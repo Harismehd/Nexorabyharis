@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../api';
+import * as api from '../api';
 import { History, CheckCircle, XCircle } from 'lucide-react';
 
 export default function Logs() {

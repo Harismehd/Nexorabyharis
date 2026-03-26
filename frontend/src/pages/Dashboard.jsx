@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../api';
-import { TrendingUp, Users, DollarSign, Calendar, Activity } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { supabase } from '../supabase';
+import { TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function Dashboard() {
   const { gymKey } = useAuth();
@@ -13,39 +13,66 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [payRes, memRes] = await Promise.all([
-          api.get(`/payments?gymKey=${gymKey}`),
-          api.get(`/members?gymKey=${gymKey}`)
-        ]);
-        setPayments(payRes.data.payments || []);
-        setMembers(memRes.data.members || []);
+        // Get data from Supabase
+        const { data, error } = await supabase
+          .from('app_state')
+          .select('payload')
+        
+        if (error) throw error
+        
+        const appData = data[0]?.payload || {}
+        const allMembers = appData.members || []
+        const allPayments = appData.payments || []
+        
+        // Filter members for current gym using gymKey
+        const filteredMembers = allMembers.filter(m => m.gymKey === gymKey)
+        
+        // Filter payments for current gym
+        const filteredPayments = allPayments.filter(p => p.gymKey === gymKey)
+        
+        setMembers(filteredMembers)
+        setPayments(filteredPayments)
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching dashboard data:', err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     };
     fetchData();
   }, [gymKey]);
 
   // Derived Metrics
-  const activeMembersCount = members.filter(m => m.status === 'Active').length;
-  const dueMembersCount = members.filter(m => m.status === 'Dues').length;
+  const activeMembersCount = members.filter(m => {
+    // Check if subscription is active
+    if (m.subscriptionEndDate) {
+      return new Date(m.subscriptionEndDate) > new Date()
+    }
+    return m.status === 'Active'
+  }).length;
+  
+  const dueMembersCount = members.filter(m => {
+    if (m.subscriptionEndDate) {
+      return new Date(m.subscriptionEndDate) <= new Date()
+    }
+    return m.status === 'Dues'
+  }).length;
+  
   const totalRevenue = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
   const currentMonthStr = new Date().toISOString().substring(0, 7);
   const currentMonthRevenue = payments
-     .filter(p => p.paymentDate.startsWith(currentMonthStr))
+     .filter(p => p.paymentDate?.startsWith(currentMonthStr))
      .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
-  // Growth Data (last 6 months dummy mapped from real data)
+  // Revenue trend data
   const revenueTrendData = useMemo(() => {
     const map = {};
     payments.forEach(p => {
-       const month = new Date(p.paymentDate).toLocaleString('default', { month: 'short' });
-       map[month] = (map[month] || 0) + parseFloat(p.amount || 0);
+       if (p.paymentDate) {
+         const month = new Date(p.paymentDate).toLocaleString('default', { month: 'short' });
+         map[month] = (map[month] || 0) + parseFloat(p.amount || 0);
+       }
     });
-    // Fill empty months logic can be expanded, keeping it simple
     return Object.keys(map).map(k => ({ name: k, Revenue: map[k] })).slice(-6);
   }, [payments]);
 
@@ -107,9 +134,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Charts Row 1 */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-         {/* Line Chart */}
          <div className="card lg:col-span-2">
             <h3 className="text-lg font-bold text-slate-800 mb-6">Monthly Revenue Trend</h3>
             <div className="h-[300px]">
@@ -135,9 +161,8 @@ export default function Dashboard() {
             </div>
          </div>
 
-         {/* Pie Chart */}
          <div className="card">
-            <h3 className="text-lg font-bold text-slate-800 mb-6">Payment Distribution</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-6">Member Distribution</h3>
             <div className="h-[300px] -mt-4">
                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -157,6 +182,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-// Ensure AreaChart and Area are imported at top (overwritten temporarily above, adjusting import)
-import { AreaChart, Area } from 'recharts';
