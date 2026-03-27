@@ -66,7 +66,7 @@ function normalizePaymentSettings(raw) {
   };
 }
 
-const PACKAGE_RANK = { starter: 1, growth: 2, pro: 3 };
+const PACKAGE_RANK = { starter: 1, growth: 2, pro: 3, pro_plus: 4 };
 
 function getPackageRank(pkg) {
   const v = String(pkg || 'starter').toLowerCase();
@@ -149,7 +149,7 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(403).json({ error: 'ACCOUNT_SUSPENDED', message: 'Your account has been suspended. Please contact the provider to resolve this.' });
   }
 
-  res.json({ message: 'Login successful', gymKey, role: 'gym' });
+  res.json({ message: 'Login successful', gymKey, role: 'gym', package: gym.package || 'starter' });
 });
 
 // Middleware for Admin validation (Simplified for this architecture)
@@ -223,7 +223,7 @@ app.post('/api/admin/gyms/create', verifyAdmin, async (req, res) => {
   }
 
   const normalizedPkg = String(pkg || 'starter').toLowerCase();
-  const allowedPackages = ['starter', 'growth', 'pro'];
+  const allowedPackages = ['starter', 'growth', 'pro', 'pro_plus'];
   const selectedPackage = allowedPackages.includes(normalizedPkg) ? normalizedPkg : 'starter';
   
   const newGym = {
@@ -255,7 +255,7 @@ app.post('/api/admin/gyms/package', verifyAdmin, async (req, res) => {
   if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
 
   const normalizedPkg = String(pkg || 'starter').toLowerCase();
-  const allowedPackages = ['starter', 'growth', 'pro'];
+  const allowedPackages = ['starter', 'growth', 'pro', 'pro_plus'];
   const selectedPackage = allowedPackages.includes(normalizedPkg) ? normalizedPkg : 'starter';
 
   db.gyms[gymIndex].package = selectedPackage;
@@ -510,6 +510,116 @@ app.get('/api/payments', async (req, res) => {
   res.json({ payments });
 });
 
+// ========================
+// FINANCE GUARD (PRO PLUS)
+// ========================
+app.get('/api/finance/guard', async (req, res) => {
+  const { gymKey } = req.query;
+  const db = await readDB();
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  ensureGymDefaults(gym || {});
+  if (!gym || !requireMinPackage(gym, 'pro_plus')) {
+    return res.status(403).json({ error: 'FEATURE_NOT_ENABLED' });
+  }
+
+  const members = (db.members || []).filter(m => m.gymKey === gymKey);
+  const payments = (db.payments || []).filter(p => p.gymKey === gymKey);
+
+  const dueMembers = members.filter(m => calculateMemberStatus(m) === 'Dues');
+  const expectedOutstanding = dueMembers.reduce((sum, m) => sum + Number(m.amount || 0), 0);
+
+  const monthStr = new Date().toISOString().slice(0, 7);
+  const thisMonthPayments = payments.filter(p => (p.paymentDate || '').startsWith(monthStr));
+  const collectedThisMonth = thisMonthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+  // Heuristic: expected this month = outstanding dues + (payments this month) to approximate monthly target
+  const expectedThisMonth = expectedOutstanding + collectedThisMonth;
+  const collectionRate = expectedThisMonth > 0 ? Math.round((collectedThisMonth / expectedThisMonth) * 100) : 100;
+
+  // Leak alerts (heuristics that catch common cash-leak behavior)
+  const alerts = [];
+
+  // 1) Active members without a recent payment (likely manually toggled paid)
+  const now = Date.now();
+  const recentWindowDays = 40;
+  const recentCutoff = now - recentWindowDays * 24 * 60 * 60 * 1000;
+  const paymentsByMember = new Map();
+  payments.forEach(p => {
+    if (!paymentsByMember.has(p.memberId)) paymentsByMember.set(p.memberId, []);
+    paymentsByMember.get(p.memberId).push(p);
+  });
+
+  const activeNoRecentPayment = members.filter(m => {
+    if (calculateMemberStatus(m) !== 'Active') return false;
+    const memberPays = paymentsByMember.get(m.id) || [];
+    const latest = memberPays.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))[0];
+    if (!latest?.paymentDate) return true;
+    return new Date(latest.paymentDate).getTime() < recentCutoff;
+  });
+
+  if (activeNoRecentPayment.length > 0) {
+    alerts.push({
+      id: 'active_no_recent_payment',
+      title: 'Active members without recent payment',
+      detail: `${activeNoRecentPayment.length} members show Active status but no payment in last ${recentWindowDays} days. This can indicate missed entries or manual status toggles.`
+    });
+  }
+
+  // 2) Duplicate transaction hash occurrences (should not happen)
+  const txMap = new Map();
+  payments.forEach(p => {
+    if (!p.transactionHash) return;
+    txMap.set(p.transactionHash, (txMap.get(p.transactionHash) || 0) + 1);
+  });
+  const dupTx = [...txMap.entries()].filter(([, c]) => c > 1).length;
+  if (dupTx > 0) {
+    alerts.push({
+      id: 'duplicate_tx_hash',
+      title: 'Duplicate transaction reference detected',
+      detail: `${dupTx} duplicated transaction references found in payments. Investigate potential replay or data entry issues.`
+    });
+  }
+
+  // 3) Unusually high number of cash payments today (helps detect “cash not deposited” patterns)
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const cashToday = payments.filter(p => (p.paymentDate || '').startsWith(todayStr) && String(p.method || '').toLowerCase().includes('cash'));
+  if (cashToday.length >= 10) {
+    alerts.push({
+      id: 'cash_spike',
+      title: 'Cash spike today',
+      detail: `${cashToday.length} cash payments recorded today. Consider reconciling cash drawer and verifying receipts.`
+    });
+  }
+
+  // Risk score (0-100)
+  const riskScore = Math.min(
+    100,
+    (activeNoRecentPayment.length * 10) +
+      (dupTx * 25) +
+      (cashToday.length >= 10 ? 15 : 0) +
+      (expectedOutstanding > 0 ? 10 : 0)
+  );
+
+  const topDefaulters = [...dueMembers]
+    .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0))
+    .slice(0, 8)
+    .map(m => ({ id: m.id, name: m.name, phone: m.phone, amount: m.amount }));
+
+  res.json({
+    gymKey,
+    month: monthStr,
+    dueMembersCount: dueMembers.length,
+    expectedOutstanding,
+    paymentsThisMonth: thisMonthPayments.length,
+    collectedThisMonth,
+    expectedThisMonth,
+    collectionRate,
+    riskScore,
+    alerts,
+    topDefaulters
+  });
+});
+
 app.post('/api/payments', async (req, res) => {
   const { gymKey, memberId, amount, method, monthsCovered } = req.body;
   const db = await readDB();
@@ -682,14 +792,14 @@ app.post('/api/messages/send', async (req, res) => {
     return res.status(403).json({ error: 'WhatsApp session not active. Please reconnect WhatsApp.' });
   }
 
-  const members = db.members.filter(m => m.gymKey === gymKey);
+  // Only send reminders to members currently in Dues
+  const members = db.members.filter(m => m.gymKey === gymKey && calculateMemberStatus(m) === 'Dues');
   const template = gym.template;
   
   // Return early, process in background
-  res.json({ message: 'Sending started. Check logs for progress.' });
+  res.json({ message: `Sending started for ${members.length} due members. Check logs for progress.` });
 
   for (let member of members) {
-    // Only send to those what arguably look like valid due ones, but for MVP we send to all members that the frontend requests or we filter here. Let's assume all in DB.
     let msg = template
       .replace('{name}', member.name)
       .replace('{amount}', member.amount || '0')

@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import Logs from './pages/Logs';
 import MasterAdmin from './pages/MasterAdmin';
 import PaymentVerification from './pages/PaymentVerification';
+import FinanceGuard from './pages/FinanceGuard';
 
 const ProtectedRoute = ({ children }) => {
   const { gymKey, role } = useAuth();
@@ -42,6 +43,7 @@ function AppRoutes() {
         <Route path="upload" element={<Upload />} />
         <Route path="send" element={<SendReminders />} />
         <Route path="payment-verification" element={<PaymentVerification />} />
+        <Route path="finance-guard" element={<FinanceGuard />} />
         <Route path="settings" element={<Settings />} />
         <Route path="logs" element={<Logs />} />
       </Route>

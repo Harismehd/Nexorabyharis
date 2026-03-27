@@ -89,8 +89,8 @@ export default function Settings() {
   if (loading) return <div>Loading settings...</div>;
 
   const gymPackage = profile.package || 'starter';
-  const canUsePaymentCollection = gymPackage === 'growth' || gymPackage === 'pro';
-  const canUseTemplateEditing = gymPackage === 'pro';
+  const canUsePaymentCollection = gymPackage === 'growth' || gymPackage === 'pro' || gymPackage === 'pro_plus';
+  const canUseTemplateEditing = gymPackage === 'pro' || gymPackage === 'pro_plus';
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
@@ -201,7 +201,7 @@ export default function Settings() {
             />
             {!canUseTemplateEditing && (
               <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
-                Upgrade to <b>Pro</b> to edit your WhatsApp message template.
+                Upgrade to <b>Pro</b> or <b>Pro Plus</b> to edit your WhatsApp message template.
               </p>
             )}
             
@@ -298,7 +298,7 @@ export default function Settings() {
             ) : (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-900">
                 <div className="font-bold mb-1">Upgrade required</div>
-                Payment collection settings are available in <b>Growth</b> and <b>Pro</b> packages.
+                Payment collection settings are available in <b>Growth</b>, <b>Pro</b> and <b>Pro Plus</b> packages.
               </div>
             )}
           </div>

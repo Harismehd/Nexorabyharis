@@ -29,7 +29,7 @@ export default function PaymentVerification() {
       const pkg = profRes.data.profile?.package || 'starter';
       setGymPackage(pkg);
 
-      if (!(pkg === 'growth' || pkg === 'pro')) {
+      if (!(pkg === 'growth' || pkg === 'pro' || pkg === 'pro_plus')) {
         return;
       }
 
@@ -66,7 +66,7 @@ export default function PaymentVerification() {
   };
 
   const verifyProof = async (id, approved) => {
-    if (!(gymPackage === 'growth' || gymPackage === 'pro')) return;
+    if (!(gymPackage === 'growth' || gymPackage === 'pro' || gymPackage === 'pro_plus')) return;
     try {
       const res = await api.post(`/payments/pending/${id}/verify`, { gymKey, approved, monthsCovered: 1 });
       if (approved && res.data.confirmation) {
@@ -89,14 +89,14 @@ export default function PaymentVerification() {
         </p>
       </div>
 
-      {!(gymPackage === 'growth' || gymPackage === 'pro') && (
+      {!(gymPackage === 'growth' || gymPackage === 'pro' || gymPackage === 'pro_plus') && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-900">
           <div className="font-bold mb-1">Upgrade required</div>
-          Payment verification is available in <b>Growth</b> and <b>Pro</b> packages only.
+          Payment verification is available in <b>Growth</b>, <b>Pro</b> and <b>Pro Plus</b> packages only.
         </div>
       )}
 
-      {(gymPackage === 'growth' || gymPackage === 'pro') && (
+      {(gymPackage === 'growth' || gymPackage === 'pro' || gymPackage === 'pro_plus') && (
       <>
       <div className="card">
         <h2 className="text-lg font-bold text-slate-800 mb-4">Submit Payment Proof</h2>

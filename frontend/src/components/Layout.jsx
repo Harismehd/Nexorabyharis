@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, MessageSquare, UploadCloud, Send, Settings, History, LogOut, Dumbbell, Users, Menu, X, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, UploadCloud, Send, Settings, History, LogOut, Dumbbell, Users, Menu, X, ShieldCheck, BadgeDollarSign } from 'lucide-react';
 
 export default function Layout() {
-  const { logout, gymKey } = useAuth();
+  const { logout, gymKey, packageTier } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -16,6 +16,7 @@ export default function Layout() {
     { name: 'Upload Data', path: '/upload', icon: UploadCloud },
     { name: 'Send Reminders', path: '/send', icon: Send },
     { name: 'Payment Verify', path: '/payment-verification', icon: ShieldCheck },
+    ...(packageTier === 'pro_plus' ? [{ name: 'Revenue Leak Guard', path: '/finance-guard', icon: BadgeDollarSign }] : []),
     { name: 'Logs', path: '/logs', icon: History },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];

@@ -40,7 +40,7 @@ export default function Login() {
         localStorage.removeItem('adminKey');
       }
       
-      login(res.data.gymKey, res.data.role);
+      login(res.data.gymKey, res.data.role, res.data.package);
     } catch (err) {
       const code = err.response?.data?.error;
       if (code === 'ACCOUNT_SUSPENDED') {

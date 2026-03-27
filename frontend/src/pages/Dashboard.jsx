@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../supabase';
+import api from '../api';
 import { TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 
@@ -13,29 +13,16 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get data from Supabase
-        const { data, error } = await supabase
-          .from('app_state')
-          .select('payload')
-        
-        if (error) throw error
-        
-        const appData = data[0]?.payload || {}
-        const allMembers = appData.members || []
-        const allPayments = appData.payments || []
-        
-        // Filter members for current gym using gymKey
-        const filteredMembers = allMembers.filter(m => m.gymKey === gymKey)
-        
-        // Filter payments for current gym
-        const filteredPayments = allPayments.filter(p => p.gymKey === gymKey)
-        
-        setMembers(filteredMembers)
-        setPayments(filteredPayments)
+        const [memRes, payRes] = await Promise.all([
+          api.get(`/members?gymKey=${gymKey}`),
+          api.get(`/payments?gymKey=${gymKey}`)
+        ]);
+        setMembers(memRes.data.members || []);
+        setPayments(payRes.data.payments || []);
       } catch (err) {
-        console.error('Error fetching dashboard data:', err)
+        console.error('Error fetching dashboard data:', err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     };
     fetchData();

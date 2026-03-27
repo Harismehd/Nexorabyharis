@@ -185,6 +185,7 @@ export default function MasterAdmin() {
                     <option value="starter">Starter</option>
                     <option value="growth">Growth</option>
                     <option value="pro">Pro</option>
+                    <option value="pro_plus">Pro Plus</option>
                   </select>
                   <div className="flex-1 text-xs text-slate-400 pt-2">
                     Choose package for this tenant.
@@ -245,7 +246,7 @@ export default function MasterAdmin() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex gap-2 justify-end">
-                              {['starter', 'growth', 'pro'].map(p => (
+                              {['starter', 'growth', 'pro', 'pro_plus'].map(p => (
                                 <button
                                   key={p}
                                   onClick={() => handleSetPackage(g.gymKey, p)}
@@ -255,7 +256,7 @@ export default function MasterAdmin() {
                                       : 'bg-slate-800/50 text-slate-300 border-slate-700 hover:bg-slate-800 hover:text-white'
                                   }`}
                                 >
-                                  {p.toUpperCase()}
+                                  {p === 'pro_plus' ? 'PRO+' : p.toUpperCase()}
                                 </button>
                               ))}
                             </div>

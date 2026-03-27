@@ -14,7 +14,7 @@ export default function Receipts() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const gymPackage = profile?.package || 'starter';
-  const canExport = gymPackage === 'growth' || gymPackage === 'pro';
+  const canExport = gymPackage === 'growth' || gymPackage === 'pro' || gymPackage === 'pro_plus';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,7 +53,7 @@ export default function Receipts() {
 
   const handleExportCSV = () => {
      if (!canExport) {
-       toast.error('Export is available in Growth and Pro packages');
+       toast.error('Export is available in Growth, Pro and Pro Plus packages');
        return;
      }
      const csvRows = [];
