@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import * as api from '../api';
+import api from '../api';
 import toast from 'react-hot-toast';
 import { Upload as UploadIcon, FileSpreadsheet, Check } from 'lucide-react';
 
