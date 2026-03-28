@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/auth/login", "destination": "/api/auth" },
-    { "source": "/api/members/upload", "destination": "/api/members" },
+    { "source": "/api/members/upload", "destination": "/api/upload" },
     { "source": "/api/members/:id/status", "destination": "/api/members" },
     { "source": "/api/members/:id", "destination": "/api/members" },
     { "source": "/api/members", "destination": "/api/members" },
@@ -20,7 +20,6 @@
     { "source": "/api/messages/send", "destination": "/api/reminders" },
     { "source": "/api/whatsapp/:path*", "destination": "/api/whatsapp" },
     { "source": "/api/finance/guard", "destination": "/api/finance" },
-    { "source": "/api/members/upload", "destination": "/api/upload" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
