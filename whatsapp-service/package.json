@@ -1,0 +1,23 @@
+{
+  "name": "gymflow-whatsapp-service",
+  "version": "1.0.0",
+  "main": "service.js",
+  "scripts": {
+    "start": "node service.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0",
+    "@whiskeysockets/baileys": "^6.7.0",
+    "pino": "^8.0.0",
+    "qrcode": "^1.5.0",
+    "dotenv": "^16.0.0"
+  },
+  "pkg": {
+    "scripts": "service.js",
+    "targets": ["node20-win-x64"],
+    "outputPath": "dist",
+    "assets": [
+      "node_modules/@whiskeysockets/baileys/**/*"
+    ]
+  }
+}
