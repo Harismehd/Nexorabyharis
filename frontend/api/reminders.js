@@ -1,6 +1,19 @@
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
+}
+
+
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { isBefore, parseISO, startOfDay } from 'date-fns';
+
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
+}
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -60,7 +73,9 @@ function requireMinPackage(gym, minPackage) {
   return (PACKAGE_RANK[gym?.package] || 1) >= (PACKAGE_RANK[minPackage] || 1);
 }
 
-export default async function handler(req, res) {
+
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { gymKey } = req.body;

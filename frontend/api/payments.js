@@ -1,3 +1,8 @@
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
+}
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { addMonths, isBefore, parseISO } from 'date-fns';
@@ -116,7 +121,8 @@ function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCover
   return { payment, newEndDate };
 }
 
-export default async function handler(req, res) {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
   const db = await readDB();
   const url = req.url || '';
 

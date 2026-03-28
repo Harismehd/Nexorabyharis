@@ -1,3 +1,8 @@
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
+}
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -17,7 +22,8 @@ async function readDB() {
   return { ...defaultData, ...data.payload };
 }
 
-export default async function handler(req, res) {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   const { gymKey } = req.query;
   const db = await readDB();
