@@ -20,6 +20,7 @@
     { "source": "/api/messages/send", "destination": "/api/reminders" },
     { "source": "/api/whatsapp/:path*", "destination": "/api/whatsapp" },
     { "source": "/api/finance/guard", "destination": "/api/finance" },
+    { "source": "/api/members/upload", "destination": "/api/upload" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
