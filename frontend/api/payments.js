@@ -104,10 +104,10 @@ export default async function handler(req, res) {
     return res.json({ message: 'Payment proof submitted.', pendingPayment: { ...pending, transactionHash: undefined } });
   }
 
-if (req.method === 'POST' && url.includes('verify')) {
-  const urlParts = req.url.split('/');
-  const pendingId = urlParts[urlParts.findIndex(p => p === 'pending') + 1];
-  const { gymKey, approved, monthsCovered } = req.body;
+  if (req.method === 'POST' && url.includes('verify')) {
+    const urlParts = req.url.split('/');
+    const pendingId = urlParts[urlParts.findIndex(p => p === 'pending') + 1];
+    const { gymKey, approved, monthsCovered } = req.body;
     const gym = db.gyms.find(g => g.gymKey === gymKey);
     ensureGymDefaults(gym || {});
     if (!requireMinPackage(gym, 'growth')) return res.status(403).json({ error: 'FEATURE_NOT_ENABLED' });
@@ -115,15 +115,53 @@ if (req.method === 'POST' && url.includes('verify')) {
     const pendingIndex = db.pendingPayments.findIndex(p => p.id === pendingId && p.gymKey === gymKey && p.status === 'pending');
     if (pendingIndex === -1) return res.status(404).json({ error: 'Pending payment not found' });
     const pending = db.pendingPayments[pendingIndex];
-    if (!approved) { pending.status = 'rejected'; pending.verifiedAt = new Date().toISOString(); db.pendingPayments[pendingIndex] = pending; await writeDB(db); return res.json({ message: 'Payment proof rejected' }); }
+    if (!approved) {
+      pending.status = 'rejected';
+      pending.verifiedAt = new Date().toISOString();
+      db.pendingPayments[pendingIndex] = pending;
+      await writeDB(db);
+      return res.json({ message: 'Payment proof rejected' });
+    }
     const result = createPaymentRecord(db, { gymKey, memberId: pending.memberId, amount: pending.amount, method: `${pending.method} (Verified)`, monthsCovered: monthsCovered || 1 });
     if (result.error) return res.status(404).json({ error: result.error });
     result.payment.transactionHash = pending.transactionHash;
     const verificationCode = `VER-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`;
-    pending.status = 'verified'; pending.verifiedAt = new Date().toISOString(); pending.verificationCode = verificationCode; pending.receiptNumber = result.payment.receiptNumber;
+    pending.status = 'verified';
+    pending.verifiedAt = new Date().toISOString();
+    pending.verificationCode = verificationCode;
+    pending.receiptNumber = result.payment.receiptNumber;
     db.pendingPayments[pendingIndex] = pending;
     await writeDB(db);
-    return res.json({ message: 'Payment verified successfully', confirmation: { verificationCode, receiptNumber: result.payment.receiptNumber, paymentDate: result.payment.paymentDate }, payment: result.payment });
+
+    // Queue confirmation message via WhatsApp service
+    try {
+      const member = db.members.find(m => m.id === pending.memberId);
+      if (member && gym.whatsappStatus === 'connected') {
+        const confirmationMsg = `Payment confirmed ✅\nReceipt: ${result.payment.receiptNumber}\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
+        await supabase.from('message_jobs').insert([{
+          id: crypto.randomUUID(),
+          gym_key: gymKey,
+          member_id: member.id,
+          member_name: member.name,
+          member_phone: member.phone,
+          message: confirmationMsg,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        }]);
+      }
+    } catch (err) {
+      console.error('Failed to queue confirmation message:', err);
+    }
+
+    return res.json({
+      message: 'Payment verified successfully',
+      confirmation: {
+        verificationCode,
+        receiptNumber: result.payment.receiptNumber,
+        paymentDate: result.payment.paymentDate
+      },
+      payment: result.payment
+    });
   }
 
   res.status(405).json({ error: 'Method not allowed' });
