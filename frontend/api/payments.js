@@ -104,8 +104,10 @@ export default async function handler(req, res) {
     return res.json({ message: 'Payment proof submitted.', pendingPayment: { ...pending, transactionHash: undefined } });
   }
 
-  if (req.method === 'POST' && url.includes('verify')) {
-    const { gymKey, pendingId, approved, monthsCovered } = req.body;
+if (req.method === 'POST' && url.includes('verify')) {
+  const urlParts = req.url.split('/');
+  const pendingId = urlParts[urlParts.findIndex(p => p === 'pending') + 1];
+  const { gymKey, approved, monthsCovered } = req.body;
     const gym = db.gyms.find(g => g.gymKey === gymKey);
     ensureGymDefaults(gym || {});
     if (!requireMinPackage(gym, 'growth')) return res.status(403).json({ error: 'FEATURE_NOT_ENABLED' });

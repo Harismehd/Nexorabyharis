@@ -1,9 +1,10 @@
 {
   "rewrites": [
     { "source": "/api/auth/login", "destination": "/api/auth" },
-    { "source": "/api/members", "destination": "/api/members" },
+    { "source": "/api/members/upload", "destination": "/api/members" },
     { "source": "/api/members/:id/status", "destination": "/api/members" },
     { "source": "/api/members/:id", "destination": "/api/members" },
+    { "source": "/api/members", "destination": "/api/members" },
     { "source": "/api/payments/pending/:id/verify", "destination": "/api/payments" },
     { "source": "/api/payments/pending", "destination": "/api/payments" },
     { "source": "/api/payments/proof", "destination": "/api/payments" },
@@ -17,6 +18,7 @@
     { "source": "/api/profile", "destination": "/api/profile" },
     { "source": "/api/logs", "destination": "/api/logs" },
     { "source": "/api/messages/send", "destination": "/api/reminders" },
+    { "source": "/api/whatsapp/:path*", "destination": "/api/whatsapp" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

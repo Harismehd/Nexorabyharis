@@ -52,8 +52,10 @@ export default async function handler(req, res) {
     return res.json({ message: 'Member added successfully', member: newMember });
   }
 
-  if (req.method === 'PUT') {
-    const { gymKey, status, memberId } = req.body;
+if (req.method === 'PUT') {
+    const urlParts = req.url.split('/');
+    const memberId = urlParts[urlParts.length - 2];
+    const { gymKey, status } = req.body;
     const memberIndex = db.members.findIndex(m => m.id === memberId && m.gymKey === gymKey);
     if (memberIndex === -1) return res.status(404).json({ error: 'Member not found' });
     const member = db.members[memberIndex];
@@ -70,7 +72,8 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'DELETE') {
-    const { memberId } = req.body;
+    const urlParts = req.url.split('/');
+    const memberId = urlParts[urlParts.length - 1];
     db.members = db.members.filter(m => m.id !== memberId);
     await writeDB(db);
     return res.json({ message: 'Member deleted' });
