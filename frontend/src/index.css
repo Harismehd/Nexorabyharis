@@ -21,6 +21,16 @@
 }
 
 @layer base {
+  .text-slate-800 { color: #f1f5f9 !important; }
+.text-slate-700 { color: #e2e8f0 !important; }
+.text-slate-600 { color: #cbd5e1 !important; }
+.text-slate-500 { color: #94a3b8 !important; }
+.bg-white { background-color: #0e1622 !important; }
+.bg-slate-50 { background-color: #080d14 !important; }
+.border-slate-200 { border-color: #1a2540 !important; }
+.border-slate-100 { border-color: #1a254050 !important; }
+.bg-slate-100 { background-color: #131f30 !important; }
+.bg-slate-50 { background-color: #0a1018 !important; }
   :root {
     --bg: 8 13 20;
     --surface: 14 22 34;
