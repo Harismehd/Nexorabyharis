@@ -1,0 +1,22 @@
+{
+  "rewrites": [
+    { "source": "/api/auth/login", "destination": "/api/auth" },
+    { "source": "/api/members", "destination": "/api/members" },
+    { "source": "/api/members/:id/status", "destination": "/api/members" },
+    { "source": "/api/members/:id", "destination": "/api/members" },
+    { "source": "/api/payments/pending/:id/verify", "destination": "/api/payments" },
+    { "source": "/api/payments/pending", "destination": "/api/payments" },
+    { "source": "/api/payments/proof", "destination": "/api/payments" },
+    { "source": "/api/payments", "destination": "/api/payments" },
+    { "source": "/api/admin/dashboard", "destination": "/api/admin" },
+    { "source": "/api/admin/gyms/create", "destination": "/api/admin" },
+    { "source": "/api/admin/gyms/package", "destination": "/api/admin" },
+    { "source": "/api/admin/gyms/toggle", "destination": "/api/admin" },
+    { "source": "/api/admin/gyms", "destination": "/api/admin" },
+    { "source": "/api/admin/shutdown", "destination": "/api/admin" },
+    { "source": "/api/profile", "destination": "/api/profile" },
+    { "source": "/api/logs", "destination": "/api/logs" },
+    { "source": "/api/messages/send", "destination": "/api/reminders" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
