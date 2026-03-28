@@ -10,3 +10,4 @@ backend/uploads/
 dist/
 *.log
 .DS_Store
+whatsapp-service/
