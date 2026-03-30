@@ -19,7 +19,8 @@
     { "source": "/api/logs", "destination": "/api/logs" },
     { "source": "/api/messages/send", "destination": "/api/reminders" },
     { "source": "/api/whatsapp/:path*", "destination": "/api/whatsapp" },
-    { "source": "/api/finance/guard", "destination": "/api/finance" },
+    { "source": "/api/finance/guard", "destination": "/api/finance" },  
+    { "source": "/api/terms", "destination": "/api/terms" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -14,11 +15,49 @@ import Logs from './pages/Logs';
 import MasterAdmin from './pages/MasterAdmin';
 import PaymentVerification from './pages/PaymentVerification';
 import FinanceGuard from './pages/FinanceGuard';
+import Terms from './pages/Terms';
+import api from './api';
 
 const ProtectedRoute = ({ children }) => {
-  const { gymKey, role } = useAuth();
+  const { gymKey, role, termsAccepted } = useAuth();
+  const [checking, setChecking] = useState(true);
+  const [needsTerms, setNeedsTerms] = useState(false);
+
+  useEffect(() => {
+    if (!gymKey || role === 'admin') {
+      setChecking(false);
+      return;
+    }
+    if (termsAccepted) {
+      setChecking(false);
+      return;
+    }
+    // Check from server
+    api.get(`/terms?gymKey=${gymKey}`)
+      .then(res => {
+        if (res.data.accepted) {
+          // Already accepted before — mark locally
+          localStorage.setItem('termsAccepted', 'true');
+          setNeedsTerms(false);
+        } else {
+          setNeedsTerms(true);
+        }
+      })
+      .catch(() => setNeedsTerms(false))
+      .finally(() => setChecking(false));
+  }, [gymKey, role, termsAccepted]);
+
   if (!gymKey) return <Navigate to="/login" replace />;
   if (role === 'admin') return <Navigate to="/admin" replace />;
+  if (checking) return (
+    <div style={{
+      minHeight: '100vh', background: '#080d14',
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }}>
+      <div style={{ color: '#475569', fontFamily: 'DM Sans, sans-serif' }}>Loading...</div>
+    </div>
+  );
+  if (needsTerms && !termsAccepted) return <Terms />;
   return children;
 };
 
@@ -31,7 +70,7 @@ const AdminRoute = ({ children }) => {
 
 function AppRoutes() {
   const { gymKey, role } = useAuth();
-  
+
   return (
     <Routes>
       <Route path="/login" element={gymKey ? <Navigate to={role === 'admin' ? '/admin' : '/'} replace /> : <Login />} />
@@ -56,7 +95,14 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster position="top-right" />
+        <Toaster position="top-right" toastOptions={{
+          style: {
+            background: '#0e1622',
+            color: '#e2e8f0',
+            border: '1px solid #1a2540',
+            fontFamily: 'DM Sans, sans-serif'
+          }
+        }} />
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
