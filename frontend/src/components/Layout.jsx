@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
-import { X, Megaphone } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, MessageSquare, UploadCloud, Send,
-  Settings, History, LogOut, Dumbbell, Users, Menu, X,
-  ShieldCheck, BadgeDollarSign, ChevronRight, FileText
+  Settings, History, LogOut, Dumbbell, Users, Menu,
+  ShieldCheck, BadgeDollarSign, ChevronRight, FileText,
+  X, Megaphone   // ← X and Megaphone added here only once
 } from 'lucide-react';
 
 export default function Layout() {
