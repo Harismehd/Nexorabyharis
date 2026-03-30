@@ -311,12 +311,45 @@ export default function Layout() {
                 boxShadow: '0 0 8px #00d4ff',
                 animation: 'pulse 2s infinite'
               }} />
-              <span style={{
-                fontFamily: 'Syne, sans-serif', fontSize: '12px',
-                fontWeight: 700, color: '#00d4ff', letterSpacing: '0.05em'
-              }}>
-                {gymKey}
-              </span>
+              <div className="flex items-center gap-3">
+  {/* Package badge */}
+  {role !== 'admin' && (() => {
+    const badges = {
+      starter: { label: 'Starter', color: '#64748b', bg: 'rgba(100,116,139,0.15)', border: 'rgba(100,116,139,0.3)' },
+      growth: { label: 'Growth', color: '#34d399', bg: 'rgba(52,211,153,0.15)', border: 'rgba(52,211,153,0.3)' },
+      pro: { label: 'Pro', color: '#00d4ff', bg: 'rgba(0,212,255,0.15)', border: 'rgba(0,212,255,0.3)' },
+      pro_plus: { label: 'Pro Plus ⭐', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)', border: 'rgba(251,191,36,0.3)' }
+    };
+    const b = badges[packageTier] || badges.starter;
+    return (
+      <span style={{
+        padding: '3px 10px', borderRadius: '99px', fontSize: '11px',
+        fontFamily: 'Syne, sans-serif', fontWeight: 700,
+        color: b.color, background: b.bg, border: `1px solid ${b.border}`
+      }}>{b.label}</span>
+    );
+  })()}
+
+  {/* Status indicator */}
+  <div style={{
+    display: 'flex', alignItems: 'center', gap: '8px',
+    padding: '6px 14px', borderRadius: '99px',
+    background: 'rgba(0,212,255,0.06)',
+    border: '1px solid rgba(0,212,255,0.12)'
+  }}>
+    <div style={{
+      width: '7px', height: '7px', borderRadius: '50%',
+      background: '#00d4ff', boxShadow: '0 0 8px #00d4ff',
+      animation: 'pulse 2s infinite'
+    }} />
+    <span style={{
+      fontFamily: 'Syne, sans-serif', fontSize: '12px',
+      fontWeight: 700, color: '#00d4ff', letterSpacing: '0.05em'
+    }}>
+      {gymKey}
+    </span>
+  </div>
+</div>
             </div>
           </div>
         </header>
