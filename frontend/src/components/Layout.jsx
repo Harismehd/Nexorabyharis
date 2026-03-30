@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import api from '../api';
+import { X, Megaphone } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -8,14 +10,41 @@ import {
 } from 'lucide-react';
 
 export default function Layout() {
-  const { logout, gymKey, packageTier } = useAuth();
+  const { logout, gymKey, packageTier, role } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [broadcasts, setBroadcasts] = useState([]);
+  const [dismissedIds, setDismissedIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('dismissedBroadcasts') || '[]'); }
+    catch { return []; }
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!gymKey || role === 'admin') return;
+    api.get(`/broadcasts?gymKey=${gymKey}`)
+      .then(res => setBroadcasts(res.data.broadcasts || []))
+      .catch(() => {});
+  }, [gymKey, role]);
+
+  const activeBroadcasts = broadcasts.filter(b => !dismissedIds.includes(b.id));
+
+  const dismissBroadcast = (id) => {
+    const updated = [...dismissedIds, id];
+    setDismissedIds(updated);
+    localStorage.setItem('dismissedBroadcasts', JSON.stringify(updated));
+  };
+
+  const broadcastColors = {
+    info: { bg: 'rgba(0,212,255,0.08)', border: 'rgba(0,212,255,0.2)', color: '#00d4ff', icon: '#00d4ff' },
+    warning: { bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.2)', color: '#fbbf24', icon: '#fbbf24' },
+    alert: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', color: '#f87171', icon: '#f87171' },
+    success: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', color: '#34d399', icon: '#34d399' }
+  };
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -45,6 +74,42 @@ export default function Layout() {
           onClick={closeSidebar}
         />
       )}
+
+      {/* Broadcast Banners */}
+      {activeBroadcasts.map(b => {
+        const colors = broadcastColors[b.type] || broadcastColors.info;
+        return (
+          <div key={b.id} style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+            background: colors.bg,
+            borderBottom: `1px solid ${colors.border}`,
+            backdropFilter: 'blur(12px)',
+            padding: '10px 24px',
+            display: 'flex', alignItems: 'center', gap: '12px',
+            animation: 'fadeSlideIn 0.4s ease'
+          }}>
+            <Megaphone size={16} color={colors.icon} style={{ flexShrink: 0 }} />
+            <span style={{
+              flex: 1, fontSize: '13px', color: colors.color,
+              fontFamily: 'DM Sans, sans-serif', fontWeight: 500
+            }}>
+              {b.message}
+            </span>
+            <span style={{ fontSize: '11px', color: '#334155', flexShrink: 0 }}>
+              Expires: {new Date(b.expires_at).toLocaleDateString()}
+            </span>
+            <button
+              onClick={() => dismissBroadcast(b.id)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: '#334155', padding: '4px', flexShrink: 0
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        );
+      })}
 
       {/* Sidebar */}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
@@ -192,6 +257,7 @@ export default function Layout() {
 
       {/* Main */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        
 
         {/* Header */}
         <header style={{
@@ -267,6 +333,10 @@ export default function Layout() {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
+        }
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         * { box-sizing: border-box; }
         select option { background: #0e1622; color: #e2e8f0; }

@@ -21,6 +21,7 @@
     { "source": "/api/whatsapp/:path*", "destination": "/api/whatsapp" },
     { "source": "/api/finance/guard", "destination": "/api/finance" },  
     { "source": "/api/terms", "destination": "/api/terms" },
+    { "source": "/api/broadcasts", "destination": "/api/broadcasts" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
