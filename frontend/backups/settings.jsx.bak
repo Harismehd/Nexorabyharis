@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { Settings as SettingsIcon, Save, Store, Bell, Wallet, Lock, Plus, Trash2, Edit2, Check, Package as PackageIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Store, Bell, Wallet, Lock } from 'lucide-react';
 
 const PACKAGE_BADGES = {
   starter: { label: 'Starter', color: '#64748b', bg: 'rgba(100,116,139,0.15)', border: 'rgba(100,116,139,0.3)' },
@@ -32,15 +32,7 @@ export default function Settings() {
     name: '', address: '', contact: '', email: '', taxReg: '', footerMessage: '',
     autoMessagingEnabled: false, reminderIntervals: [1, 3, 7], template: '',
     paymentSettings: { methods: ['easypaisa'], easypaisaNumber: '', jazzcashNumber: '', bankTitle: '', bankIban: '' },
-    package: 'starter',
-    packages: []
-  });
-  const [members, setMembers] = useState([]);
-  const [showPackageModal, setShowPackageModal] = useState(false);
-  const [editingPackage, setEditingPackage] = useState(null);
-  const [packageForm, setPackageForm] = useState({
-    id: '', name: '', description: '', duration: 'monthly', customDays: '', 
-    price: '', discountType: 'none', discountValue: '', badgeColor: '#00d4ff', isActive: true
+    package: 'starter'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,14 +44,7 @@ export default function Settings() {
         if (res.data.profile) setProfile(p => ({ ...p, ...res.data.profile }));
       } catch {} finally { setLoading(false); }
     };
-    const fetchMembers = async () => {
-      try {
-        const res = await api.get(`/members?gymKey=${gymKey}`);
-        setMembers(res.data.members || []);
-      } catch {}
-    };
     fetchProfile();
-    fetchMembers();
   }, [gymKey]);
 
   const handleChange = (e) => {
@@ -91,46 +76,6 @@ export default function Settings() {
 
   const handlePaymentField = (name, value) => {
     setProfile(prev => ({ ...prev, paymentSettings: { ...prev.paymentSettings, [name]: value } }));
-  };
-
-  const openPackageModal = (pkg = null) => {
-    if (pkg) {
-      setEditingPackage(pkg);
-      setPackageForm({ ...pkg });
-    } else {
-      setEditingPackage(null);
-      setPackageForm({
-        id: Math.random().toString(36).substr(2, 9),
-        name: '', description: '', duration: 'monthly', customDays: '', 
-        price: '', discountType: 'none', discountValue: '', badgeColor: '#00d4ff', isActive: true
-      });
-    }
-    setShowPackageModal(true);
-  };
-
-  const handleSavePackage = () => {
-    if (!packageForm.name || !packageForm.price) return toast.error('Name and Price are required');
-    
-    setProfile(prev => {
-      const currentPackages = prev.packages || [];
-      let updated;
-      if (editingPackage) {
-        updated = currentPackages.map(p => p.id === editingPackage.id ? packageForm : p);
-      } else {
-        updated = [...currentPackages, packageForm];
-      }
-      return { ...prev, packages: updated };
-    });
-    setShowPackageModal(false);
-  };
-
-  const deletePackage = (id) => {
-    const usageCount = members.filter(m => m.packageId === id).length;
-    let msg = 'Delete this package?';
-    if (usageCount > 0) msg = `This package is used by ${usageCount} members. Deleting it will not affect them but you won't be able to assign it to new members. Proceed?`;
-    
-    if (!window.confirm(msg)) return;
-    setProfile(prev => ({ ...prev, packages: (prev.packages || []).filter(p => p.id !== id) }));
   };
 
   if (loading) return <div style={{ color: '#475569', padding: '32px' }}>Loading settings...</div>;
@@ -211,87 +156,6 @@ export default function Settings() {
 
         {/* Right Column */}
         <div className="space-y-6">
-
-          {/* Offer Craft - Package Builder */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
-              <div className="flex items-center gap-3">
-                <div style={{ background: 'rgba(0,212,255,0.15)', padding: '8px', borderRadius: '10px' }}>
-                  <PackageIcon size={20} color="#00d4ff" />
-                </div>
-                <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Offer Craft</h2>
-              </div>
-              {isPro && (
-                <button 
-                  onClick={() => openPackageModal()}
-                  className="btn-primary" 
-                  style={{ padding: '6px 12px', fontSize: '12px' }}
-                  disabled={(pkg === 'pro' && (profile.packages?.length >= 3)) || (pkg === 'pro_plus' && (profile.packages?.length >= 7))}
-                >
-                  <Plus size={14} /> Add Package
-                </button>
-              )}
-            </div>
-
-            {!isPro ? (
-              <UpgradeBadge message="Upgrade to Pro (3 packages) or Pro Plus (7 packages) to build custom plans." />
-            ) : (
-              <div className="space-y-4">
-                {(profile.packages || []).length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', background: '#080d14', borderRadius: '12px', border: '1px dashed #1a2540' }}>
-                    <p style={{ fontSize: '13px', color: '#475569' }}>No custom packages created yet.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3">
-                    {profile.packages.map(p => (
-                      <div key={p.id} style={{ 
-                        background: '#080d14', border: '1px solid #1a2540', 
-                        borderRadius: '12px', padding: '12px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                      }}>
-                        <div className="flex items-center gap-3">
-                          <div style={{ width: '4px', height: '32px', background: p.badgeColor, borderRadius: '4px' }} />
-                          <div>
-                            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>{p.name}</h4>
-                            <p style={{ fontSize: '11px', color: '#475569' }}>
-                              Rs {p.price} • {p.duration} • {members.filter(m => m.packageId === p.id).length} members
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => openPackageModal(p)} style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}><Edit2 size={16} /></button>
-                          <button onClick={() => deletePackage(p.id)} style={{ color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Package Limit Progress */}
-                <div style={{ marginTop: '16px' }}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span style={{ fontSize: '11px', color: '#475569', fontWeight: 600 }}>PACKAGE LIMITS</span>
-                    <span style={{ fontSize: '11px', color: '#475569', fontWeight: 600 }}>
-                      {profile.packages?.length || 0} / {pkg === 'pro_plus' ? '7' : '3'}
-                    </span>
-                  </div>
-                  <div style={{ height: '4px', background: '#1a2540', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ 
-                      height: '100%', 
-                      width: `${((profile.packages?.length || 0) / (pkg === 'pro_plus' ? 7 : 3)) * 100}%`,
-                      background: 'linear-gradient(90deg, #0070c4, #00d4ff)',
-                      transition: 'width 0.3s ease'
-                    }} />
-                  </div>
-                  {((pkg === 'pro' && profile.packages?.length >= 3) || (pkg === 'pro_plus' && profile.packages?.length >= 7)) && (
-                    <p style={{ fontSize: '11px', color: '#fbbf24', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Lock size={10} /> Limit reached. Upgrade to Pro Plus for more slots.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Automated Reminders */}
           <div className="card">
@@ -438,148 +302,6 @@ export default function Settings() {
           </div>
         </div>
       </div>
-
-      {/* Package Modal */}
-      {showPackageModal && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
-          background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(8px)'
-        }}>
-          <div className="card" style={{ maxWidth: '480px', width: '100%', border: '1px solid #1a2540', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-            <div className="flex items-center justify-between mb-6 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
-              <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#f1f5f9' }}>
-                {editingPackage ? 'Edit Package' : 'Create Package'}
-              </h2>
-              <button 
-                onClick={() => setShowPackageModal(false)} 
-                style={{ 
-                  color: '#475569', background: 'rgba(255,255,255,0.05)', 
-                  border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '8px',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-              >
-                <Plus size={20} style={{ transform: 'rotate(45deg)' }} />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Package Name</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  placeholder="e.g. Premium Membership" 
-                  value={packageForm.name}
-                  onChange={e => setPackageForm(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Description / Benefits (One per line)</label>
-                <textarea 
-                  className="input-field" 
-                  style={{ height: '80px', resize: 'none' }}
-                  placeholder="✓ Full Gym Access&#10;✓ Sauna Included"
-                  value={packageForm.description}
-                  onChange={e => setPackageForm(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Duration</label>
-                  <select 
-                    className="input-field"
-                    value={packageForm.duration}
-                    onChange={e => setPackageForm(prev => ({ ...prev, duration: e.target.value }))}
-                  >
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly (3 months)</option>
-                    <option value="half-yearly">Half-Yearly (6 months)</option>
-                    <option value="yearly">Yearly (12 months)</option>
-                    <option value="custom">Custom Days</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Price (PKR)</label>
-                  <input 
-                    type="number" 
-                    className="input-field" 
-                    placeholder="5000"
-                    value={packageForm.price}
-                    onChange={e => setPackageForm(prev => ({ ...prev, price: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              {packageForm.duration === 'custom' && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Duration in Days</label>
-                  <input 
-                    type="number" 
-                    className="input-field" 
-                    placeholder="e.g. 45"
-                    value={packageForm.customDays}
-                    onChange={e => setPackageForm(prev => ({ ...prev, customDays: e.target.value }))}
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Accent Color</label>
-                  <div className="flex gap-2">
-                    {['#00d4ff', '#fbbf24', '#a78bfa', '#34d399', '#f87171'].map(color => (
-                      <button 
-                        key={color}
-                        type="button"
-                        onClick={() => setPackageForm(prev => ({ ...prev, badgeColor: color }))}
-                        style={{ 
-                          width: '28px', height: '28px', borderRadius: '8px', background: color,
-                          border: packageForm.badgeColor === color ? '2px solid white' : '1px solid rgba(255,255,255,0.1)',
-                          transition: 'all 0.2s ease',
-                          transform: packageForm.badgeColor === color ? 'scale(1.1)' : 'scale(1)',
-                          boxShadow: packageForm.badgeColor === color ? `0 0 12px ${color}80` : 'none'
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center justify-end">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Is Active</span>
-                    <div 
-                      onClick={() => setPackageForm(prev => ({ ...prev, isActive: !prev.isActive }))}
-                      style={{
-                        width: '40px', height: '20px', borderRadius: '99px',
-                        background: packageForm.isActive ? 'rgba(0,212,255,0.2)' : '#1a2540',
-                        position: 'relative', border: '1px solid ' + (packageForm.isActive ? 'rgba(0,212,255,0.3)' : '#1a2540'),
-                        transition: 'all 0.3s ease'
-                      }}>
-                      <div style={{
-                        position: 'absolute', top: '2px', left: packageForm.isActive ? '22px' : '2px',
-                        width: '14px', height: '14px', borderRadius: '50%', background: packageForm.isActive ? '#00d4ff' : '#475569',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        boxShadow: packageForm.isActive ? '0 0 8px #00d4ff80' : 'none'
-                      }} />
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 mt-8 pt-4" style={{ borderTop: '1px solid #1a2540' }}>
-                <button type="button" className="btn-secondary px-6" onClick={() => setShowPackageModal(false)}>Cancel</button>
-                <button type="button" className="btn-primary px-8" onClick={handleSavePackage}>
-                  {editingPackage ? 'Update Package' : 'Create Package'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

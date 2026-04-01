@@ -42,7 +42,6 @@ const PACKAGE_RANK = { starter: 1, growth: 2, pro: 3, pro_plus: 4 };
 function ensureGymDefaults(gym) {
   if (typeof gym.isActive !== 'boolean') gym.isActive = true;
   if (!gym.package) gym.package = 'starter';
-  if (!gym.packages) gym.packages = [];
   if (!gym.paymentSettings) gym.paymentSettings = { methods: ['easypaisa'], easypaisaNumberEncrypted: '', jazzcashNumberEncrypted: '', bankTitle: '', bankIbanEncrypted: '' };
 }
 
@@ -79,13 +78,7 @@ export default async function handler(req, res) {
       const p = safeProfile.paymentSettings;
       safeProfile.paymentSettings = { methods: p.methods || ['easypaisa'], easypaisaNumberEncrypted: p.easypaisaNumber ? encryptSensitive(p.easypaisaNumber) : '', jazzcashNumberEncrypted: p.jazzcashNumber ? encryptSensitive(p.jazzcashNumber) : '', bankTitle: p.bankTitle || '', bankIbanEncrypted: p.bankIban ? encryptSensitive(p.bankIban) : '' };
     }
-    if (rank < PACKAGE_RANK.pro) {
-      delete safeProfile.template;
-      delete safeProfile.packages;
-    } else if (safeProfile.packages) {
-      const limit = gym.package === 'pro_plus' ? 7 : 3;
-      if (safeProfile.packages.length > limit) safeProfile.packages = safeProfile.packages.slice(0, limit);
-    }
+    if (rank < PACKAGE_RANK.pro) delete safeProfile.template;
     db.gyms[gymIndex] = { ...gym, ...safeProfile };
     await writeDB(db);
     return res.json({ message: 'Profile updated successfully' });

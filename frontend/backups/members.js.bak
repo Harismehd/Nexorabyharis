@@ -30,20 +30,6 @@ function getMemberDueDate(member) {
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function formatLastVisit(dateStr) {
-  if (!dateStr) return '—';
-  const visitDate = startOfDay(parseISO(dateStr));
-  const today = startOfDay(new Date());
-  const yesterday = startOfDay(new Date());
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (visitDate.getTime() === today.getTime()) return 'Today';
-  if (visitDate.getTime() === yesterday.getTime()) return 'Yesterday';
-  
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
@@ -54,50 +40,25 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const { gymKey } = req.query;
-    const members = db.members.filter(m => m.gymKey === gymKey).map(m => ({ 
-      ...m, 
-      status: calculateMemberStatus(m), 
-      dueDate: getMemberDueDate(m),
-      lastVisitFormatted: formatLastVisit(m.lastVisit)
-    }));
+    const members = db.members.filter(m => m.gymKey === gymKey).map(m => ({ ...m, status: calculateMemberStatus(m), dueDate: getMemberDueDate(m) }));
     return res.json({ members });
   }
 
   if (req.method === 'POST') {
-    const { gymKey, name, phone, email, joiningDate, subscriptionType, amount, packageId, packageName } = req.body;
-    const newMember = { 
-      id: uuidv4(), gymKey, name, phone, 
-      email: email || '', 
-      joiningDate: joiningDate || new Date().toISOString(), 
-      subscriptionType: subscriptionType || 'monthly', 
-      subscriptionEndDate: '', 
-      amount: amount || 0,
-      packageId: packageId || null,
-      packageName: packageName || null,
-      lastVisit: null
-    };
+    const { gymKey, name, phone, email, joiningDate, subscriptionType, amount } = req.body;
+    const newMember = { id: uuidv4(), gymKey, name, phone, email: email || '', joiningDate: joiningDate || new Date().toISOString(), subscriptionType: subscriptionType || 'monthly', subscriptionEndDate: '', amount: amount || 0 };
     db.members.push(newMember);
     await writeDB(db);
     return res.json({ message: 'Member added successfully', member: newMember });
   }
 
-  if (req.method === 'PUT') {
-    const urlParts = req.url.split('?')[0].split('/');
-    const action = urlParts[urlParts.length - 1]; // 'status' or 'checkin'
+if (req.method === 'PUT') {
+    const urlParts = req.url.split('/');
     const memberId = urlParts[urlParts.length - 2];
     const { gymKey, status } = req.body;
-
     const memberIndex = db.members.findIndex(m => m.id === memberId && m.gymKey === gymKey);
     if (memberIndex === -1) return res.status(404).json({ error: 'Member not found' });
     const member = db.members[memberIndex];
-
-    if (action === 'checkin') {
-      member.lastVisit = new Date().toISOString();
-      db.members[memberIndex] = member;
-      await writeDB(db);
-      return res.json({ message: 'Checked in successfully', lastVisit: member.lastVisit, lastVisitFormatted: 'Today' });
-    }
-
     if (status === 'Active') {
       member.subscriptionEndDate = addMonths(new Date(), 1).toISOString();
     } else {

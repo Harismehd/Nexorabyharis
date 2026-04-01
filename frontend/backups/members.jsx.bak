@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { Plus, Search, Trash2, DollarSign, RefreshCcw, Phone, Calendar, User, Printer, CheckCircle, Package, Clock } from 'lucide-react';
+import { Plus, Search, Trash2, DollarSign, RefreshCcw, Phone, Calendar, User, Printer } from 'lucide-react';
 import printReceiptHtml from '../utils/printReceipt';
 
 export default function Members() {
@@ -13,29 +13,14 @@ export default function Members() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [newMember, setNewMember] = useState({ 
-    name: '', phone: '', email: '', joiningDate: '', subscriptionType: 'monthly', 
-    amount: '', packageId: '', packageName: '' 
-  });
+  const [newMember, setNewMember] = useState({ name: '', phone: '', email: '', joiningDate: '', subscriptionType: 'monthly', amount: '' });
   const [paymentForm, setPaymentForm] = useState({ amount: '', method: 'Cash', monthsCovered: 1 });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [mRes, pRes] = await Promise.all([
-          api.get(`/members?gymKey=${gymKey}`),
-          api.get(`/profile?gymKey=${gymKey}`)
-        ]);
-        setMembers(mRes.data.members || []);
-        setProfile(pRes.data.profile || null);
-      } catch {
-        toast.error('Failed to load data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    api.get(`/members?gymKey=${gymKey}`)
+      .then(res => setMembers(res.data.members || []))
+      .catch(() => toast.error('Failed to load members'))
+      .finally(() => setLoading(false));
   }, [gymKey]);
 
   const filteredMembers = members.filter(m =>
@@ -76,19 +61,6 @@ export default function Members() {
       toast.success(`Marked as ${newStatus === 'Active' ? 'Paid' : 'Unpaid'}`);
       setMembers(prev => prev.map(m => m.id === member.id ? res.data.member : m));
     } catch { toast.error('Failed to update status'); }
-  };
-
-  const handleCheckIn = async (member) => {
-    try {
-      const res = await api.put(`/members/${member.id}/checkin`, { gymKey });
-      toast.success(`${member.name} checked in!`);
-      // Update state with returned check-in data
-      setMembers(prev => prev.map(m => m.id === member.id ? { 
-        ...m, 
-        lastVisit: res.data.lastVisit, 
-        lastVisitFormatted: res.data.lastVisitFormatted 
-      } : m));
-    } catch { toast.error('Check-in failed'); }
   };
 
   const openPayModal = (member) => {
@@ -286,41 +258,15 @@ export default function Members() {
                       Expires: {m.subscriptionEndDate ? new Date(m.subscriptionEndDate).toLocaleDateString() : '—'}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                    <Clock size={13} color={m.lastVisitFormatted === 'Today' ? '#34d399' : '#334155'} />
-                    <span style={{ 
-                      fontSize: '12px', 
-                      color: m.lastVisitFormatted === 'Today' ? '#34d399' : '#475569', 
-                      fontWeight: m.lastVisitFormatted === 'Today' ? 700 : 400
-                    }}>
-                      Last: {m.lastVisitFormatted || 'Never'}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Card Actions */}
                 <div style={{
                   padding: '12px 16px',
                   borderTop: '1px solid #1a2540',
-                  display: 'flex', flexWrap: 'wrap', gap: '8px',
+                  display: 'flex', gap: '8px',
                   background: '#080d14'
                 }}>
-                  <button
-                    onClick={() => handleCheckIn(m)}
-                    disabled={m.lastVisitFormatted === 'Today'}
-                    style={{
-                      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      gap: '6px', padding: '10px', borderRadius: '10px', fontSize: '12px',
-                      fontFamily: 'Syne, sans-serif', fontWeight: 800, cursor: m.lastVisitFormatted === 'Today' ? 'default' : 'pointer',
-                      background: m.lastVisitFormatted === 'Today' ? 'rgba(52,211,153,0.1)' : 'rgba(0,212,255,0.1)',
-                      color: m.lastVisitFormatted === 'Today' ? '#34d399' : '#00d4ff',
-                      border: `1px solid ${m.lastVisitFormatted === 'Today' ? 'rgba(52,211,153,0.2)' : 'rgba(0,212,255,0.2)'}`,
-                      marginBottom: '4px', transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {m.lastVisitFormatted === 'Today' ? <CheckCircle size={14} /> : <Clock size={14} />}
-                    {m.lastVisitFormatted === 'Today' ? 'Present Today' : 'Mark Present'}
-                  </button>
                   <button
                     onClick={() => openPayModal(m)}
                     style={{
@@ -373,104 +319,29 @@ export default function Members() {
       {/* Add Member Modal */}
       {showAddModal && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
+          position: 'fixed', inset: 0, zIndex: 50,
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
           background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(8px)'
         }}>
-          <div className="card" style={{ maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="card" style={{ maxWidth: '520px', width: '100%' }}>
             <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#f1f5f9', marginBottom: '20px' }}>
               Add New Member
             </h2>
-            
-            <form onSubmit={handleAddMember} className="space-y-6">
-              {/* Basic Info */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Full Name</label>
-                  <input className="input-field" placeholder="John Doe" value={newMember.name} onChange={e => setNewMember(v => ({ ...v, name: e.target.value }))} required />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Phone Number</label>
-                  <input className="input-field" placeholder="03XXXXXXXXX" value={newMember.phone} onChange={e => setNewMember(v => ({ ...v, phone: e.target.value }))} required />
-                </div>
-              </div>
-
-              {/* Package Selection Grid (Only for Pro/Pro Plus) */}
-              {profile?.packages?.length > 0 && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>Select Membership Package</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
-                    {profile.packages.map(pkg => (
-                      <div 
-                        key={pkg.id}
-                        onClick={() => setNewMember(prev => ({ 
-                          ...prev, 
-                          packageId: pkg.id, 
-                          packageName: pkg.name,
-                          amount: pkg.price,
-                          subscriptionType: pkg.duration === 'custom' ? `${pkg.customDays} days` : pkg.duration
-                        }))}
-                        style={{
-                          background: newMember.packageId === pkg.id ? 'rgba(0,212,255,0.1)' : '#080d14',
-                          border: `1px solid ${newMember.packageId === pkg.id ? '#00d4ff' : '#1a2540'}`,
-                          borderRadius: '12px', padding: '12px', cursor: 'pointer', transition: 'all 0.2s ease',
-                          position: 'relative'
-                        }}
-                      >
-                        {newMember.packageId === pkg.id && (
-                          <div style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#00d4ff', borderRadius: '50%', padding: '2px' }}>
-                            <CheckCircle size={14} color="#080d14" />
-                          </div>
-                        )}
-                        <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', margin: '0 0 4px 0' }}>{pkg.name}</h4>
-                        <p style={{ fontSize: '11px', color: '#00d4ff', fontWeight: 600, margin: 0 }}>Rs {pkg.price}</p>
-                        <p style={{ fontSize: '10px', color: '#475569', margin: '2px 0 0 0' }}>{pkg.duration}</p>
-                      </div>
-                    ))}
-                    <div 
-                      onClick={() => setNewMember(prev => ({ ...prev, packageId: '', packageName: '', amount: '', subscriptionType: 'monthly' }))}
-                      style={{
-                        background: !newMember.packageId ? 'rgba(100,116,139,0.1)' : '#080d14',
-                        border: `1px solid ${!newMember.packageId ? '#64748b' : '#1a2540'}`,
-                        borderRadius: '12px', padding: '12px', cursor: 'pointer', transition: 'all 0.2s ease',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center'
-                      }}
-                    >
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: !newMember.packageId ? '#f1f5f9' : '#475569' }}>Manual Entry</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Advanced fields */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Subscription Duration</label>
-                  <select className="input-field" value={newMember.subscriptionType} onChange={e => setNewMember(v => ({ ...v, subscriptionType: e.target.value }))}>
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly</option>
-                    <option value="half-yearly">Half Yearly</option>
-                    <option value="yearly">Yearly</option>
-                    <option value="custom">Custom</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Monthly Fee (PKR)</label>
-                  <input className="input-field" placeholder="5000" value={newMember.amount} onChange={e => setNewMember(v => ({ ...v, amount: e.target.value }))} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Joining Date</label>
-                  <input className="input-field" type="date" value={newMember.joiningDate} onChange={e => setNewMember(v => ({ ...v, joiningDate: e.target.value }))} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Email (Optional)</label>
-                  <input className="input-field" placeholder="alex@example.com" value={newMember.email} onChange={e => setNewMember(v => ({ ...v, email: e.target.value }))} />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px', pt: '16px', borderTop: '1px solid #1a2540' }}>
-                <button type="button" className="btn-secondary px-6" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary px-8">Add Member</button>
+            <form onSubmit={handleAddMember} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <input className="input-field" placeholder="Full Name" value={newMember.name} onChange={e => setNewMember(v => ({ ...v, name: e.target.value }))} required />
+              <input className="input-field" placeholder="Phone Number" value={newMember.phone} onChange={e => setNewMember(v => ({ ...v, phone: e.target.value }))} required />
+              <input className="input-field" placeholder="Email (optional)" value={newMember.email} onChange={e => setNewMember(v => ({ ...v, email: e.target.value }))} />
+              <input className="input-field" placeholder="Joining Date (optional)" type="date" value={newMember.joiningDate} onChange={e => setNewMember(v => ({ ...v, joiningDate: e.target.value }))} />
+              <select className="input-field" value={newMember.subscriptionType} onChange={e => setNewMember(v => ({ ...v, subscriptionType: e.target.value }))}>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="half-yearly">Half Yearly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+              <input className="input-field" placeholder="Monthly Fee Amount" value={newMember.amount} onChange={e => setNewMember(v => ({ ...v, amount: e.target.value }))} />
+              <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary">Add Member</button>
               </div>
             </form>
           </div>
