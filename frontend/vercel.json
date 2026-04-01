@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/api/auth/login", "destination": "/api/auth" },
     { "source": "/api/members/upload", "destination": "/api/upload" },
+    { "source": "/api/members/:id/checkin", "destination": "/api/members" },
     { "source": "/api/members/:id/status", "destination": "/api/members" },
     { "source": "/api/members/:id", "destination": "/api/members" },
     { "source": "/api/members", "destination": "/api/members" },
