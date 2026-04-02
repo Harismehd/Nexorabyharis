@@ -64,7 +64,7 @@ export default function Layout() {
   const currentPage = navItems.find(item => item.path === location.pathname)?.name || 'Dashboard';
 
   return (
-    <div className="min-h-screen flex relative overflow-x-hidden" style={{ background: '#080d14' }}>
+    <div className="min-h-screen flex relative overflow-x-hidden" style={{ background: 'transparent' }}>
 
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -112,11 +112,9 @@ export default function Layout() {
       })}
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out brushed-metal ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         style={{
           width: '260px',
-          background: '#0a1018',
-          borderRight: '1px solid #1a2540',
           minHeight: '100vh'
         }}
       >
@@ -134,7 +132,7 @@ export default function Layout() {
                 GymFlow
               </h1>
               <p style={{ fontSize: '11px', color: '#475569', marginTop: '2px', fontFamily: 'DM Sans, sans-serif' }}>
-                Fee Automation
+                Fee Automation by Haris
               </p>
             </div>
           </div>
@@ -261,9 +259,9 @@ export default function Layout() {
 
         {/* Header */}
         <header style={{
-          background: 'rgba(10,16,24,0.8)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid #1a2540',
+          background: 'rgba(10,16,24,0.4)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
           padding: '14px 24px',
           display: 'flex',
           alignItems: 'center',
@@ -355,10 +353,13 @@ export default function Layout() {
         </header>
 
         {/* Page Content */}
-        <div style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto', width: '100%' }}
-          className={mounted ? 'animate-in fade-in slide-in-from-bottom-4' : ''}
-        >
-          <Outlet />
+        <div style={{ padding: '0 24px 32px' }}>
+          <div 
+            className={`glass-pane p-8 maxWidth-[1280px] mx-auto w-full ${mounted ? 'animate-in fade-in slide-in-from-bottom-4' : ''}`}
+            style={{ marginTop: '24px' }}
+          >
+            <Outlet />
+          </div>
         </div>
       </main>
 
