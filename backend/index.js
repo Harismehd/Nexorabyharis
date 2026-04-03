@@ -348,6 +348,26 @@ app.post('/api/admin/gyms/security-password', verifyAdmin, async (req, res) => {
   res.json({ message: `Security password updated` });
 });
 
+app.post('/api/admin/gyms/update', verifyAdmin, async (req, res) => {
+  const { gymKey, field, value } = req.body;
+  const db = await readDB();
+  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+
+  // Dynamically update the field
+  if (field === 'deviceLimit') {
+    db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
+  } else if (field === 'securityPassword') {
+    db.gyms[gymIndex].securityPassword = String(value).slice(0, 4);
+  } else {
+    // Generic fallback for other fields if needed
+    db.gyms[gymIndex][field] = value;
+  }
+
+  await writeDB(db);
+  res.json({ message: `Updated ${field} successfully` });
+});
+
 app.post('/api/admin/gyms/toggle', verifyAdmin, async (req, res) => {
   const { gymKey } = req.body;
   const db = await readDB();

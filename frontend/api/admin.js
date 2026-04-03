@@ -35,11 +35,34 @@ export default async function handler(req, res) {
   const url = req.url || '';
 
   if (req.method === 'GET' && url.includes('dashboard')) {
-    return res.json({ system: db.system || { globalShutdown: false }, gyms: db.gyms.map(g => ({ gymKey: g.gymKey, name: g.name || 'Unnamed Gym', isActive: g.isActive !== false, package: g.package || 'starter', whatsappStatus: g.whatsappStatus, memberCount: db.members.filter(m => m.gymKey === g.gymKey).length })) });
+    return res.json({ 
+      system: db.system || { globalShutdown: false }, 
+      gyms: db.gyms.map(g => ({ 
+        gymKey: g.gymKey, 
+        name: g.name || 'Unnamed Gym', 
+        isActive: g.isActive !== false, 
+        package: g.package || 'starter', 
+        deviceLimit: g.deviceLimit || 5, // Expose for UI
+        securityPassword: g.securityPassword || '1234', // Expose for UI
+        whatsappStatus: g.whatsappStatus, 
+        memberCount: db.members.filter(m => m.gymKey === g.gymKey).length 
+      })) 
+    });
   }
 
   if (req.method === 'GET' && url.includes('gyms')) {
-    return res.json({ gyms: db.gyms.map(g => ({ gymKey: g.gymKey, name: g.name || 'Unnamed Gym', isActive: g.isActive !== false, package: g.package || 'starter', whatsappStatus: g.whatsappStatus, memberCount: db.members.filter(m => m.gymKey === g.gymKey).length })) });
+    return res.json({ 
+      gyms: db.gyms.map(g => ({ 
+        gymKey: g.gymKey, 
+        name: g.name || 'Unnamed Gym', 
+        isActive: g.isActive !== false, 
+        package: g.package || 'starter', 
+        deviceLimit: g.deviceLimit || 5, // Expose for UI
+        securityPassword: g.securityPassword || '1234', // Expose for UI
+        whatsappStatus: g.whatsappStatus, 
+        memberCount: db.members.filter(m => m.gymKey === g.gymKey).length 
+      })) 
+    });
   }
 
   if (req.method === 'POST' && url.includes('create')) {
@@ -70,6 +93,23 @@ export default async function handler(req, res) {
     db.gyms[gymIndex].isActive = !(db.gyms[gymIndex].isActive !== false);
     await writeDB(db);
     return res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
+  }
+
+  if (req.method === 'POST' && url.includes('update')) {
+    const { gymKey, field, value } = req.body;
+    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+    
+    if (field === 'deviceLimit') {
+      db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
+    } else if (field === 'securityPassword') {
+      db.gyms[gymIndex].securityPassword = String(value).slice(0, 4);
+    } else {
+      db.gyms[gymIndex][field] = value;
+    }
+    
+    await writeDB(db);
+    return res.json({ message: `Updated ${field} successfully` });
   }
 
   if (req.method === 'POST' && url.includes('shutdown')) {
