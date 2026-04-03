@@ -57,7 +57,7 @@ export default function Login() {
       {/* Left Pane: Visuals & Mission */}
       <div style={{
         flex: 1, position: 'relative', display: 'flex', alignItems: 'flex-end', padding: '60px',
-        background: `url("/C:/Users/sa/.gemini/antigravity/brain/7ccdd7c2-88aa-459f-a576-08e0b9838f61/nexora_login_visual_1775220286456.png")`,
+        background: `url("/nexora_login_visual.png")`,
         backgroundSize: 'cover', backgroundPosition: 'center'
       }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #050a10 15%, transparent 60%)' }} />
