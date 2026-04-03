@@ -16,6 +16,7 @@ import MasterAdmin from './pages/MasterAdmin';
 import PaymentVerification from './pages/PaymentVerification';
 import FinanceGuard from './pages/FinanceGuard';
 import Terms from './pages/Terms';
+import Register from './pages/Register';
 import api from './api';
 
 const ProtectedRoute = ({ children }) => {
@@ -87,6 +88,7 @@ function AppRoutes() {
         <Route path="logs" element={<Logs />} />
       </Route>
       <Route path="/admin" element={<AdminRoute><MasterAdmin /></AdminRoute>} />
+      <Route path="/register" element={<Register />} />
     </Routes>
   );
 }

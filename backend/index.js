@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const nodemailer = require('nodemailer');
 const xlsx = require('xlsx');
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
@@ -109,6 +110,62 @@ async function updateDB(collection, filterFn, updateFn) {
 // ========================
 // AUTHENTICATION & ADMIN
 // ========================
+
+// Email Transporter for Registration
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'harismehmd1@gmail.com', // User's Gmail
+    pass: process.env.GMAIL_APP_PASSWORD || '' // Requires App Password
+  }
+});
+
+app.post('/api/register', upload.single('paymentProof'), async (req, res) => {
+  try {
+    const { 
+      gymName, ownerName, businessPhone, emailAddress, 
+      packageName, gymKeyChoice 
+    } = req.body;
+    const paymentProof = req.file;
+
+    if (!gymName || !ownerName || !businessPhone || !emailAddress || !packageName) {
+      return res.status(400).json({ error: 'Missing required information' });
+    }
+
+    const mailOptions = {
+      from: 'Nexora System <noreply@nexora.com>',
+      to: 'harismehmd1@gmail.com',
+      subject: `New Nexora Registration: ${gymName}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; color: #333;">
+          <h2 style="color: #00d4ff;">Nexora Gym Registration</h2>
+          <hr />
+          <p><strong>Gym Name:</strong> ${gymName}</p>
+          <p><strong>Owner Name:</strong> ${ownerName}</p>
+          <p><strong>WhatsApp/Phone:</strong> ${businessPhone}</p>
+          <p><strong>Email:</strong> ${emailAddress}</p>
+          <p><strong>Package selected:</strong> ${packageName}</p>
+          <p><strong>Proposed Gym Key:</strong> ${gymKeyChoice || 'Not specified'}</p>
+          <hr />
+          <p style="font-size: 12px; color: #666;">This registration was submitted from the Nexora Login Page.</p>
+        </div>
+      `,
+      attachments: paymentProof ? [
+        {
+          filename: paymentProof.originalname,
+          path: paymentProof.path
+        }
+      ] : []
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.json({ message: 'Registration received successfully' });
+  } catch (err) {
+    console.error('Registration Error:', err);
+    res.status(500).json({ error: 'Failed to send registration. Please try again.' });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   const { gymKey, password } = req.body;
   const db = await readDB();

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { Dumbbell, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Dumbbell, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import PackagesModal from '../components/PackagesModal';
 
 export default function Login() {
   const [gymKey, setKey] = useState('');
@@ -10,6 +11,7 @@ export default function Login() {
   const [adminStage, setAdminStage] = useState(false);
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const normalizedGymKey = gymKey.trim().toUpperCase();
 
@@ -96,10 +98,26 @@ export default function Login() {
         <div style={{
           background: '#0e1622', border: '1px solid #1a2540',
           borderRadius: '24px', padding: '32px',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.5)', marginBottom: '40px'
+          boxShadow: '0 25px 50px rgba(0,0,0,0.5)', marginBottom: '32px'
         }}>
           {!adminStage ? (
-            <form onSubmit={handleContinue} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <>
+              {/* CTA for Packages */}
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                style={{
+                  width: '100%', marginBottom: '24px', padding: '16px', borderRadius: '14px',
+                  background: 'linear-gradient(135deg, #00d4ff 0%, #0072ff 100%)',
+                  border: 'none', color: '#050a10', fontSize: '13px', fontWeight: 900,
+                  textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  boxShadow: '0 10px 25px rgba(0, 212, 255, 0.25)',
+                  animation: 'pulseGlow 2s infinite'
+                }}>
+                <Zap size={16} fill="#050a10" /> See Packages & Offers
+              </button>
+
+              <form onSubmit={handleContinue} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
                   Tenant Identifier
@@ -138,8 +156,9 @@ export default function Login() {
                 )}
               </button>
             </form>
-          ) : (
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          </>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{
                 padding: '12px 16px', borderRadius: '12px',
                 background: 'rgba(0,212,255,0.06)',
@@ -207,7 +226,14 @@ export default function Login() {
         </p>
       </div>
 
+      <PackagesModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
       <style>{`
+        @keyframes pulseGlow {
+          0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(0, 212, 255, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
+        }
         @keyframes fadeSlideIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
