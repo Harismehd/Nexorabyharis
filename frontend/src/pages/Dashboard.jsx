@@ -8,14 +8,17 @@ import {
 import { 
   Banknote, TrendingUp, CreditCard, AlertCircle, 
   Users, Calendar, BarChart3, Activity, ArrowUpRight,
-  Crown, Zap, Flame, Target, Layers
+  Crown, Zap, Flame, Target, Layers, Lock
 } from 'lucide-react';
+import LockedOverlay from '../components/LockedOverlay';
 
 export default function Dashboard() {
-  const { gymKey } = useAuth();
+  const { gymKey, packageTier } = useAuth();
   const [members, setMembers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const isAdvancedLocked = packageTier === 'starter' || packageTier === 'growth';
 
   useEffect(() => {
     Promise.all([
@@ -151,9 +154,9 @@ export default function Dashboard() {
       <div className="flex justify-between items-end mb-4">
         <div>
           <h1 className="text-premium" style={{ fontWeight: 800, fontSize: '32px', color: '#f1f5f9', margin: 0, letterSpacing: '-0.02em' }}>
-            Financial Reports & Insights
+            Nexora Hub
           </h1>
-          <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px', opacity: 0.8 }}>A Comprehensive View of Gym Performance • GymFlow Fee Automation by Haris</p>
+          <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px', opacity: 0.8 }}>Next-Level Gym Intelligence • Fee Automation by Haris</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <div className="glass-pane" style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, color: '#00d4ff' }}>
@@ -256,150 +259,158 @@ export default function Dashboard() {
         </div>
 
         {/* Member Distribution */}
-        <div style={cardStyle}>
-          <h3 className="text-premium" style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 24px' }}>
-            Member Distribution
-          </h3>
-          <div style={{ position: 'relative' }}>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie 
-                  data={pieData} 
-                  cx="50%" 
-                  cy="50%" 
-                  innerRadius={70} 
-                  outerRadius={95} 
-                  paddingAngle={8} 
-                  dataKey="value"
-                  animationBegin={0}
-                  animationDuration={1500}
-                >
-                  {pieData.map((_, i) => (
-                    <Cell 
-                      key={i} 
-                      fill={PIE_COLORS[i % PIE_COLORS.length]} 
-                      stroke="rgba(255,255,255,0.1)" 
-                      strokeWidth={1}
-                      style={{ filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ 
-              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#fff' }}>{members.length}</div>
-              <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total</div>
+        <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for advanced distribution metrics">
+          <div style={{ ...cardStyle, height: '100%' }}>
+            <h3 className="text-premium" style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 24px' }}>
+              Member Distribution
+            </h3>
+            <div style={{ position: 'relative' }}>
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie 
+                    data={pieData} 
+                    cx="50%" 
+                    cy="50%" 
+                    innerRadius={70} 
+                    outerRadius={95} 
+                    paddingAngle={8} 
+                    dataKey="value"
+                    animationBegin={0}
+                    animationDuration={1500}
+                  >
+                    {pieData.map((_, i) => (
+                      <Cell 
+                        key={i} 
+                        fill={PIE_COLORS[i % PIE_COLORS.length]} 
+                        stroke="rgba(255,255,255,0.1)" 
+                        strokeWidth={1}
+                        style={{ filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ 
+                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: '#fff' }}>{members.length}</div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total</div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '24px' }}>
+              {pieData.map((d, i) => (
+                <div key={i} className="glass-pane" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: PIE_COLORS[i], boxShadow: `0 0 10px ${PIE_COLORS[i]}40` }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>{d.name}</div>
+                    <div style={{ fontSize: '14px', color: '#fff', fontWeight: 700 }}>{d.value}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '24px' }}>
-            {pieData.map((d, i) => (
-              <div key={i} className="glass-pane" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: PIE_COLORS[i], boxShadow: `0 0 10px ${PIE_COLORS[i]}40` }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>{d.name}</div>
-                  <div style={{ fontSize: '14px', color: '#fff', fontWeight: 700 }}>{d.value}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        </LockedOverlay>
       </div>
 
-      {/* Bottom 3 widgets */}
+      {/* Bottom 3 widgets Wrapped in LockedOverlay */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
 
         {/* Membership Growth */}
-        <div style={cardStyle}>
-          <div className="flex items-center gap-2 mb-4">
-            <Users size={18} color="#a855f7" />
-            <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-              Membership Growth
-            </h3>
+        <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for growth insights">
+          <div style={cardStyle}>
+            <div className="flex items-center gap-2 mb-4">
+              <Users size={18} color="#a855f7" />
+              <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                Membership Growth
+              </h3>
+            </div>
+            {growthData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Line type="monotone" dataKey="Members" stroke="#a855f7" strokeWidth={3} dot={{ fill: '#a855f7', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>No data yet</div>
+            )}
           </div>
-          {growthData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={growthData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Line type="monotone" dataKey="Members" stroke="#a855f7" strokeWidth={3} dot={{ fill: '#a855f7', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div style={{ height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>No data yet</div>
-          )}
-        </div>
+        </LockedOverlay>
 
         {/* Class Popularity */}
-        <div style={cardStyle}>
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 size={18} color="#3b82f6" />
-            <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-              Class Popularity
-            </h3>
+        <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for popularity tracking">
+          <div style={cardStyle}>
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 size={18} color="#3b82f6" />
+              <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                Class Popularity
+              </h3>
+            </div>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={[
+                { name: 'CrossFit', val: 85 },
+                { name: 'Yoga', val: 65 },
+                { name: 'Spin', val: 45 },
+                { name: 'HIIT', val: 95 },
+                { name: 'Boxing', val: 75 }
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Bar dataKey="val" radius={[6, 6, 0, 0]}>
+                  {[0, 1, 2, 3, 4].map((_, i) => (
+                    <Cell key={i} fill={`url(#barGrad${i})`} />
+                  ))}
+                </Bar>
+                <defs>
+                  {[0, 1, 2, 3, 4].map((_, i) => (
+                    <linearGradient key={i} id={`barGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" />
+                      <stop offset="100%" stopColor="#1e3a8a" />
+                    </linearGradient>
+                  ))}
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={[
-              { name: 'CrossFit', val: 85 },
-              { name: 'Yoga', val: 65 },
-              { name: 'Spin', val: 45 },
-              { name: 'HIIT', val: 95 },
-              { name: 'Boxing', val: 75 }
-            ]}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-              <Bar dataKey="val" radius={[6, 6, 0, 0]}>
-                {[0, 1, 2, 3, 4].map((_, i) => (
-                  <Cell key={i} fill={`url(#barGrad${i})`} />
-                ))}
-              </Bar>
-              <defs>
-                {[0, 1, 2, 3, 4].map((_, i) => (
-                  <linearGradient key={i} id={`barGrad${i}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#1e3a8a" />
-                  </linearGradient>
-                ))}
-              </defs>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        </LockedOverlay>
 
         {/* Attendance Heatmap */}
-        <div style={cardStyle}>
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar size={18} color="#00d4ff" />
-            <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-              Attendance Heatmap
-            </h3>
+        <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for intensity maps">
+          <div style={cardStyle}>
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar size={18} color="#00d4ff" />
+              <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                Attendance Heatmap
+              </h3>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px', marginBottom: '8px' }}>
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                <div key={i} style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', fontWeight: 700 }}>{d}</div>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px' }}>
+              {heatmapCells.map((cell, i) => (
+                <div key={i} style={{
+                  height: '18px', borderRadius: '4px',
+                  background: cell.value > 0.7 ? '#00d4ff' : cell.value > 0.4 ? 'rgba(0,212,255,0.4)' : 'rgba(255,255,255,0.05)',
+                  boxShadow: cell.value > 0.7 ? '0 0 10px rgba(0,212,255,0.3)' : 'none',
+                  transition: 'all 0.3s ease'
+                }} 
+                title={`Activity: ${Math.round(cell.value * 100)}%`}
+                />
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '10px', color: '#64748b', fontWeight: 500 }}>
+              <span>Less Active</span><span>Peak Hours</span>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px', marginBottom: '8px' }}>
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-              <div key={i} style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', fontWeight: 700 }}>{d}</div>
-            ))}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px' }}>
-            {heatmapCells.map((cell, i) => (
-              <div key={i} style={{
-                height: '18px', borderRadius: '4px',
-                background: cell.value > 0.7 ? '#00d4ff' : cell.value > 0.4 ? 'rgba(0,212,255,0.4)' : 'rgba(255,255,255,0.05)',
-                boxShadow: cell.value > 0.7 ? '0 0 10px rgba(0,212,255,0.3)' : 'none',
-                transition: 'all 0.3s ease'
-              }} 
-              title={`Activity: ${Math.round(cell.value * 100)}%`}
-              />
-            ))}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '10px', color: '#64748b', fontWeight: 500 }}>
-            <span>Less Active</span><span>Peak Hours</span>
-          </div>
-        </div>
+        </LockedOverlay>
       </div>
     </div>
   );

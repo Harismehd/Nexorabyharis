@@ -94,10 +94,10 @@ export default function Login() {
             fontFamily: 'Syne, sans-serif', fontWeight: 800,
             fontSize: '32px', color: '#f1f5f9', margin: 0, lineHeight: 1
           }}>
-            GymFlow
+            Nexora
           </h1>
           <p style={{ color: '#475569', marginTop: '8px', fontSize: '14px' }}>
-            Fee Automation Platform
+            Next-Level Gym Intelligence
           </p>
         </div>
 
@@ -185,7 +185,7 @@ export default function Login() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: '#1e293b' }}>
-          GymFlow © 2026 — Built for Pakistani Gyms
+          Nexora © 2026 — Powered by Haris Mehmood
         </p>
       </div>
 

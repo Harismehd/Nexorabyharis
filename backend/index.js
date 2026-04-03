@@ -24,7 +24,7 @@ function ensureSystem(db) {
 
 function getSecurityKey() {
   // Keep key out of source control in production.
-  return process.env.PAYMENT_SECRET || 'GymFlow-Payment-Secret-Change-Now-2026';
+  return process.env.PAYMENT_SECRET || 'Nexora-Payment-Secret-Change-Now-2026';
 }
 
 function encryptSensitive(text) {
@@ -76,13 +76,16 @@ function getPackageRank(pkg) {
 function ensureGymDefaults(gym) {
   if (typeof gym.isActive !== 'boolean') gym.isActive = true;
   if (!gym.package) gym.package = 'starter';
+  if (gym.deviceLimit === undefined) gym.deviceLimit = 5;
+  if (!gym.securityPassword) gym.securityPassword = '0000';
   if (!gym.paymentSettings) {
     gym.paymentSettings = {
       methods: ['easypaisa'],
       easypaisaNumberEncrypted: '',
       jazzcashNumberEncrypted: '',
       bankTitle: '',
-      bankIbanEncrypted: ''
+      bankIbanEncrypted: '',
+      autoConfirm: false // New field for Task 1
     };
   }
 }
@@ -142,14 +145,68 @@ app.post('/api/auth/login', async (req, res) => {
   if (before !== JSON.stringify(gym)) {
     dbTouched = true;
   }
+
+  // 4. Enforce Device Login Limit (Task 4)
+  if (!db.activeSessions) db.activeSessions = [];
+  
+  // Clean up old sessions (> 24h)
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  db.activeSessions = db.activeSessions.filter(s => s.lastActive > oneDayAgo);
+  
+  const gymSessions = db.activeSessions.filter(s => s.gymKey === gymKey);
+  const deviceId = req.headers['x-device-id'] || req.ip;
+  const existingSession = gymSessions.find(s => s.deviceId === deviceId);
+
+  if (!existingSession && gymSessions.length >= (gym.deviceLimit || 5)) {
+    return res.status(403).json({ 
+      error: 'DEVICE_LIMIT_REACHED', 
+      message: `Device limit reached (${gym.deviceLimit || 5}). Log out from another device first.` 
+    });
+  }
+
+  // Update or create session
+  const sessionId = uuidv4();
+  if (existingSession) {
+    existingSession.lastActive = new Date().toISOString();
+  } else {
+    db.activeSessions.push({
+      id: sessionId,
+      gymKey,
+      deviceId,
+      loginTime: new Date().toISOString(),
+      lastActive: new Date().toISOString()
+    });
+  }
+  dbTouched = true;
+
   if (dbTouched) await writeDB(db);
 
-  // 4. Enforce Ban (Suspension)
+  // 5. Enforce Ban (Suspension)
   if (gym.isActive === false) {
     return res.status(403).json({ error: 'ACCOUNT_SUSPENDED', message: 'Your account has been suspended. Please contact the provider to resolve this.' });
   }
 
-  res.json({ message: 'Login successful', gymKey, role: 'gym', package: gym.package || 'starter' });
+  res.json({ 
+    message: 'Login successful', 
+    gymKey, 
+    role: 'gym', 
+    package: gym.package || 'starter',
+    sessionId: existingSession ? existingSession.id : sessionId 
+  });
+});
+
+// Verify PIN for sensitive sections (Task 3)
+app.post('/api/auth/verify-pin', async (req, res) => {
+  const { gymKey, pin } = req.body;
+  const db = await readDB();
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  if (!gym) return res.status(404).json({ error: 'Gym not found' });
+  
+  if (gym.securityPassword === pin) {
+    res.json({ success: true, message: 'Identity verified' });
+  } else {
+    res.status(401).json({ error: 'Invalid security PIN' });
+  }
 });
 
 // Middleware for Admin validation (Simplified for this architecture)
@@ -194,6 +251,8 @@ app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
       name: g.name || 'Unnamed Gym',
       isActive: g.isActive !== false, // Default to true
       package: g.package || 'starter',
+      deviceLimit: g.deviceLimit || 5, // Task 4
+      securityPassword: g.securityPassword || '0000', // Task 3
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -208,6 +267,8 @@ app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
       name: g.name || 'Unnamed Gym',
       isActive: g.isActive !== false,
       package: g.package || 'starter',
+      deviceLimit: g.deviceLimit || 5,
+      securityPassword: g.securityPassword || '0000',
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -263,6 +324,28 @@ app.post('/api/admin/gyms/package', verifyAdmin, async (req, res) => {
   await writeDB(db);
 
   res.json({ message: `Package updated to ${selectedPackage.toUpperCase()}` });
+});
+
+app.post('/api/admin/gyms/device-limit', verifyAdmin, async (req, res) => {
+  const { gymKey, limit } = req.body;
+  const db = await readDB();
+  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+
+  db.gyms[gymIndex].deviceLimit = parseInt(limit, 10) || 5;
+  await writeDB(db);
+  res.json({ message: `Device limit updated to ${limit}` });
+});
+
+app.post('/api/admin/gyms/security-password', verifyAdmin, async (req, res) => {
+  const { gymKey, password } = req.body;
+  const db = await readDB();
+  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+
+  db.gyms[gymIndex].securityPassword = String(password).slice(0, 4);
+  await writeDB(db);
+  res.json({ message: `Security password updated` });
 });
 
 app.post('/api/admin/gyms/toggle', verifyAdmin, async (req, res) => {
@@ -434,9 +517,15 @@ app.post('/api/members/upload', upload.single('file'), async (req, res) => {
 app.delete('/api/members/:id', async (req, res) => {
   const { id } = req.params;
   const db = await readDB();
+  
+  // Task 6.4: Cascading deletion
   db.members = db.members.filter(m => m.id !== id);
+  if (db.payments) db.payments = db.payments.filter(p => p.memberId !== id);
+  if (db.attendance) db.attendance = db.attendance.filter(a => a.memberId !== id);
+  if (db.pendingPayments) db.pendingPayments = db.pendingPayments.filter(p => p.memberId !== id);
+  
   await writeDB(db);
-  res.json({ message: 'Member deleted' });
+  res.json({ message: 'Member and related records deleted' });
 });
 
 app.put('/api/members/:id/status', async (req, res) => {
@@ -540,14 +629,24 @@ app.get('/api/finance/guard', async (req, res) => {
   const alerts = [];
 
   // 1) Active members without a recent payment (likely manually toggled paid)
+  // This is the primary "Ghost Active" detection
   const now = Date.now();
   const recentWindowDays = 40;
   const recentCutoff = now - recentWindowDays * 24 * 60 * 60 * 1000;
+  
   const paymentsByMember = new Map();
   payments.forEach(p => {
     if (!paymentsByMember.has(p.memberId)) paymentsByMember.set(p.memberId, []);
     paymentsByMember.get(p.memberId).push(p);
   });
+
+  const attendanceByMember = new Map();
+  if (db.attendance) {
+    db.attendance.filter(a => a.gymKey === gymKey).forEach(a => {
+        if (!attendanceByMember.has(a.memberId)) attendanceByMember.set(a.memberId, []);
+        attendanceByMember.get(a.memberId).push(a);
+    });
+  }
 
   const activeNoRecentPayment = members.filter(m => {
     if (calculateMemberStatus(m) !== 'Active') return false;
@@ -560,12 +659,44 @@ app.get('/api/finance/guard', async (req, res) => {
   if (activeNoRecentPayment.length > 0) {
     alerts.push({
       id: 'active_no_recent_payment',
-      title: 'Active members without recent payment',
-      detail: `${activeNoRecentPayment.length} members show Active status but no payment in last ${recentWindowDays} days. This can indicate missed entries or manual status toggles.`
+      title: 'Ghost Actives Detected',
+      detail: `${activeNoRecentPayment.length} members are set to 'Active' but haven't paid in 40+ days. This indicates status overrides or missed billing entries.`
     });
   }
 
-  // 2) Duplicate transaction hash occurrences (should not happen)
+  // 2) Attendance/Status Mismatch (Dues but still coming?)
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const duesStillAttending = members.filter(m => {
+    if (calculateMemberStatus(m) !== 'Dues') return false;
+    const memberAtt = attendanceByMember.get(m.id) || [];
+    return memberAtt.some(a => new Date(a.timestamp).getTime() > sevenDaysAgo);
+  });
+
+  if (duesStillAttending.length > 0) {
+    alerts.push({
+      id: 'dues_attending',
+      title: 'Dues Mismatch (Leak Alert)',
+      detail: `${duesStillAttending.length} members are marked as 'Dues' but have checked in this week. This is a primary source of immediate revenue leak.`
+    });
+  }
+
+  // 3) Stale Dues (>60 days unpaid)
+  const sixtyDaysAgo = now - 60 * 24 * 60 * 60 * 1000;
+  const staleDues = members.filter(m => {
+    if (calculateMemberStatus(m) !== 'Dues') return false;
+    if (!m.subscriptionEndDate) return false;
+    return new Date(m.subscriptionEndDate).getTime() < sixtyDaysAgo;
+  });
+
+  if (staleDues.length > 0) {
+    alerts.push({
+      id: 'stale_dues',
+      title: 'Stale Dues (Lost Revenue)',
+      detail: `${staleDues.length} members have been outstanding for over 2 months. Consider official suspension or recovery reach-out.`
+    });
+  }
+
+  // 4) Duplicate transaction hash occurrences (should not happen)
   const txMap = new Map();
   payments.forEach(p => {
     if (!p.transactionHash) return;
@@ -575,29 +706,30 @@ app.get('/api/finance/guard', async (req, res) => {
   if (dupTx > 0) {
     alerts.push({
       id: 'duplicate_tx_hash',
-      title: 'Duplicate transaction reference detected',
-      detail: `${dupTx} duplicated transaction references found in payments. Investigate potential replay or data entry issues.`
+      title: 'Transaction Reference Collision',
+      detail: `${dupTx} duplicate transaction hashes found. Investigate for potential fraud or double-entry.`
     });
   }
 
-  // 3) Unusually high number of cash payments today (helps detect “cash not deposited” patterns)
+  // 5) Cash spike detection
   const todayStr = new Date().toISOString().slice(0, 10);
   const cashToday = payments.filter(p => (p.paymentDate || '').startsWith(todayStr) && String(p.method || '').toLowerCase().includes('cash'));
   if (cashToday.length >= 10) {
     alerts.push({
       id: 'cash_spike',
-      title: 'Cash spike today',
-      detail: `${cashToday.length} cash payments recorded today. Consider reconciling cash drawer and verifying receipts.`
+      title: 'Cash Flow Anomaly',
+      detail: `${cashToday.length} cash entries recorded today. Ensure cash drawer matches records to prevent leakage.`
     });
   }
 
   // Risk score (0-100)
   const riskScore = Math.min(
     100,
-    (activeNoRecentPayment.length * 10) +
+    (activeNoRecentPayment.length * 12) +
+      (duesStillAttending.length * 15) +
+      (staleDues.length * 5) +
       (dupTx * 25) +
-      (cashToday.length >= 10 ? 15 : 0) +
-      (expectedOutstanding > 0 ? 10 : 0)
+      (cashToday.length >= 10 ? 10 : 0)
   );
 
   const topDefaulters = [...dueMembers]
@@ -684,11 +816,39 @@ app.post('/api/payments/proof', async (req, res) => {
     createdAt: new Date().toISOString()
   };
   db.pendingPayments.unshift(pending);
+  
+  // Implementation of Task 2.1: Auto-Confirm for Pro/Pro Plus
+  const canAutoConfirm = requireMinPackage(gym, 'pro') && gym.paymentSettings?.autoConfirm;
+  
+  if (canAutoConfirm) {
+    const result = createPaymentRecord(db, {
+      gymKey,
+      memberId: pending.memberId,
+      amount: pending.amount,
+      method: `${pending.method} (Auto-Verified)`,
+      monthsCovered: 1
+    });
+
+    if (!result.error) {
+      result.payment.transactionHash = pending.transactionHash;
+      pending.status = 'verified';
+      pending.verifiedAt = new Date().toISOString();
+      pending.receiptNumber = result.payment.receiptNumber;
+      
+      const member = db.members.find(m => m.id === pending.memberId);
+      if (member && gym.whatsappStatus === 'connected') {
+        const msg = `Payment Auto-Confirmed ✅\nReceipt: ${result.payment.receiptNumber}\nAmount: Rs ${pending.amount}\nThank you for choosing Nexora.`;
+        try { sendMessage(gymKey, member.phone, msg); } catch {}
+      }
+    }
+  }
+
   await writeDB(db);
 
   res.json({
-    message: 'Payment proof submitted. Ready for owner verification.',
-    pendingPayment: { ...pending, transactionHash: undefined }
+    message: canAutoConfirm ? 'Payment auto-confirmed and recorded.' : 'Payment proof submitted. Ready for owner verification.',
+    pendingPayment: { ...pending, transactionHash: undefined },
+    autoConfirmed: !!canAutoConfirm
   });
 });
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gymflow-v1';
+const CACHE_NAME = 'nexora-v1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

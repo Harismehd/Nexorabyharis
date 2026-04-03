@@ -4,7 +4,7 @@ import { isBefore, parseISO, startOfDay } from 'date-fns';
 import crypto from 'crypto';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-const defaultData = { system: { globalShutdown: false, masterPassword: 'SAdmin#2026!GymFlow' }, gyms: [], members: [], payments: [], pendingPayments: [], logs: [] };
+const defaultData = { system: { globalShutdown: false, masterPassword: 'SAdmin#2026!Nexora' }, gyms: [], members: [], payments: [], pendingPayments: [], logs: [] };
 
 async function readDB() {
   const { data, error } = await supabase.from('app_state').select('payload').eq('id', 1).maybeSingle();
@@ -30,7 +30,7 @@ function decryptSensitive(payload) {
   if (!payload || !payload.includes(':')) return payload || '';
   try {
     const [ivHex, tagHex, dataHex] = payload.split(':');
-    const key = crypto.createHash('sha256').update(process.env.PAYMENT_SECRET || 'GymFlow-Payment-Secret-Change-Now-2026').digest();
+    const key = crypto.createHash('sha256').update(process.env.PAYMENT_SECRET || 'Nexora-Payment-Secret-Change-Now-2026').digest();
     const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
     decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
     return Buffer.concat([decipher.update(Buffer.from(dataHex, 'hex')), decipher.final()]).toString('utf8');

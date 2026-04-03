@@ -28,7 +28,7 @@ export default function Terms() {
     setLoading(true);
     try {
       await api.post('/terms', { gymKey });
-      toast.success('Terms accepted. Welcome to GymFlow!');
+      toast.success('Terms accepted. Welcome to Nexora!');
       acceptTerms();
     } catch (err) {
       toast.error('Failed to save acceptance. Try again.');
@@ -70,7 +70,7 @@ export default function Terms() {
             Terms of Service & Privacy Policy
           </h1>
           <p style={{ color: '#475569', marginTop: '8px', fontSize: '14px' }}>
-            Please read and accept before using GymFlow
+            Please read and accept before using Nexora
           </p>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -105,15 +105,15 @@ export default function Terms() {
             </Section>
 
             <Section title="1. Agreement to Terms">
-              <p>By activating your GymFlow account and checking the acceptance box, you ("Gym", "Client", "User") confirm that you have read, understood, and agree to be legally bound by these Terms of Service. If you do not agree, you must not use the software.</p>
+              <p>By activating your Nexora account and checking the acceptance box, you ("Gym", "Client", "User") confirm that you have read, understood, and agree to be legally bound by these Terms of Service. If you do not agree, you must not use the software.</p>
             </Section>
 
             <Section title="2. Nature of Service">
-              <p>GymFlow is a gym management and fee automation software providing member management, payment recording, automated WhatsApp reminders, and financial reporting. The software is a tool to assist gym operations — it does not guarantee any specific business outcomes.</p>
+              <p>Nexora is a gym management and fee automation software providing member management, payment recording, automated WhatsApp reminders, and financial reporting. The software is a tool to assist gym operations — it does not guarantee any specific business outcomes.</p>
             </Section>
 
             <Section title="3. WhatsApp Integration — Critical Disclaimer" highlight>
-              <p>GymFlow uses an unofficial WhatsApp automation method. By using this feature, you explicitly acknowledge:</p>
+              <p>Nexora uses an unofficial WhatsApp automation method. By using this feature, you explicitly acknowledge:</p>
               <ul style={{ marginTop: '12px', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <li>This integration is <strong>not affiliated with, endorsed by, or officially supported by WhatsApp Inc. or Meta Platforms Inc.</strong></li>
                 <li>WhatsApp's Terms of Service prohibit unauthorized automation. Use <strong>may result in temporary or permanent suspension of your WhatsApp number.</strong></li>
@@ -151,11 +151,11 @@ export default function Terms() {
             </Section>
 
             <Section title="6. Your Responsibilities">
-              <p>You agree that you are solely responsible for how you use the software, will only message your own registered members, will not use GymFlow for spam or harassment, will maintain security of your credentials, and will comply with all applicable local laws.</p>
+              <p>You agree that you are solely responsible for how you use the software, will only message your own registered members, will not use Nexora for spam or harassment, will maintain security of your credentials, and will comply with all applicable local laws.</p>
             </Section>
 
             <Section title="7. Service Availability">
-              <p>GymFlow is provided "as is" and "as available." The Developer does not guarantee 100% uptime. The Developer may modify, suspend, or discontinue features at any time with reasonable notice where possible.</p>
+              <p>Nexora is provided "as is" and "as available." The Developer does not guarantee 100% uptime. The Developer may modify, suspend, or discontinue features at any time with reasonable notice where possible.</p>
             </Section>
 
             <Section title="8. Subscription & Payment">
@@ -163,7 +163,7 @@ export default function Terms() {
             </Section>
 
             <Section title="9. Intellectual Property">
-              <p>GymFlow, its code, design, and all related materials are the intellectual property of Haris Mehmood. You may not copy, resell, reverse engineer, or redistribute the software or any part of it.</p>
+              <p>Nexora, its code, design, and all related materials are the intellectual property of Haris Mehmood. You may not copy, resell, reverse engineer, or redistribute the software or any part of it.</p>
             </Section>
 
             <Section title="10. Governing Law">
@@ -175,11 +175,11 @@ export default function Terms() {
             </Section>
 
             <Section title="11. Data We Collect">
-              <p>GymFlow collects: gym name, contact info, login credentials, member names and phone numbers, payment records, WhatsApp message logs, and your acceptance of these Terms with timestamp and device info.</p>
+              <p>Nexora collects: gym name, contact info, login credentials, member names and phone numbers, payment records, WhatsApp message logs, and your acceptance of these Terms with timestamp and device info.</p>
             </Section>
 
             <Section title="12. Data Usage">
-              <p>Your data is used solely to provide GymFlow services, send WhatsApp reminders to your members, generate reports and receipts, and maintain security.</p>
+              <p>Your data is used solely to provide Nexora services, send WhatsApp reminders to your members, generate reports and receipts, and maintain security.</p>
             </Section>
 
             <Section title="13. Data Storage & Security">
@@ -191,7 +191,7 @@ export default function Terms() {
             </Section>
 
             <Section title="15. Member Data Responsibility">
-              <p>You are solely responsible for obtaining consent from your gym members before storing their personal information in GymFlow. The Developer accepts no liability for your data handling practices toward your members.</p>
+              <p>You are solely responsible for obtaining consent from your gym members before storing their personal information in Nexora. The Developer accepts no liability for your data handling practices toward your members.</p>
             </Section>
 
             <Section title="16. Your Rights">
@@ -200,7 +200,7 @@ export default function Terms() {
 
             <div style={{ marginTop: '32px', padding: '16px', borderRadius: '12px', background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.1)', textAlign: 'center' }}>
               <p style={{ color: '#475569', fontSize: '12px', margin: 0 }}>
-                For questions or concerns contact: <strong style={{ color: '#00d4ff' }}>Haris Mehmood — GymFlow Developer</strong>
+                For questions or concerns contact: <strong style={{ color: '#00d4ff' }}>Haris Mehmood — Nexora Developer</strong>
               </p>
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function Terms() {
                 {checked && <CheckCircle size={14} color="#00d4ff" />}
               </div>
               <span style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                I, the authorized representative of this gym, confirm that I have fully read and understood the Terms of Service and Privacy Policy. I accept all terms including the WhatsApp disclaimer and force majeure clause, and agree to use GymFlow entirely at my own risk.
+                I, the authorized representative of this gym, confirm that I have fully read and understood the Terms of Service and Privacy Policy. I accept all terms including the WhatsApp disclaimer and force majeure clause, and agree to use Nexora entirely at my own risk.
                 <strong style={{ color: '#e2e8f0' }}> Gym Key: {gymKey}</strong>
               </span>
             </label>
@@ -248,7 +248,7 @@ export default function Terms() {
               style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '15px' }}
             >
               <ShieldCheck size={20} />
-              {loading ? 'Saving acceptance...' : 'I Accept — Activate GymFlow'}
+              {loading ? 'Saving acceptance...' : 'I Accept — Activate Nexora'}
             </button>
 
             {!scrolled && (
@@ -260,7 +260,7 @@ export default function Terms() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '11px', color: '#1e293b' }}>
-          GymFlow © 2026 — Haris Mehmood — Pakistan
+          Nexora © 2026 — Haris Mehmood — Pakistan
         </p>
       </div>
     </div>

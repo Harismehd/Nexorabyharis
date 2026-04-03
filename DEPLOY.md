@@ -46,7 +46,7 @@ npm run migrate
    - `PAYMENT_SECRET` (use a long random string; keep it stable across deploys or encrypted payment fields won’t decrypt)
    - `NODE_VERSION` = `20` (optional, recommended)
 
-6. Deploy. Copy the URL (e.g. `https://gymflow-api.onrender.com`).
+6. Deploy. Copy the URL (e.g. `https://Nexora-api.onrender.com`).
 
 **API base for the frontend:** `https://YOUR-RENDER-URL` — routes are under `/api/...`, so:
 

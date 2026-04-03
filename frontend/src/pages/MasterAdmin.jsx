@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { ShieldAlert, Power, Users, KeyRound, Ban, CheckCircle2, LogOut, Plus, Megaphone, Trash2, Radio, Activity } from 'lucide-react';
+import { ShieldAlert, Power, Users, KeyRound, Ban, CheckCircle2, LogOut, Plus, Megaphone, Trash2, Radio, Activity, Monitor, Lock, RefreshCw } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseClient = createClient(
@@ -17,6 +17,8 @@ export default function MasterAdmin() {
   const [newKey, setNewKey] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPackage, setNewPackage] = useState('starter');
+  const [newDeviceLimit, setNewDeviceLimit] = useState(5);
+  const [newPin, setNewPin] = useState('');
   const [creating, setCreating] = useState(false);
   const [broadcasts, setBroadcasts] = useState([]);
   const [broadcastForm, setBroadcastForm] = useState({
@@ -121,20 +123,45 @@ export default function MasterAdmin() {
     fetchMsgStats();
   }, []);
 
+  const generateRandomPin = () => {
+    setNewPin(Math.floor(1000 + Math.random() * 9000).toString());
+  };
+
   const handleCreateGym = async (e) => {
     e.preventDefault();
     if (!newKey || !newPassword) return toast.error('Fill both fields');
     setCreating(true);
     try {
-      await api.post('/admin/gyms/create', { gymKey: newKey, password: newPassword, package: newPackage }, getAdminHeaders());
-      toast.success('New Gym Key generated successfully');
+      await api.post('/admin/gyms/create', { 
+        gymKey: newKey, 
+        password: newPassword, 
+        package: newPackage,
+        deviceLimit: newDeviceLimit,
+        securityPassword: newPin || '1234'
+      }, getAdminHeaders());
+      toast.success('New Gym Key minted successfully');
       setNewKey('');
       setNewPassword('');
+      setNewPin('');
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to generate key');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleUpdateGymSecurity = async (gymKey, field, value) => {
+    try {
+      await api.post('/admin/gyms/update', { 
+        gymKey, 
+        field, 
+        value 
+      }, getAdminHeaders());
+      toast.success(`Updated ${field}`);
+      fetchData();
+    } catch {
+      toast.error('Update failed');
     }
   };
 
@@ -174,168 +201,231 @@ export default function MasterAdmin() {
     }
   };
 
-  if (loading) return <div className="p-10 text-center font-bold text-slate-500">Loading GOD MODE...</div>;
+  if (loading) return <div className="p-10 text-center font-bold text-slate-500">Loading NEXORA CORE...</div>;
 
   const isOffline = data.system.globalShutdown;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 p-8 font-mono">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-950 text-slate-200 p-8 font-mono" style={{ background: 'radial-gradient(circle at top right, #0f172a, #020617)' }}>
+      <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header */}
-        <div className="flex justify-between items-center border-b border-slate-700 pb-6">
+        <div className="flex justify-between items-center border-b border-slate-800 pb-6">
            <div className="flex items-center gap-4">
-              <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+              <div className="bg-red-500/10 p-4 rounded-2xl border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
                  <ShieldAlert className="text-red-500" size={32} />
               </div>
               <div>
-                 <h1 className="text-3xl font-bold tracking-tight text-white">MASTER CONTROLS</h1>
-                 <p className="text-red-400 text-sm">God Mode Enabled. Direct database access active.</p>
+                 <h1 className="text-3xl font-black tracking-tighter text-white">NEXORA GOD MODE</h1>
+                 <p className="text-red-400 text-xs font-bold tracking-widest uppercase">Root Access: Level 0 Authority</p>
               </div>
            </div>
            
            <button 
              onClick={logout}
-             className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700"
+             className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 rounded-xl transition-all border border-slate-800 hover:border-slate-700 text-sm font-bold"
            >
-             <LogOut size={16} /> Exit Matrix
+             <LogOut size={16} /> DE-AUTHORIZE
            </button>
         </div>
 
         {/* Top Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
            
            {/* Kill Switch Card */}
-           <div className={`p-6 rounded-xl border ${isOffline ? 'bg-red-900/20 border-red-500/30' : 'bg-slate-800/50 border-slate-700'}`}>
-              <div className="flex justify-between items-start mb-4">
-                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Power className={isOffline ? 'text-red-500' : 'text-emerald-500'} /> 
-                    Global Network Status
-                 </h2>
-                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${isOffline ? 'bg-red-500 text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                    {isOffline ? 'OFFLINE (LOCKED)' : 'ONLINE (ACTIVE)'}
+           <div className={`lg:col-span-4 p-8 rounded-2xl border ${isOffline ? 'bg-red-950/20 border-red-500/30' : 'bg-slate-900/50 border-slate-800'} backdrop-blur-md`}>
+              <div className="flex justify-between items-start mb-6">
+                 <div>
+                   <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
+                      <Power className={isOffline ? 'text-red-500' : 'text-emerald-500'} /> 
+                      Network Status
+                   </h2>
+                   <p className="text-xs text-slate-500">Global kill-switch authority</p>
+                 </div>
+                 <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest ${isOffline ? 'bg-red-500 text-white' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+                    {isOffline ? 'DEADLINE' : 'OPERATIONAL'}
                  </span>
               </div>
-              <p className="text-sm text-slate-400 mb-6">
-                 When the network is shut down, ZERO gym clients will be able to log in or use the API. This acts as an emergency suspension for all tenants.
+              <p className="text-xs text-slate-400 mb-8 leading-relaxed">
+                 Engaging the Kill Switch immediately terminates all active tenant sessions and prevents any new API handshakes. Use only in event of critical breach or global maintenance.
               </p>
               <button 
                 onClick={handleGlobalShutdown}
-                className={`w-full py-4 rounded-lg font-bold text-lg tracking-widest transition-all ${
+                className={`w-full py-4 rounded-xl font-black text-xs tracking-[0.2em] transition-all uppercase ${
                    isOffline 
-                   ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(5,150,105,0.4)]' 
-                   : 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)]'
+                   ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_30px_rgba(5,150,105,0.3)]' 
+                   : 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_30px_rgba(220,38,38,0.3)]'
                 }`}
               >
-                 {isOffline ? 'INITIATE PLATFORM REBOOT' : 'ENGAGE GLOBAL KILL SWITCH'}
+                 {isOffline ? 'Initiate Core Reboot' : 'Execute Platform Silence'}
               </button>
            </div>
            
            {/* Key Generator Card */}
-           <div className="p-6 rounded-xl bg-slate-800/50 border border-slate-700">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+           <div className="lg:col-span-8 p-8 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
                  <KeyRound className="text-blue-400" /> 
-                 Generate Tenant Gateway
+                 Tenant Provisioning
               </h2>
-              <p className="text-sm text-slate-400 mb-6">Create rigid login credentials for new gyms. Auto-registration is disabled for security.</p>
+              <p className="text-xs text-slate-500 mb-8">Mint unique authorization keys for new gym instances.</p>
               
-              <form onSubmit={handleCreateGym} className="space-y-4">
-                 <div className="flex gap-4">
+              <form onSubmit={handleCreateGym} className="space-y-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input 
                       required
                       type="text" 
-                      placeholder="NEW GYM KEY (e.g. GYM-X99)" 
+                      placeholder="GYM IDENTIFIER (e.g. ULTIMATE-FIT)" 
                       value={newKey}
                       onChange={e => setNewKey(e.target.value.toUpperCase().replace(/\s/g, '-'))}
-                      className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 flex-1 text-white focus:outline-none focus:border-blue-500 uppercase"
+                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 uppercase text-sm font-bold"
                     />
                     <input 
                       required
                       type="text" 
-                      placeholder="Initial Password" 
+                      placeholder="ACCESS PASSWORD" 
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
-                      className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 flex-1 text-white focus:outline-none focus:border-blue-500"
+                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm"
                     />
                  </div>
-                <div className="flex gap-4">
-                  <select
-                    className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 flex-1 text-white focus:outline-none focus:border-blue-500"
-                    value={newPackage}
-                    onChange={(e) => setNewPackage(e.target.value)}
-                  >
-                    <option value="starter">Starter</option>
-                    <option value="growth">Growth</option>
-                    <option value="pro">Pro</option>
-                    <option value="pro_plus">Pro Plus</option>
-                  </select>
-                  <div className="flex-1 text-xs text-slate-400 pt-2">
-                    Choose package for this tenant.
-                  </div>
-                </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <select
+                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm appearance-none"
+                      value={newPackage}
+                      onChange={(e) => setNewPackage(e.target.value)}
+                    >
+                      <option value="starter">Starter Plan</option>
+                      <option value="growth">Growth Plan</option>
+                      <option value="pro">Pro Plan</option>
+                      <option value="pro_plus">Pro Plus Plan</option>
+                    </select>
+
+                    <div className="relative">
+                      <Monitor className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+                      <input 
+                        type="number"
+                        placeholder="Device Limit"
+                        value={newDeviceLimit}
+                        onChange={e => setNewDeviceLimit(Number(e.target.value))}
+                        className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 pl-10 w-full text-white focus:outline-none focus:border-blue-500 text-sm"
+                      />
+                    </div>
+
+                    <div className="relative flex gap-2">
+                      <div className="flex-1 relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+                        <input 
+                          type="text"
+                          maxLength={4}
+                          placeholder="Pin (1234)"
+                          value={newPin}
+                          onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))}
+                          className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 pl-10 w-full text-white focus:outline-none focus:border-blue-500 text-sm font-bold tracking-[0.3em]"
+                        />
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={generateRandomPin}
+                        className="bg-slate-800 p-3 rounded-xl border border-slate-700 hover:bg-slate-700 transition-colors"
+                      >
+                        <RefreshCw size={16} />
+                      </button>
+                    </div>
+                 </div>
+
                  <button 
                    disabled={creating}
                    type="submit" 
-                   className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                   className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs tracking-[0.2em] rounded-xl transition-all flex items-center justify-center gap-2 uppercase shadow-[0_0_30px_rgba(37,99,235,0.2)]"
                  >
-                    <Plus size={18} /> {creating ? 'Generating...' : 'Mint New Authorization Key'}
+                    <Plus size={18} /> {creating ? 'Authorizing...' : 'Mint New Authorization Key'}
                  </button>
               </form>
            </div>
-
         </div>
 
         {/* Tenant Roster */}
-        <div className="p-6 rounded-xl bg-slate-800/50 border border-slate-700">
-           <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
-              <Users className="text-purple-400" /> 
-              Tenant Roster ({data.gyms.length})
-           </h2>
+        <div className="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md">
+           <div className="flex items-center justify-between mb-8">
+             <div>
+               <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
+                  <Users className="text-purple-400" /> 
+                  Tenant Infrastructure
+               </h2>
+               <p className="text-xs text-slate-500">Live monitoring and control of active instances</p>
+             </div>
+             <div className="flex gap-4">
+                <div className="text-right">
+                   <p className="text-[10px] text-slate-500 font-bold uppercase">Total Tenants</p>
+                   <p className="text-xl font-black text-purple-400">{data.gyms.length}</p>
+                </div>
+             </div>
+           </div>
            
            <div className="overflow-x-auto">
              <table className="w-full text-left border-collapse">
                <thead>
-                 <tr className="border-b border-slate-700 text-slate-400 text-sm">
-                   <th className="py-3 px-4">Gym Key</th>
-                   <th className="py-3 px-4">Gym Name</th>
-                   <th className="py-3 px-4">Members</th>
-                   <th className="py-3 px-4">WhatsApp Link</th>
-                   <th className="py-3 px-4">Account Status</th>
-                  <th className="py-3 px-4 text-right">Package</th>
-                   <th className="py-3 px-4 text-right">Sanctions</th>
+                 <tr className="border-b border-slate-800 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                   <th className="py-4 px-4">Gym Identity</th>
+                   <th className="py-4 px-4">Quota</th>
+                   <th className="py-4 px-4">Device/Pin</th>
+                   <th className="py-4 px-4 text-center">Plan Override</th>
+                   <th className="py-4 px-4 text-right">Sanctions</th>
                  </tr>
                </thead>
                <tbody>
                  {data.gyms.length === 0 ? (
-                    <tr><td colSpan="7" className="text-center py-6 text-slate-500">No tenants registered yet.</td></tr>
+                    <tr><td colSpan="5" className="text-center py-12 text-slate-600 text-sm italic">Zero tenants identified in local cluster.</td></tr>
                  ) : (
                     data.gyms.map(g => (
-                       <tr key={g.gymKey} className={`border-b border-slate-700/50 ${g.isActive ? '' : 'bg-red-900/10'}`}>
-                          <td className="py-3 px-4 font-bold text-blue-400">{g.gymKey}</td>
-                          <td className="py-3 px-4 text-slate-200">{g.name}</td>
-                          <td className="py-3 px-4 text-slate-400">{g.memberCount}</td>
-                          <td className="py-3 px-4">
-                             <span className={`text-xs px-2 py-1 rounded-full ${g.whatsappStatus === 'connected' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
-                                {g.whatsappStatus || 'none'}
-                             </span>
+                       <tr key={g.gymKey} className={`border-b border-slate-800/50 hover:bg-white/5 transition-colors group ${g.isActive ? '' : 'bg-red-950/10 opacity-70'}`}>
+                          <td className="py-5 px-4">
+                             <div className="font-black text-blue-400 text-sm mb-1">{g.gymKey}</div>
+                             <div className="text-[11px] text-slate-400 font-bold truncate max-w-[150px]">{g.name || 'UNINITIALIZED'}</div>
                           </td>
-                          <td className="py-3 px-4">
-                             {g.isActive ? (
-                                <span className="text-emerald-400 flex items-center gap-1 text-sm"><CheckCircle2 size={14}/> ACTIVE</span>
-                             ) : (
-                                <span className="text-red-400 flex items-center gap-1 text-sm font-bold"><Ban size={14}/> SUSPENDED</span>
-                             )}
+                          <td className="py-5 px-4">
+                             <div className="flex items-center gap-2 mb-1">
+                                <Users size={12} className="text-slate-600" />
+                                <span className="text-sm font-bold text-slate-200">{g.memberCount}</span>
+                             </div>
+                             <div className={`text-[10px] font-black uppercase ${g.whatsappStatus === 'connected' ? 'text-emerald-500' : 'text-slate-600'}`}>
+                                {g.whatsappStatus || 'dis-linked'}
+                             </div>
                           </td>
-                          <td className="py-3 px-4">
-                            <div className="flex gap-2 justify-end">
+                          <td className="py-5 px-4">
+                             <div className="flex flex-col gap-2">
+                               <div className="flex items-center gap-2">
+                                  <Monitor size={12} className="text-slate-600" />
+                                  <input 
+                                    type="number"
+                                    defaultValue={g.deviceLimit || 5}
+                                    onBlur={(e) => handleUpdateGymSecurity(g.gymKey, 'deviceLimit', Number(e.target.value))}
+                                    className="bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-[11px] w-12 focus:border-blue-500 focus:outline-none"
+                                  />
+                               </div>
+                               <div className="flex items-center gap-2">
+                                  <Lock size={12} className="text-slate-600" />
+                                  <input 
+                                    type="text"
+                                    maxLength={4}
+                                    defaultValue={g.securityPassword || '1234'}
+                                    onBlur={(e) => handleUpdateGymSecurity(g.gymKey, 'securityPassword', e.target.value)}
+                                    className="bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-[11px] w-14 font-bold tracking-widest focus:border-blue-500 focus:outline-none"
+                                  />
+                               </div>
+                             </div>
+                          </td>
+                          <td className="py-5 px-4">
+                            <div className="flex gap-1.5 justify-center">
                               {['starter', 'growth', 'pro', 'pro_plus'].map(p => (
                                 <button
                                   key={p}
                                   onClick={() => handleSetPackage(g.gymKey, p)}
-                                  className={`px-3 py-1.5 rounded text-xs font-bold transition-colors border ${
+                                  className={`px-2 py-1 rounded text-[9px] font-black tracking-tighter transition-all border ${
                                     (g.package || 'starter') === p
-                                      ? 'bg-primary-600 text-white border-primary-600'
-                                      : 'bg-slate-800/50 text-slate-300 border-slate-700 hover:bg-slate-800 hover:text-white'
+                                      ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
                                   }`}
                                 >
                                   {p === 'pro_plus' ? 'PRO+' : p.toUpperCase()}
@@ -343,16 +433,16 @@ export default function MasterAdmin() {
                               ))}
                             </div>
                           </td>
-                          <td className="py-3 px-4 flex justify-end">
+                          <td className="py-5 px-4 text-right">
                              <button
                                onClick={() => handleToggleBan(g.gymKey)}
-                               className={`px-3 py-1.5 rounded text-xs font-bold transition-colors ${
+                               className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all uppercase ${
                                   g.isActive 
-                                  ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30' 
-                                  : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
+                                  ? 'text-red-500 hover:bg-red-500/10 border border-red-500/20' 
+                                  : 'bg-emerald-600 text-white border border-emerald-500/30'
                                }`}
                              >
-                                {g.isActive ? 'SUSPEND' : 'RESTORE'}
+                                {g.isActive ? 'Suspend' : 'Amnesty'}
                              </button>
                           </td>
                        </tr>
@@ -363,142 +453,135 @@ export default function MasterAdmin() {
            </div>
         </div>
 
-        {/* Broadcast Control */}
-        <div className="p-6 rounded-xl bg-slate-800/50 border border-slate-700 mt-6">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
-            <Radio className="text-cyan-400" /> Broadcast Control
-          </h2>
+        {/* Broadcast & Stats Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            
+            {/* Broadcast Control */}
+            <div className="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
+                <Radio className="text-cyan-400" /> Core Broadcast
+              </h2>
+              <p className="text-xs text-slate-500 mb-8">Push system notification directly to gym dashboards.</p>
 
-          <form onSubmit={handleSendBroadcast} className="space-y-4 mb-8">
-            <textarea
-              required
-              placeholder="Compose your message to gyms..."
-              value={broadcastForm.message}
-              onChange={e => setBroadcastForm(f => ({ ...f, message: e.target.value }))}
-              rows={3}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 resize-none"
-            />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <select
-                value={broadcastForm.type}
-                onChange={e => setBroadcastForm(f => ({ ...f, type: e.target.value }))}
-                className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
-              >
-                <option value="info">ℹ️ Info</option>
-                <option value="warning">⚠️ Warning</option>
-                <option value="alert">🚨 Alert</option>
-                <option value="success">✅ Success</option>
-              </select>
+              <form onSubmit={handleSendBroadcast} className="space-y-4 mb-10">
+                <textarea
+                  required
+                  placeholder="Transmission content..."
+                  value={broadcastForm.message}
+                  onChange={e => setBroadcastForm(f => ({ ...f, message: e.target.value }))}
+                  rows={3}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-cyan-500 resize-none text-sm leading-relaxed"
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <select value={broadcastForm.type} onChange={e => setBroadcastForm(f => ({ ...f, type: e.target.value }))} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none text-xs">
+                    <option value="info">Status: Info</option>
+                    <option value="warning">Status: Warning</option>
+                    <option value="alert">Status: Critical</option>
+                  </select>
 
-              <select
-                value={broadcastForm.recipients}
-                onChange={e => setBroadcastForm(f => ({ ...f, recipients: e.target.value }))}
-                className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
-              >
-                <option value="ALL">All Gyms</option>
-                <option value="SPECIFIC">Specific Keys</option>
-              </select>
-
-              <select
-                value={broadcastForm.durationHours}
-                onChange={e => setBroadcastForm(f => ({ ...f, durationHours: e.target.value }))}
-                className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
-              >
-                <option value={0.5}>30 Minutes</option>
-                <option value={1}>1 Hour</option>
-                <option value={24}>24 Hours</option>
-                <option value={168}>7 Days</option>
-                <option value={720}>1 Month</option>
-              </select>
-
-              <button
-                type="submit"
-                disabled={sending}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg px-4 py-2 flex items-center gap-2 justify-center transition-colors"
-              >
-                <Megaphone size={16} /> {sending ? 'Sending...' : 'Broadcast'}
-              </button>
-            </div>
-
-            {broadcastForm.recipients === 'SPECIFIC' && (
-              <input
-                placeholder="Enter gym keys comma separated: GYM-TEST, 111-FITNESS"
-                value={broadcastForm.specificKeys}
-                onChange={e => setBroadcastForm(f => ({ ...f, specificKeys: e.target.value }))}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
-              />
-            )}
-          </form>
-
-          {/* Active Broadcasts */}
-          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Active Broadcasts</h3>
-          {broadcasts.length === 0 ? (
-            <p className="text-slate-500 text-sm">No active broadcasts.</p>
-          ) : (
-            <div className="space-y-3">
-              {broadcasts.map(b => (
-                <div key={b.id} className="flex items-start gap-4 p-4 rounded-lg bg-slate-900 border border-slate-700">
-                  <div className="flex-1">
-                    <p className="text-white text-sm">{b.message}</p>
-                    <p className="text-slate-500 text-xs mt-1">
-                      Type: {b.type} | Recipients: {b.recipients?.join(', ')} | Expires: {new Date(b.expires_at).toLocaleString()}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteBroadcast(b.id)}
-                    className="text-red-400 hover:text-red-300 transition-colors flex-shrink-0"
-                  >
-                    <Trash2 size={16} />
+                  <select value={broadcastForm.durationHours} onChange={e => setBroadcastForm(f => ({ ...f, durationHours: e.target.value }))} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none text-xs">
+                    <option value={1}>TTL: 1 Hour</option>
+                    <option value={24}>TTL: 24 Hours</option>
+                    <option value={168}>TTL: 7 Days</option>
+                  </select>
+                </div>
+                
+                <div className="flex gap-4">
+                  <select value={broadcastForm.recipients} onChange={e => setBroadcastForm(f => ({ ...f, recipients: e.target.value }))} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none text-xs flex-1">
+                    <option value="ALL">Global Transmission</option>
+                    <option value="SPECIFIC">Targeted Uplink</option>
+                  </select>
+                  <button type="submit" disabled={sending} className="bg-cyan-600 hover:bg-cyan-500 text-white font-black text-[10px] tracking-widest rounded-xl px-8 py-3 flex items-center gap-2 justify-center transition-all uppercase shadow-[0_0_20px_rgba(8,145,178,0.2)]">
+                    <Megaphone size={14} /> Send
                   </button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Network Message Volume */}
-        <div className="p-6 rounded-xl bg-slate-800/50 border border-slate-700 mt-6 mb-8">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6">
-            <Activity className="text-purple-400" /> Network Message Volume (Last 7 Days)
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-700 text-slate-400 text-sm">
-                  <th className="py-3 px-4">Gym Key</th>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Messages Sent</th>
-                  <th className="py-3 px-4">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {msgStats.length === 0 ? (
-                  <tr><td colSpan="4" className="py-6 text-center text-slate-500">No message data found.</td></tr>
-                ) : (
-                  msgStats.map((row, i) => {
-                    const color = row.count <= 20 ? '#34d399' : row.count <= 40 ? '#fbbf24' : '#f87171';
-                    const label = row.count <= 20 ? '✅ Normal' : row.count <= 40 ? '⚠️ High' : '🚨 Alert';
-                    return (
-                      <tr key={i} className="border-b border-slate-700/50">
-                        <td className="py-3 px-4 font-bold text-blue-400">{row.gymKey}</td>
-                        <td className="py-3 px-4 text-slate-400">{row.date}</td>
-                        <td className="py-3 px-4 font-bold" style={{ color }}>{row.count}</td>
-                        <td className="py-3 px-4">
-                          <span className="text-xs font-bold px-2 py-1 rounded-full"
-                            style={{ color, background: `${color}15`, border: `1px solid ${color}30` }}>
-                            {label}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
+                {broadcastForm.recipients === 'SPECIFIC' && (
+                  <input
+                    placeholder="Enter gym IDs: GYM-01, GYM-02"
+                    value={broadcastForm.specificKeys}
+                    onChange={e => setBroadcastForm(f => ({ ...f, specificKeys: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none text-xs"
+                  />
                 )}
-              </tbody>
-            </table>
-          </div>
+              </form>
+
+              <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Active Streams</h3>
+              <div className="space-y-3">
+                {broadcasts.length === 0 ? (
+                  <p className="text-slate-600 text-xs italic">No active data streams.</p>
+                ) : (
+                  broadcasts.map(b => (
+                    <div key={b.id} className="flex items-start gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800 group">
+                      <div className="flex-1">
+                        <p className="text-slate-300 text-xs leading-relaxed">{b.message}</p>
+                        <div className="flex gap-3 mt-2">
+                           <span className="text-[9px] font-bold text-slate-600 uppercase tabular-nums">EXP: {new Date(b.expires_at).toLocaleDateString()}</span>
+                           <span className="text-[9px] font-bold text-cyan-600/50 uppercase">TYPE: {b.type}</span>
+                        </div>
+                      </div>
+                      <button onClick={() => handleDeleteBroadcast(b.id)} className="text-slate-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Network Volume */}
+            <div className="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
+                <Activity className="text-purple-400" /> Traffic Analysis
+              </h2>
+              <p className="text-xs text-slate-500 mb-8">Message throughput across all nodes (last 7D).</p>
+              
+              <div style={{ maxHeight: '420px', overflowY: 'auto' }} className="pr-2 custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                      <th className="py-4 px-2">Node</th>
+                      <th className="py-4 px-2 text-right">Volume</th>
+                      <th className="py-4 px-2 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {msgStats.length === 0 ? (
+                      <tr><td colSpan="3" className="py-12 text-center text-slate-600 text-xs italic">No message traffic detected.</td></tr>
+                    ) : (
+                      msgStats.map((row, i) => {
+                        const color = row.count <= 20 ? '#10b981' : row.count <= 40 ? '#f59e0b' : '#ef4444';
+                        return (
+                          <tr key={i} className="border-b border-slate-800/50">
+                            <td className="py-3 px-2">
+                               <div className="font-bold text-slate-300 text-[11px]">{row.gymKey}</div>
+                               <div className="text-[9px] text-slate-600">{row.date}</div>
+                            </td>
+                            <td className="py-3 px-2 text-right font-black text-xs tabular-nums text-slate-200">{row.count}</td>
+                            <td className="py-3 px-2 text-right">
+                              <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
+                                style={{ color, background: `${color}10`, border: `1px solid ${color}20` }}>
+                                {row.count <= 20 ? 'NOMINAL' : row.count <= 40 ? 'HIGH' : 'STRESS'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
         </div>
 
       </div>
+      
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
+      `}</style>
     </div>
   );
-}
+}

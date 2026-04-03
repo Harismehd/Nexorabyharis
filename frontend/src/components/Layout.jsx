@@ -129,10 +129,10 @@ export default function Layout() {
             </div>
             <div>
               <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '18px', color: '#f1f5f9', lineHeight: 1 }}>
-                GymFlow
+                Nexora
               </h1>
-              <p style={{ fontSize: '11px', color: '#475569', marginTop: '2px', fontFamily: 'DM Sans, sans-serif' }}>
-                Fee Automation by Haris
+              <p style={{ fontSize: '12px', color: '#34d399', marginTop: '2px', fontFamily: 'DM Sans, sans-serif', fontWeight: 700 }}>
+                Powered by Haris Mehmood
               </p>
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function Layout() {
                 {currentPage}
               </h2>
               <p style={{ fontSize: '12px', color: '#334155', marginTop: '2px', fontFamily: 'DM Sans, sans-serif' }}>
-                GymFlow Dashboard
+                Nexora Dashboard
               </p>
             </div>
           </div>

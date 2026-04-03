@@ -61,7 +61,7 @@ export default function Receipts() {
     const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", "gymflow_payments.csv");
+    link.setAttribute("download", "nexora_payments.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

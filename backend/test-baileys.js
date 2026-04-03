@@ -7,7 +7,7 @@ async function test() {
     const sock = makeWASocket({
       auth: state,
       printQRInTerminal: true,
-      browser: ['GymFlow', 'Chrome', '1.0.0']
+      browser: ['Nexora', 'Chrome', '1.0.0']
     });
 
     sock.ev.on('connection.update', (update) => {

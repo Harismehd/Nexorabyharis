@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 
 const defaultData = {
-  system: { globalShutdown: false, masterPassword: 'SAdmin#2026!GymFlow' },
+  system: { globalShutdown: false, masterPassword: 'SAdmin#2026!Nexora' },
   gyms: [], members: [], payments: [], pendingPayments: [], logs: []
 };
 

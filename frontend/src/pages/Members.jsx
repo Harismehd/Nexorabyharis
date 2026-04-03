@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { Plus, Search, Trash2, DollarSign, RefreshCcw, Phone, Calendar, User, Printer, CheckCircle, Package, Clock } from 'lucide-react';
+import { Plus, Search, Trash2, DollarSign, RefreshCcw, Phone, Calendar, User, Printer, CheckCircle, Package, Clock, Eye, X } from 'lucide-react';
 import printReceiptHtml from '../utils/printReceipt';
+import LockedOverlay from '../components/LockedOverlay';
 
 export default function Members() {
   const { gymKey } = useAuth();
@@ -12,6 +13,8 @@ export default function Members() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [memberPayments, setMemberPayments] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
   const [profile, setProfile] = useState(null);
   const [newMember, setNewMember] = useState({ 
@@ -95,6 +98,18 @@ export default function Members() {
     setSelectedMember(member);
     setPaymentForm({ amount: member.amount || '', method: 'Cash', monthsCovered: 1 });
     setShowPayModal(true);
+  };
+
+  const openDetailModal = async (member) => {
+    setSelectedMember(member);
+    setShowDetailModal(true);
+    try {
+      const res = await api.get(`/payments?gymKey=${gymKey}`);
+      const filtered = (res.data.payments || []).filter(p => p.memberId === member.id);
+      setMemberPayments(filtered.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate)));
+    } catch {
+      toast.error('Failed to load payment history');
+    }
   };
 
   const handleRecordPayment = async (e) => {
@@ -247,14 +262,36 @@ export default function Members() {
                     <h3 style={{
                       fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '15px',
                       color: '#f1f5f9', margin: 0, whiteSpace: 'nowrap',
-                      overflow: 'hidden', textOverflow: 'ellipsis'
-                    }}>{m.name}</h3>
-                    <span style={{
-                      fontSize: '11px', color: '#475569', textTransform: 'capitalize',
-                      fontFamily: 'DM Sans, sans-serif'
+                      overflow: 'hidden', textOverflow: 'ellipsis',
+                      display: 'flex', alignItems: 'center', gap: '6px'
                     }}>
-                      {m.subscriptionType || 'monthly'} — Rs {m.amount || '0'}
-                    </span>
+                      {m.name}
+                      <Eye 
+                        size={14} 
+                        style={{ cursor: 'pointer', color: '#475569', transition: 'color 0.2s' }} 
+                        onClick={(e) => { e.stopPropagation(); openDetailModal(m); }}
+                        onMouseEnter={e => e.target.style.color = '#00d4ff'}
+                        onMouseLeave={e => e.target.style.color = '#475569'}
+                      />
+                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                      <span style={{
+                        fontSize: '10px', 
+                        padding: '2px 6px', 
+                        borderRadius: '4px',
+                        background: m.packageName ? 'rgba(0, 212, 255, 0.1)' : 'rgba(71, 85, 105, 0.1)',
+                        color: m.packageName ? '#00d4ff' : '#94a3b8',
+                        border: `1px solid ${m.packageName ? 'rgba(0, 212, 255, 0.2)' : 'rgba(71, 85, 105, 0.2)'}`,
+                        fontWeight: 700,
+                        fontFamily: 'Syne, sans-serif',
+                        textTransform: 'uppercase'
+                      }}>
+                        {m.packageName || 'Monthly'}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#475569', fontFamily: 'DM Sans, sans-serif' }}>
+                        Rs {m.amount || '0'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Status Badge */}
@@ -480,9 +517,9 @@ export default function Members() {
       {/* Pay Modal */}
       {showPayModal && selectedMember && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 50,
+          position: 'fixed', inset: 0, zGenerateSessionId: 50,
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
-          background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(8px)'
+          background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000
         }}>
           <div className="card" style={{ maxWidth: '520px', width: '100%' }}>
             <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#f1f5f9', marginBottom: '6px' }}>
@@ -521,6 +558,115 @@ export default function Members() {
                 <button type="submit" className="btn-primary">Save Payment</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Member Detail Modal (Task 6) */}
+      {showDetailModal && selectedMember && (
+        <div style={{
+          position: 'fixed', inset: 0, zGenerateSessionId: 50,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
+          background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000
+        }}>
+          <div className="card" style={{ maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+            <button 
+              onClick={() => { setShowDetailModal(false); setSelectedMember(null); }}
+              style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}
+            >
+              <X size={24} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '30px' }}>
+              <div style={{
+                width: '80px', height: '80px', borderRadius: '20px', flexShrink: 0,
+                background: getAvatarColor(selectedMember.name),
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '28px', color: 'white',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
+              }}>
+                {getInitials(selectedMember.name)}
+              </div>
+              <div>
+                <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '26px', color: '#f1f5f9', margin: '0 0 4px 0' }}>
+                  {selectedMember.name}
+                </h2>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <span style={{ fontSize: '14px', color: '#00d4ff', fontWeight: 600 }}>{selectedMember.phone}</span>
+                  <span style={{ fontSize: '14px', color: '#475569' }}>•</span>
+                  <span style={{ fontSize: '14px', color: '#475569' }}>Joined: {new Date(selectedMember.joiningDate || Date.now()).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+              <div className="glass-pane" style={{ padding: '20px', borderRadius: '16px' }}>
+                <p style={{ fontSize: '11px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Current Plan</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Package size={20} color="#00d4ff" />
+                  <div>
+                    <p style={{ fontSize: '16px', color: '#f1f5f9', fontWeight: 700, margin: 0 }}>{selectedMember.packageName || 'Manual'}</p>
+                    <p style={{ fontSize: '13px', color: '#475569', margin: 0 }}>Rs {selectedMember.amount} / {selectedMember.subscriptionType}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="glass-pane" style={{ padding: '20px', borderRadius: '16px' }}>
+                <p style={{ fontSize: '11px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Subscription End</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Calendar size={20} color={selectedMember.status === 'Active' ? '#34d399' : '#f87171'} />
+                  <div>
+                    <p style={{ fontSize: '16px', color: '#f1f5f9', fontWeight: 700, margin: 0 }}>
+                      {selectedMember.subscriptionEndDate ? new Date(selectedMember.subscriptionEndDate).toLocaleDateString() : 'No Payment'}
+                    </p>
+                    <p style={{ fontSize: '13px', color: selectedMember.status === 'Active' ? '#34d399' : '#f87171', margin: 0 }}>
+                      Status: {selectedMember.status}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '18px', color: '#f1f5f9', marginBottom: '16px' }}>
+              Payment History
+            </h3>
+            <div style={{ background: '#080d14', borderRadius: '16px', overflow: 'hidden', border: '1px solid #1a2540' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.02)', textAlign: 'left' }}>
+                    <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>Date</th>
+                    <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>Amount</th>
+                    <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>Method</th>
+                    <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>Receipt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {memberPayments.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" style={{ padding: '30px', textAlign: 'center', color: '#334155 italic' }}>No payment records found</td>
+                    </tr>
+                  ) : (
+                    memberPayments.map((p, i) => (
+                      <tr key={p.id} style={{ borderTop: '1px solid #1a2540' }}>
+                        <td style={{ padding: '12px 16px', color: '#f1f5f9' }}>{new Date(p.paymentDate).toLocaleDateString()}</td>
+                        <td style={{ padding: '12px 16px', color: '#34d399', fontWeight: 700 }}>Rs {p.amount}</td>
+                        <td style={{ padding: '12px 16px', color: '#94a3b8' }}>{p.method}</td>
+                        <td style={{ padding: '12px 16px', color: '#00d4ff' }}>{p.receiptNumber}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            
+            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => { setShowDetailModal(false); setSelectedMember(null); }}
+                style={{ padding: '10px 24px' }}
+              >
+                Close Details
+              </button>
+            </div>
           </div>
         </div>
       )}

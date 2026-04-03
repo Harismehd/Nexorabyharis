@@ -7,7 +7,7 @@ const DB_FILE = path.join(__dirname, 'database.json');
 const defaultData = {
   system: {
     globalShutdown: false,
-    masterPassword: 'SAdmin#2026!GymFlow'
+    masterPassword: 'SAdmin#2026!Nexora'
   },
   gyms: [],
   members: [],

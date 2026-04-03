@@ -2,24 +2,35 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { AlertTriangle, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ShieldCheck, TrendingDown, TrendingUp, Lock, CheckCircle, Ghost, ArrowRight, DollarSign } from 'lucide-react';
+import LockedOverlay from '../components/LockedOverlay';
 
 export default function FinanceGuard() {
   const { gymKey, packageTier } = useAuth();
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState(null);
+  const [isVerified, setIsVerified] = useState(false);
+  const [pin, setPin] = useState('');
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
+    const verified = sessionStorage.getItem(`nexora_verified_${gymKey}`);
+    const expiry = sessionStorage.getItem(`nexora_verified_expiry_${gymKey}`);
+    
+    if (verified === 'true' && expiry && Date.now() < parseInt(expiry)) {
+      setIsVerified(true);
+    }
+    
     const load = async () => {
-      if (packageTier !== 'pro_plus') {
-        setLoading(false);
-        return;
-      }
+      // Even if locked, we might want to load some blurred data for effect
+      // But the API currently rejects non-pro-plus
       try {
         const res = await api.get(`/finance/guard?gymKey=${gymKey}`);
         setReport(res.data);
       } catch (err) {
-        toast.error(err.response?.data?.error || 'Failed to load finance guard');
+        if (packageTier === 'pro_plus') {
+          toast.error(err.response?.data?.error || 'Failed to load finance guard');
+        }
       } finally {
         setLoading(false);
       }
@@ -27,123 +38,227 @@ export default function FinanceGuard() {
     load();
   }, [gymKey, packageTier]);
 
-  if (loading) return <div className="py-8 text-center text-slate-500">Loading Revenue Leak Guard...</div>;
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    setVerifying(true);
+    try {
+      const res = await api.post('/auth/verify-pin', { gymKey, pin });
+      if (res.data.success) {
+        setIsVerified(true);
+        sessionStorage.setItem(`nexora_verified_${gymKey}`, 'true');
+        sessionStorage.setItem(`nexora_verified_expiry_${gymKey}`, (Date.now() + 30 * 60 * 1000).toString());
+        toast.success('Access Granted');
+      }
+    } catch (err) {
+      toast.error('Invalid Security PIN');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
-  if (packageTier !== 'pro_plus') {
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', color: '#475569', fontFamily: 'Syne, sans-serif' }}>
+      Analyzing financial integrity...
+    </div>
+  );
+
+  // Task 1: Lock for non-Pro Plus
+  const isLocked = packageTier !== 'pro_plus';
+
+  if (!isVerified && !isLocked) {
     return (
-      <div className="card">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="text-amber-600 mt-0.5" size={20} />
-          <div>
-            <div className="font-bold text-slate-800">Upgrade required</div>
-            <div className="text-sm text-slate-600">
-              Revenue Leak Guard is available in <b>Pro Plus</b> only.
-            </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '40px' }}>
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '50%',
+            background: 'rgba(0, 212, 255, 0.1)', border: '1px solid rgba(0, 212, 255, 0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px',
+            boxShadow: '0 0 20px rgba(0, 212, 255, 0.2)'
+          }}>
+            <Lock size={28} color="#00d4ff" />
           </div>
+          <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '22px', color: '#f1f5f9', marginBottom: '8px' }}>
+            Nexora Security
+          </h2>
+          <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '24px' }}>
+            Enter your 4-digit security password to access the Revenue Leak Guard.
+          </p>
+          <form onSubmit={handleVerify} className="space-y-4">
+            <input 
+              type="password" 
+              maxLength={4}
+              placeholder="••••"
+              className="input-field"
+              style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '12px', height: '60px' }}
+              value={pin}
+              onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
+              required
+            />
+            <button type="submit" className="btn-primary w-full py-4 text-sm font-extrabold" disabled={verifying}>
+              {verifying ? 'Verifying...' : 'Unlock Data'}
+            </button>
+          </form>
+          <p style={{ marginTop: '20px', fontSize: '11px', color: '#475569' }}>
+            Lost your password? Contact Master Admin.
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!report) return null;
-
   const riskColor =
-    report.riskScore >= 70 ? 'text-rose-700 bg-rose-50 border-rose-200' :
-    report.riskScore >= 40 ? 'text-amber-800 bg-amber-50 border-amber-200' :
-    'text-emerald-800 bg-emerald-50 border-emerald-200';
+    report?.riskScore >= 70 ? 'rgba(244, 63, 94, 0.2)' :
+    report?.riskScore >= 40 ? 'rgba(245, 158, 11, 0.2)' :
+    'rgba(16, 185, 129, 0.2)';
+  
+  const riskBorder =
+    report?.riskScore >= 70 ? 'rgba(244, 63, 94, 0.4)' :
+    report?.riskScore >= 40 ? 'rgba(245, 158, 11, 0.4)' :
+    'rgba(16, 185, 129, 0.4)';
 
-  return (
+  const riskText =
+    report?.riskScore >= 70 ? '#f43f5e' :
+    report?.riskScore >= 40 ? '#f59e0b' :
+    '#10b981';
+
+  const content = (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h1 className="text-3xl font-bold text-slate-800">Revenue Leak Guard (Pro Plus)</h1>
-        <p className="text-slate-500 mt-2">
+        <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '32px', color: '#f1f5f9', margin: 0 }}>
+          Revenue Leak Guard
+        </h1>
+        <p style={{ color: '#94a3b8', fontSize: '15px', marginTop: '6px' }}>
           Detect unpaid “ghost actives”, reconciliation gaps, and cash leakage risk automatically.
         </p>
       </div>
 
-      <div className={`card border ${riskColor}`}>
+      <div className="card" style={{ 
+        background: riskColor, 
+        borderColor: riskBorder,
+        borderWidth: '1px',
+        borderStyle: 'solid'
+      }}>
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <ShieldCheck size={22} />
+          <div className="flex items-center gap-4">
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '12px',
+              background: 'rgba(255,255,255,0.1)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', color: riskText
+            }}>
+              <ShieldCheck size={28} />
+            </div>
             <div>
-              <div className="font-bold">Leak Risk Score</div>
-              <div className="text-sm opacity-80">0 = safe, 100 = high risk</div>
+              <div style={{ fontWeight: 800, color: '#f1f5f9', fontSize: '18px' }}>Nexora Integrity Score</div>
+              <div style={{ fontSize: '13px', color: '#94a3b8' }}>0 = safe, 100 = critical leakage risk</div>
             </div>
           </div>
-          <div className="text-4xl font-extrabold tabular-nums">{report.riskScore}</div>
+          <div style={{ fontSize: '48px', fontWeight: 900, color: '#f1f5f9', letterSpacing: '-2px' }}>
+            {report?.riskScore || 0}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card">
-          <div className="text-sm text-slate-500">Expected Outstanding (Due Members)</div>
-          <div className="text-3xl font-extrabold text-slate-800 mt-2">Rs {report.expectedOutstanding.toLocaleString()}</div>
-          <div className="text-xs text-slate-500 mt-2">{report.dueMembersCount} due members</div>
+          <p style={{ fontSize: '12px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expected Collections</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, color: '#f1f5f9', margin: '8px 0' }}>Rs {report?.expectedOutstanding?.toLocaleString() || 0}</p>
+          <div className="flex items-center gap-2" style={{ fontSize: '12px', color: '#94a3b8' }}>
+            <TrendingDown size={14} color="#f87171" />
+            <span>{report?.dueMembersCount || 0} members overdue</span>
+          </div>
         </div>
         <div className="card">
-          <div className="text-sm text-slate-500">Collected This Month</div>
-          <div className="text-3xl font-extrabold text-slate-800 mt-2">Rs {report.collectedThisMonth.toLocaleString()}</div>
-          <div className="text-xs text-slate-500 mt-2">{report.paymentsThisMonth} payments</div>
+          <p style={{ fontSize: '12px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Realized Revenue</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, color: '#34d399', margin: '8px 0' }}>Rs {report?.collectedThisMonth?.toLocaleString() || 0}</p>
+          <div className="flex items-center gap-2" style={{ fontSize: '12px', color: '#94a3b8' }}>
+            <TrendingUp size={14} color="#34d399" />
+            <span>{report?.paymentsThisMonth || 0} payments confirmed</span>
+          </div>
         </div>
         <div className="card">
-          <div className="text-sm text-slate-500">Collection Rate</div>
-          <div className="text-3xl font-extrabold text-slate-800 mt-2">{report.collectionRate}%</div>
-          <div className="text-xs text-slate-500 mt-2">This month vs expected</div>
+          <p style={{ fontSize: '12px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recovery Rate</p>
+          <p style={{ fontSize: '28px', fontWeight: 800, color: '#00d4ff', margin: '8px 0' }}>{report?.collectionRate || 0}%</p>
+          <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
+             <div style={{ width: `${report?.collectionRate || 0}%`, height: '100%', background: '#00d4ff', borderRadius: '10px', boxShadow: '0 0 10px rgba(0,212,255,0.5)' }} />
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-800">Leak Alerts</h2>
-            {report.alerts.length ? (
-              <span className="text-xs font-bold px-2 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                {report.alerts.length} alerts
-              </span>
-            ) : (
-              <span className="text-xs font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                No alerts
-              </span>
-            )}
+          <div className="flex items-center justify-between mb-6">
+            <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '18px', color: '#f1f5f9', margin: 0 }}>Leak Alerts</h2>
+            <div style={{ padding: '4px 12px', borderRadius: '99px', background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', fontSize: '11px', fontWeight: 700 }}>
+              {report?.alerts?.length || 0} Critical
+            </div>
           </div>
-          {report.alerts.length === 0 ? (
-            <div className="text-sm text-slate-500">All good. No suspicious patterns detected.</div>
+          {report?.alerts?.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+               <CheckCircle size={40} color="#34d399" style={{ margin: '0 auto 16px', opacity: 0.2 }} />
+               <p style={{ color: '#475569', fontSize: '14px' }}>All systems nominal. No leaks detected.</p>
+            </div>
           ) : (
-            <ul className="space-y-3">
-              {report.alerts.map((a) => (
-                <li key={a.id} className="border border-slate-200 rounded-xl p-3">
-                  <div className="font-bold text-slate-800">{a.title}</div>
-                  <div className="text-sm text-slate-600 mt-1">{a.detail}</div>
+            <ul className="space-y-4">
+              {report?.alerts.map((a) => (
+                <li key={a.id} className="glass-pane" style={{ padding: '16px', borderRadius: '16px', borderLeft: '4px solid #f43f5e' }}>
+                  <div style={{ fontWeight: 700, color: '#f1f5f9', marginBottom: '4px' }}>{a.title}</div>
+                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>{a.detail}</p>
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        <div className="card">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Top Due Members</h2>
-          {report.topDefaulters.length === 0 ? (
-            <div className="text-sm text-slate-500">No due members right now.</div>
-          ) : (
-            <div className="space-y-3">
-              {report.topDefaulters.map((m) => (
-                <div key={m.id} className="flex items-center justify-between border border-slate-200 rounded-xl p-3">
+        {/* Task 3.1: Mind Blowing Feature - Ghost Revenue Recovery Guide */}
+        <div className="card" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)' }}>
+          <div className="flex items-center gap-3 mb-6">
+            <Ghost size={24} color="#a78bfa" />
+            <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '18px', color: '#f1f5f9', margin: 0 }}>Ghost Recovery Guide</h2>
+          </div>
+          
+          <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '20px' }}>
+            These members are marked **Active** but have no payment record in the last 45 days. They are consuming your resources without contributing.
+          </p>
+
+          <div style={{ maxHeight: '300px', overflowY: 'auto' }} className="space-y-3 pr-2 custom-scrollbar">
+            {report?.topDefaulters?.length === 0 ? (
+              <p style={{ color: '#475569', textAlign: 'center', padding: '20px' }}>No ghost actives found.</p>
+            ) : (
+              report?.topDefaulters.map((m) => (
+                <div key={m.id} className="glass-pane" style={{ padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <div className="font-semibold text-slate-800">{m.name}</div>
-                    <div className="text-xs text-slate-500">{m.phone}</div>
+                    <div style={{ fontWeight: 700, color: '#f1f5f9', fontSize: '14px' }}>{m.name}</div>
+                    <div style={{ fontSize: '11px', color: '#475569' }}>{m.phone}</div>
                   </div>
-                  <div className="font-extrabold text-slate-800">Rs {Number(m.amount || 0).toLocaleString()}</div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 800, color: '#f87171', fontSize: '14px' }}>Rs {Number(m.amount || 0).toLocaleString()}</div>
+                    <div style={{ fontSize: '10px', color: '#475569' }}>Recoverable</div>
+                  </div>
                 </div>
-              ))}
+              ))
+            )}
+          </div>
+
+          <div style={{ marginTop: '24px', padding: '16px', borderRadius: '16px', background: 'rgba(167, 139, 250, 0.1)', border: '1px solid rgba(167, 139, 250, 0.2)' }}>
+            <div className="flex items-start gap-3">
+               <DollarSign size={18} color="#a78bfa" style={{ marginTop: '2px' }} />
+               <div>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', margin: '0 0 4px 0' }}>Estimated Total Recovery</p>
+                  <p style={{ fontSize: '20px', fontWeight: 800, color: '#a78bfa', margin: 0 }}>
+                    Rs {(report?.expectedOutstanding || 0).toLocaleString()}
+                  </p>
+               </div>
             </div>
-          )}
-          <div className="mt-5 grid grid-cols-2 gap-3 text-xs text-slate-600">
-            <div className="flex items-center gap-2"><TrendingDown size={14} className="text-rose-600" /> Reduce leakage by verifying cash entries</div>
-            <div className="flex items-center gap-2"><TrendingUp size={14} className="text-emerald-600" /> Use verified payments for clean receipts</div>
           </div>
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <LockedOverlay isLocked={isLocked} message="Upgrade to Pro Plus to unlock Revenue Leak Guard">
+      {content}
+    </LockedOverlay>
   );
 }
 

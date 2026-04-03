@@ -2,13 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { ShieldCheck, CheckCircle2, XCircle } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, XCircle, Zap, Shield, HelpCircle, Activity } from 'lucide-react';
+import LockedOverlay from '../components/LockedOverlay';
 
 export default function PaymentVerification() {
-  const { gymKey } = useAuth();
+  const { gymKey, packageTier } = useAuth();
   const [members, setMembers] = useState([]);
   const [pendingPayments, setPendingPayments] = useState([]);
   const [gymPackage, setGymPackage] = useState('starter');
+  const [autoConfirm, setAutoConfirm] = useState(false);
+  const [updatingAuto, setUpdatingAuto] = useState(false);
   const [form, setForm] = useState({
     memberId: '',
     amount: '',
@@ -28,6 +31,7 @@ export default function PaymentVerification() {
       const profRes = await api.get(`/profile?gymKey=${gymKey}`);
       const pkg = profRes.data.profile?.package || 'starter';
       setGymPackage(pkg);
+      setAutoConfirm(profRes.data.profile?.paymentSettings?.autoConfirm || false);
 
       if (!(pkg === 'growth' || pkg === 'pro' || pkg === 'pro_plus')) {
         return;
@@ -45,9 +49,26 @@ export default function PaymentVerification() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, [gymKey]);
+
+  const handleToggleAutoConfirm = async () => {
+    if (packageTier === 'starter' || packageTier === 'growth') return;
+    
+    setUpdatingAuto(true);
+    try {
+      const newStatus = !autoConfirm;
+      await api.put(`/profile?gymKey=${gymKey}`, { 
+        paymentSettings: { autoConfirm: newStatus } 
+      });
+      setAutoConfirm(newStatus);
+      toast.success(`Auto-Confirm ${newStatus ? 'Enabled' : 'Disabled'}`);
+    } catch (err) {
+      toast.error('Failed to update Auto-Confirm');
+    } finally {
+      setUpdatingAuto(false);
+    }
+  };
 
   const submitProof = async (e) => {
     e.preventDefault();
@@ -81,126 +102,196 @@ export default function PaymentVerification() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-800">Payment Verification</h1>
-        <p className="text-slate-500 mt-2">
-          Secure proof queue for EasyPaisa, JazzCash, and Bank transfers with strong confirmation code generation.
-        </p>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '32px', color: '#f1f5f9', margin: 0 }}>
+            Payment Verification
+          </h1>
+          <p style={{ color: '#94a3b8', fontSize: '15px', marginTop: '6px' }}>
+            Nexora Secure Proof Queue for Automated Transaction Reconciliation.
+          </p>
+        </div>
+        
+        {/* Task 1: Auto-Confirm Toggle */}
+        <div style={{ minWidth: '320px' }}>
+          <LockedOverlay isLocked={packageTier === 'starter' || packageTier === 'growth'} message="Upgrade to Pro for AI Auto-Confirmation">
+            <div className="glass-pane" style={{ padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="flex items-center gap-3">
+                <div style={{
+                  width: '32px', height: '32px', borderRadius: '8px', 
+                  background: autoConfirm ? 'rgba(52, 211, 153, 0.1)' : 'rgba(71, 85, 105, 0.1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Zap size={18} color={autoConfirm ? '#34d399' : '#94a3b8'} />
+                </div>
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Auto-Confirmation</p>
+                  <p style={{ fontSize: '10px', color: '#475569', margin: 0 }}>Enable high-trust processing</p>
+                </div>
+              </div>
+              <button 
+                onClick={handleToggleAutoConfirm}
+                disabled={updatingAuto}
+                style={{
+                  width: '44px', height: '24px', borderRadius: '99px',
+                  background: autoConfirm ? '#34d399' : '#1e293b',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  position: 'relative', cursor: 'pointer', transition: 'all 0.3s ease'
+                }}
+              >
+                <div style={{
+                  width: '18px', height: '18px', borderRadius: '50%', background: 'white',
+                  position: 'absolute', top: '2px', left: autoConfirm ? '22px' : '2px',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                }} />
+              </button>
+            </div>
+          </LockedOverlay>
+        </div>
       </div>
 
       {!(gymPackage === 'growth' || gymPackage === 'pro' || gymPackage === 'pro_plus') && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-900">
-          <div className="font-bold mb-1">Upgrade required</div>
-          Payment verification is available in <b>Growth</b>, <b>Pro</b> and <b>Pro Plus</b> packages only.
+        <div style={{ padding: '20px', borderRadius: '16px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Shield color="#f59e0b" size={20} />
+          <p style={{ fontSize: '14px', color: '#f59e0b', margin: 0 }}>
+            <strong>Upgrade Required:</strong> Payment verification is available in <strong>Growth</strong> and <strong>Pro</strong> packages only.
+          </p>
         </div>
       )}
 
       {(gymPackage === 'growth' || gymPackage === 'pro' || gymPackage === 'pro_plus') && (
       <>
-      <div className="card">
-        <h2 className="text-lg font-bold text-slate-800 mb-4">Submit Payment Proof</h2>
-        <form onSubmit={submitProof} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select
-            className="input-field"
-            value={form.memberId}
-            onChange={(e) => setForm(f => ({ ...f, memberId: e.target.value }))}
-          >
-            <option value="">Select Member</option>
-            {members.map(m => (
-              <option key={m.id} value={m.id}>{m.name} ({m.phone})</option>
-            ))}
-          </select>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Verification Form */}
+        <div className="lg:col-span-5">
+          <div className="card h-full">
+            <div className="flex items-center gap-2 mb-6">
+              <ShieldCheck size={20} color="#00d4ff" />
+              <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '18px', color: '#f1f5f9', margin: 0 }}>
+                Submit Payment Proof
+              </h2>
+            </div>
+            
+            <form onSubmit={submitProof} className="space-y-4">
+              <div>
+                <label style={{ fontSize: '11px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Member</label>
+                <select className="input-field" value={form.memberId} onChange={(e) => setForm(f => ({ ...f, memberId: e.target.value }))}>
+                  <option value="">Select Member</option>
+                  {members.map(m => (
+                    <option key={m.id} value={m.id}>{m.name} ({m.phone})</option>
+                  ))}
+                </select>
+              </div>
 
-          <input
-            type="number"
-            className="input-field"
-            placeholder="Amount (Rs)"
-            value={form.amount}
-            onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
-          />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label style={{ fontSize: '11px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Amount (Rs)</label>
+                  <input type="number" className="input-field" placeholder="Entry amount" value={form.amount} onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Method</label>
+                  <select className="input-field" value={form.method} onChange={(e) => setForm(f => ({ ...f, method: e.target.value }))}>
+                    <option value="easypaisa">EasyPaisa</option>
+                    <option value="jazzcash">JazzCash</option>
+                    <option value="bank">Bank Transfer</option>
+                  </select>
+                </div>
+              </div>
 
-          <select
-            className="input-field"
-            value={form.method}
-            onChange={(e) => setForm(f => ({ ...f, method: e.target.value }))}
-          >
-            <option value="easypaisa">EasyPaisa</option>
-            <option value="jazzcash">JazzCash</option>
-            <option value="bank">Bank Transfer</option>
-          </select>
+              <div>
+                <label style={{ fontSize: '11px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Transaction Reference</label>
+                <input type="text" className="input-field" placeholder="ID or Referral Number" value={form.transactionId} onChange={(e) => setForm(f => ({ ...f, transactionId: e.target.value }))} />
+              </div>
 
-          <input
-            type="text"
-            className="input-field"
-            placeholder="Transaction ID / Ref No"
-            value={form.transactionId}
-            onChange={(e) => setForm(f => ({ ...f, transactionId: e.target.value }))}
-          />
+              <div>
+                <label style={{ fontSize: '11px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>Collector's Note</label>
+                <textarea className="input-field" rows={3} placeholder="Any additional proof details..." value={form.proofNote} onChange={(e) => setForm(f => ({ ...f, proofNote: e.target.value }))} />
+              </div>
 
-          <textarea
-            className="input-field md:col-span-2"
-            placeholder="Proof note (optional): payer name, time, screenshot ref"
-            value={form.proofNote}
-            onChange={(e) => setForm(f => ({ ...f, proofNote: e.target.value }))}
-          />
+              <button type="submit" className="btn-primary w-full py-4 text-sm font-bold">
+                <ShieldCheck size={18} /> Submit To Secure Queue
+              </button>
+            </form>
+          </div>
+        </div>
 
-          <button type="submit" className="btn-primary md:col-span-2 justify-center">
-            <ShieldCheck size={18} /> Submit To Secure Queue
-          </button>
-        </form>
-      </div>
+        {/* Verification Queue */}
+        <div className="lg:col-span-7">
+          <div className="card h-full">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Activity size={20} color="#34d399" />
+                <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '18px', color: '#f1f5f9', margin: 0 }}>
+                  Verification Queue
+                </h2>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span className="glass-pane" style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '6px', color: '#94a3b8' }}>
+                  {pendingPayments.length} Pending
+                </span>
+              </div>
+            </div>
 
-      <div className="card">
-        <h2 className="text-lg font-bold text-slate-800 mb-4">Pending Verification Queue</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="py-3 px-4">Member</th>
-                <th className="py-3 px-4">Amount</th>
-                <th className="py-3 px-4">Method</th>
-                <th className="py-3 px-4">Txn Last 4</th>
-                <th className="py-3 px-4">Strength</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingPayments.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="py-8 px-4 text-center text-slate-500">No pending proofs</td>
-                </tr>
-              ) : (
-                pendingPayments.map(p => (
-                  <tr key={p.id} className="border-b border-slate-100">
-                    <td className="py-3 px-4">{memberMap.get(p.memberId)?.name || 'Unknown'}</td>
-                    <td className="py-3 px-4 font-semibold text-emerald-700">Rs {p.amount}</td>
-                    <td className="py-3 px-4 uppercase">{p.method}</td>
-                    <td className="py-3 px-4 font-mono">****{p.transactionLast4}</td>
-                    <td className="py-3 px-4">{p.verificationStrength || 'high'}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => verifyProof(p.id, true)}
-                          className="px-3 py-1.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-300"
-                        >
-                          <CheckCircle2 size={14} className="inline mr-1" />
-                          Verify
-                        </button>
-                        <button
-                          onClick={() => verifyProof(p.id, false)}
-                          className="px-3 py-1.5 rounded text-xs font-bold bg-red-100 text-red-700 border border-red-300"
-                        >
-                          <XCircle size={14} className="inline mr-1" />
-                          Reject
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+            <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #1a2540', background: '#080d14' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.02)', color: '#475569' }}>
+                      <th style={{ padding: '16px' }}>Member</th>
+                      <th style={{ padding: '16px' }}>Amount</th>
+                      <th style={{ padding: '16px' }}>Method</th>
+                      <th style={{ padding: '16px' }}>Proof</th>
+                      <th style={{ padding: '16px', textAlign: 'right' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody style={{ color: '#f1f5f9' }}>
+                    {pendingPayments.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" style={{ padding: '60px', textAlign: 'center', color: '#475569 italic' }}>Clean Queue: No pending payments</td>
+                      </tr>
+                    ) : (
+                      pendingPayments.map(p => (
+                        <tr key={p.id} style={{ borderTop: '1px solid #1a2540' }}>
+                          <td style={{ padding: '16px' }}>
+                            <div style={{ fontWeight: 700 }}>{memberMap.get(p.memberId)?.name || 'Unknown'}</div>
+                            <div style={{ fontSize: '11px', color: '#475569' }}>{memberMap.get(p.memberId)?.phone}</div>
+                          </td>
+                          <td style={{ padding: '16px', color: '#34d399', fontWeight: 800 }}>Rs {p.amount}</td>
+                          <td style={{ padding: '16px' }}>
+                             <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', textTransform: 'uppercase' }}>{p.method}</span>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                             <div className="flex items-center gap-1">
+                               <Shield size={12} color="#00d4ff" />
+                               <span style={{ fontFamily: 'mono', fontSize: '12px' }}>****{p.transactionLast4}</span>
+                             </div>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            <div className="flex gap-2 justify-end">
+                              <button onClick={() => verifyProof(p.id, true)} style={{ padding: '6px 12px', borderRadius: '8px', background: 'rgba(52, 211, 153, 0.1)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.2)', cursor: 'pointer' }}>
+                                <CheckCircle2 size={16} />
+                              </button>
+                              <button onClick={() => verifyProof(p.id, false)} style={{ padding: '6px 12px', borderRadius: '8px', background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.2)', cursor: 'pointer' }}>
+                                <XCircle size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '8px', color: '#475569', fontSize: '11px' }}>
+              <HelpCircle size={14} />
+              <span>Verifying a proof generates an automated receipt and WhatsApp confirmation to the member.</span>
+            </div>
+          </div>
         </div>
       </div>
       </>

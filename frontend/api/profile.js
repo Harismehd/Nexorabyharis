@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-const defaultData = { system: { globalShutdown: false, masterPassword: 'SAdmin#2026!GymFlow' }, gyms: [], members: [], payments: [], pendingPayments: [], logs: [] };
+const defaultData = { system: { globalShutdown: false, masterPassword: 'SAdmin#2026!Nexora' }, gyms: [], members: [], payments: [], pendingPayments: [], logs: [] };
 
 async function readDB() {
   const { data, error } = await supabase.from('app_state').select('payload').eq('id', 1).maybeSingle();
@@ -16,7 +16,7 @@ async function writeDB(payload) {
   if (error) throw error;
 }
 
-function getKey() { return process.env.PAYMENT_SECRET || 'GymFlow-Payment-Secret-Change-Now-2026'; }
+function getKey() { return process.env.PAYMENT_SECRET || 'Nexora-Payment-Secret-Change-Now-2026'; }
 
 function encryptSensitive(text) {
   const key = crypto.createHash('sha256').update(getKey()).digest();
