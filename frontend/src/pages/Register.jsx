@@ -1,8 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Dumbbell, ShieldCheck, HelpCircle, Check, Upload, ArrowLeft, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import api from '../api';
+import { supabase } from '../supabase';
 
 const Register = () => {
   const [searchParams] = useSearchParams();
@@ -39,18 +35,45 @@ const Register = () => {
     if (!paymentProof) return toast.error('Please upload your payment screenshot');
     
     setLoading(true);
-    const data = new FormData();
-    Object.keys(formData).forEach(key => data.append(key, formData[key]));
-    if (paymentProof) data.append('paymentProof', paymentProof);
 
     try {
-      await api.post('/register', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // 1. Upload Screenshot to Supabase Storage
+      const fileExt = paymentProof.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `proofs/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('registration-proofs')
+        .upload(filePath, paymentProof);
+
+      if (uploadError) throw new Error('Image upload failed: ' + uploadError.message);
+
+      // Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('registration-proofs')
+        .getPublicUrl(filePath);
+
+      // 2. Insert Record into registrations Table
+      const { error: insertError } = await supabase
+        .from('registrations')
+        .insert([{
+          gym_name: formData.gymName,
+          owner_name: formData.ownerName,
+          phone: formData.businessPhone,
+          email: formData.emailAddress,
+          package_name: formData.packageName,
+          gym_key_choice: formData.gymKeyChoice,
+          payment_proof_url: publicUrl,
+          status: 'pending'
+        }]);
+
+      if (insertError) throw new Error('Database insertion failed: ' + insertError.message);
+
       setSubmitted(true);
-      toast.success('Registration received!');
+      toast.success('Registration submitted to Master Admin!');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Registration failed. Try again.');
+      toast.error(err.message || 'Registration failed. Try again.');
+      console.error('Registration Error:', err);
     } finally {
       setLoading(false);
     }

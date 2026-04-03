@@ -5,15 +5,13 @@ import toast from 'react-hot-toast';
 import { ShieldAlert, Power, Users, KeyRound, Ban, LogOut, Plus, Megaphone, Trash2, Radio, Activity, Monitor, RefreshCw } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseClient = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '../supabase';
 
 export default function MasterAdmin() {
   const { logout } = useAuth();
   const [data, setData] = useState({ system: {}, gyms: [] });
   const [loading, setLoading] = useState(true);
+  const [applications, setApplications] = useState([]);
   const [newKey, setNewKey] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPackage, setNewPackage] = useState('starter');
@@ -48,6 +46,21 @@ export default function MasterAdmin() {
     }
   };
 
+  const fetchApplications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setApplications(data || []);
+    } catch (err) {
+      console.error('Failed to fetch applications:', err);
+    }
+  };
+
   const fetchBroadcasts = async () => {
     try {
       const res = await api.get('/broadcasts?gymKey=ADMIN', getAdminHeaders());
@@ -57,7 +70,7 @@ export default function MasterAdmin() {
 
   const fetchMsgStats = async () => {
     try {
-      const { data } = await supabaseClient
+      const { data } = await supabase
         .from('message_jobs')
         .select('gym_key, created_at')
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
@@ -118,6 +131,7 @@ export default function MasterAdmin() {
     fetchData();
     fetchBroadcasts();
     fetchMsgStats();
+    fetchApplications();
   }, []);
 
   const handleCreateGym = async (e) => {
@@ -139,6 +153,32 @@ export default function MasterAdmin() {
       toast.error(err.response?.data?.error || 'Failed to generate key');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleApprove = (app) => {
+    setNewKey(app.gym_key_choice || app.gym_name.toUpperCase().replace(/\s/g, '-'));
+    setNewPackage(app.package_name.toLowerCase());
+    setNewPassword(Math.random().toString(36).substring(2, 10).toUpperCase());
+    
+    // Smooth scroll to provisioning
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    toast.success('Fields pre-filled. Press Mint to complete.');
+
+    // Update status in Supabase
+    supabase.from('registrations').update({ status: 'approved' }).eq('id', app.id).then(() => {
+      fetchApplications();
+    });
+  };
+
+  const handleReject = async (id) => {
+    if (!window.confirm('Reject this application?')) return;
+    try {
+      await supabase.from('registrations').update({ status: 'rejected' }).eq('id', id);
+      toast.success('Application rejected');
+      fetchApplications();
+    } catch {
+      toast.error('Failed to reject');
     }
   };
 
@@ -287,7 +327,7 @@ export default function MasterAdmin() {
                       <option value="pro">Pro Plan</option>
                       <option value="pro_plus">Pro Plus Plan</option>
                     </select>
-
+ 
                     <div className="relative">
                       <Monitor className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
                       <input 
@@ -299,7 +339,7 @@ export default function MasterAdmin() {
                       />
                     </div>
                  </div>
-
+ 
                  <button 
                    disabled={creating}
                    type="submit" 
@@ -308,6 +348,78 @@ export default function MasterAdmin() {
                     <Plus size={18} /> {creating ? 'Authorizing...' : 'Mint New Authorization Key'}
                  </button>
               </form>
+           </div>
+        </div>
+
+        {/* Incoming Applications Section */}
+        <div className="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md">
+           <div className="flex items-center justify-between mb-8">
+             <div>
+               <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
+                  <Activity className="text-emerald-400" /> 
+                  Incoming Applications
+               </h2>
+               <p className="text-xs text-slate-500">Review pending gym signups and payment proofs</p>
+             </div>
+             <div className="bg-emerald-500/10 px-4 py-1 rounded-full border border-emerald-500/20">
+                <span className="text-emerald-400 text-xs font-black">{applications.length} PENDING</span>
+             </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {applications.length === 0 ? (
+                <div className="col-span-full py-12 text-center border border-dashed border-slate-800 rounded-2xl text-slate-600 text-sm">
+                  Zero incoming signals. The ecosystem is quiet.
+                </div>
+              ) : (
+                applications.map(app => (
+                  <div key={app.id} className="p-6 rounded-2xl bg-slate-950/50 border border-slate-800 hover:border-emerald-500/30 transition-all group">
+                     <div className="flex justify-between items-start mb-4">
+                        <div>
+                           <h3 className="font-black text-white text-sm uppercase mb-1">{app.gym_name}</h3>
+                           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{app.owner_name}</p>
+                        </div>
+                        <span className="px-2 py-1 bg-blue-500/10 text-blue-400 text-[9px] font-black rounded border border-blue-500/20 uppercase">
+                           {app.package_name}
+                        </span>
+                     </div>
+
+                     <div className="space-y-2 mb-6">
+                        <div className="flex justify-between text-[11px]">
+                           <span className="text-slate-500 font-bold">WHATSAPP:</span>
+                           <span className="text-slate-300 tabular-nums">{app.phone}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px]">
+                           <span className="text-slate-500 font-bold">KEY CHOICE:</span>
+                           <span className="text-emerald-400 font-black">{app.gym_key_choice || 'NONE'}</span>
+                        </div>
+                     </div>
+
+                     <div className="flex gap-2">
+                        <a 
+                          href={app.payment_proof_url} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-black text-center rounded-lg transition-all uppercase border border-slate-700"
+                        >
+                           View Proof
+                        </a>
+                        <button 
+                          onClick={() => handleApprove(app)}
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black rounded-lg transition-all uppercase shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                        >
+                           Approve
+                        </button>
+                        <button 
+                          onClick={() => handleReject(app.id)}
+                          className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all border border-red-500/20"
+                        >
+                           <Trash2 size={14} />
+                        </button>
+                     </div>
+                  </div>
+                ))
+              )}
            </div>
         </div>
 

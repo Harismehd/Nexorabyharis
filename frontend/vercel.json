@@ -1,7 +1,6 @@
 {
   "rewrites": [
     { "source": "/api/auth/login", "destination": "/api/auth" },
-    { "source": "/api/register", "destination": "/api/register" },
     { "source": "/api/members/upload", "destination": "/api/upload" },
     { "source": "/api/members/:id/checkin", "destination": "/api/members" },
     { "source": "/api/members/:id/status", "destination": "/api/members" },
