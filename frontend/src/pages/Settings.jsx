@@ -73,6 +73,13 @@ export default function Settings() {
   };
 
   const handleSave = async () => {
+    // Email Validation (Gmail check)
+    if (profile.email && !profile.email.toLowerCase().endsWith('@gmail.com')) {
+      toast.error('Automated features require a valid @gmail.com address');
+      // We don't block saving but we warn. 
+      // return; 
+    }
+
     setSaving(true);
     try {
       await api.post('/profile', { gymKey, profile });
@@ -141,445 +148,241 @@ export default function Settings() {
   const badge = PACKAGE_BADGES[pkg] || PACKAGE_BADGES.starter;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '28px', color: '#f1f5f9' }}>
-              Gym Settings
-            </h1>
-            {/* Package Badge */}
-            <span style={{
-              padding: '4px 12px', borderRadius: '99px', fontSize: '12px',
-              fontFamily: 'Syne, sans-serif', fontWeight: 700, letterSpacing: '0.05em',
-              color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`
-            }}>
-              {badge.label}
-            </span>
-          </div>
-          <p style={{ color: '#475569', fontSize: '14px' }}>Manage your gym profile, automated sending, and message templates.</p>
-        </div>
-        <button onClick={handleSave} disabled={saving} className="btn-primary px-8">
-          <Save size={18} /> {saving ? 'Saving...' : 'Save All Settings'}
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Gym Profile */}
-        <div className="card space-y-4">
-          <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
-            <div style={{ background: 'rgba(0,112,196,0.15)', padding: '8px', borderRadius: '10px' }}>
-              <Store size={20} color="#0c8ee7" />
+    <>
+      <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '28px', color: '#f1f5f9' }}>
+                Gym Settings
+              </h1>
+              <span style={{
+                padding: '4px 12px', borderRadius: '99px', fontSize: '12px',
+                fontFamily: 'Syne, sans-serif', fontWeight: 700, letterSpacing: '0.05em',
+                color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`
+              }}>
+                {badge.label}
+              </span>
             </div>
-            <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Gym Profile</h2>
+            <p style={{ color: '#475569', fontSize: '14px' }}>Manage your gym profile, automated sending, and message templates.</p>
           </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-              Gym Name <span style={{ color: '#f87171' }}>*</span>
-            </label>
-            <input type="text" name="name" value={profile.name || ''} onChange={handleChange} className="input-field" placeholder="E.g. Titan Fitness" />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Address</label>
-            <textarea name="address" value={profile.address || ''} onChange={handleChange} className="input-field" style={{ height: '80px', resize: 'vertical' }} placeholder="Full gym address..." />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Contact No.</label>
-              <input type="text" name="contact" value={profile.contact || ''} onChange={handleChange} className="input-field" placeholder="Phone number" />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Email</label>
-              <input type="email" name="email" value={profile.email || ''} onChange={handleChange} className="input-field" placeholder="Email address" />
-            </div>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Tax Reg. No.</label>
-            <input type="text" name="taxReg" value={profile.taxReg || ''} onChange={handleChange} className="input-field" placeholder="Optional" />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Receipt Footer Message</label>
-            <input type="text" name="footerMessage" value={profile.footerMessage || ''} onChange={handleChange} className="input-field" placeholder="e.g. Thanks for choosing us!" />
-          </div>
+          <button onClick={handleSave} disabled={saving} className="btn-primary px-8 shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+            <Save size={18} /> {saving ? 'Saving...' : 'Save All Settings'}
+          </button>
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-6">
+        <div className="custom-scrollbar pr-4" style={{ 
+          maxHeight: 'calc(100vh - 250px)', 
+          overflowY: 'auto',
+          paddingBottom: '40px'
+        }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Offer Craft - Package Builder */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
-              <div className="flex items-center gap-3">
-                <div style={{ background: 'rgba(0,212,255,0.15)', padding: '8px', borderRadius: '10px' }}>
-                  <PackageIcon size={20} color="#00d4ff" />
+            {/* Gym Profile */}
+            <div className="card space-y-4">
+              <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
+                <div style={{ background: 'rgba(0,112,196,0.15)', padding: '8px', borderRadius: '10px' }}>
+                  <Store size={20} color="#0c8ee7" />
                 </div>
-                <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Offer Craft</h2>
+                <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Gym Profile</h2>
               </div>
-              {isPro && (
-                <button 
-                  onClick={() => openPackageModal()}
-                  className="btn-primary" 
-                  style={{ padding: '6px 12px', fontSize: '12px' }}
-                  disabled={(pkg === 'pro' && (profile.packages?.length >= 3)) || (pkg === 'pro_plus' && (profile.packages?.length >= 7))}
-                >
-                  <Plus size={14} /> Add Package
-                </button>
-              )}
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Gym Name *</label>
+                <input type="text" name="name" value={profile.name || ''} onChange={handleChange} className="input-field" placeholder="E.g. Titan Fitness" />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Address</label>
+                <textarea name="address" value={profile.address || ''} onChange={handleChange} className="input-field" style={{ height: '80px', resize: 'vertical' }} placeholder="Full gym address..." />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Contact No.</label>
+                  <input type="text" name="contact" value={profile.contact || ''} onChange={handleChange} className="input-field" placeholder="03XXXXXXXXX" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Email</label>
+                  <input type="email" name="email" value={profile.email || ''} onChange={handleChange} className="input-field" placeholder="gym@gmail.com" />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Tax Reg. No.</label>
+                <input type="text" name="taxReg" value={profile.taxReg || ''} onChange={handleChange} className="input-field" placeholder="Optional" />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Receipt Footer Message</label>
+                <input type="text" name="footerMessage" value={profile.footerMessage || ''} onChange={handleChange} className="input-field" placeholder="e.g. Thanks for choosing us!" />
+              </div>
             </div>
 
-            {!isPro ? (
-              <UpgradeBadge message="Upgrade to Pro (3 packages) or Pro Plus (7 packages) to build custom plans." />
-            ) : (
-              <div className="space-y-4">
-                {(profile.packages || []).length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', background: '#080d14', borderRadius: '12px', border: '1px dashed #1a2540' }}>
-                    <p style={{ fontSize: '13px', color: '#475569' }}>No custom packages created yet.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3">
-                    {profile.packages.map(p => (
-                      <div key={p.id} style={{ 
-                        background: '#080d14', border: '1px solid #1a2540', 
-                        borderRadius: '12px', padding: '12px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                      }}>
-                        <div className="flex items-center gap-3">
-                          <div style={{ width: '4px', height: '32px', background: p.badgeColor, borderRadius: '4px' }} />
-                          <div>
-                            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>{p.name}</h4>
-                            <p style={{ fontSize: '11px', color: '#475569' }}>
-                              Rs {p.price} • {p.duration} • {members.filter(m => m.packageId === p.id).length} members
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => openPackageModal(p)} style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}><Edit2 size={16} /></button>
-                          <button onClick={() => deletePackage(p.id)} style={{ color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+            {/* Right Column */}
+            <div className="space-y-6">
 
-                {/* Package Limit Progress */}
-                <div style={{ marginTop: '16px' }}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span style={{ fontSize: '11px', color: '#475569', fontWeight: 600 }}>PACKAGE LIMITS</span>
-                    <span style={{ fontSize: '11px', color: '#475569', fontWeight: 600 }}>
-                      {profile.packages?.length || 0} / {pkg === 'pro_plus' ? '7' : '3'}
-                    </span>
+              {/* Offer Craft - Package Builder */}
+              <div className="card">
+                <div className="flex items-center justify-between mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
+                  <div className="flex items-center gap-3">
+                    <div style={{ background: 'rgba(0,212,255,0.15)', padding: '8px', borderRadius: '10px' }}>
+                      <PackageIcon size={20} color="#00d4ff" />
+                    </div>
+                    <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Offer Craft</h2>
                   </div>
-                  <div style={{ height: '4px', background: '#1a2540', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ 
-                      height: '100%', 
-                      width: `${((profile.packages?.length || 0) / (pkg === 'pro_plus' ? 7 : 3)) * 100}%`,
-                      background: 'linear-gradient(90deg, #0070c4, #00d4ff)',
-                      transition: 'width 0.3s ease'
-                    }} />
-                  </div>
-                  {((pkg === 'pro' && profile.packages?.length >= 3) || (pkg === 'pro_plus' && profile.packages?.length >= 7)) && (
-                    <p style={{ fontSize: '11px', color: '#fbbf24', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Lock size={10} /> Limit reached. Upgrade to Pro Plus for more slots.
-                    </p>
+                  {isPro && (
+                    <button onClick={() => openPackageModal()} className="btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} disabled={(pkg === 'pro' && (profile.packages?.length >= 3)) || (pkg === 'pro_plus' && (profile.packages?.length >= 7))}>
+                      <Plus size={14} /> Add Package
+                    </button>
                   )}
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* Automated Reminders */}
-          <div className="card">
-            <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
-              <div style={{ background: 'rgba(251,191,36,0.15)', padding: '8px', borderRadius: '10px' }}>
-                <Bell size={20} color="#fbbf24" />
-              </div>
-              <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Automated Reminders</h2>
-            </div>
-
-            {!isGrowth ? (
-              <UpgradeBadge message="Upgrade to Growth, Pro or Pro Plus to enable automated reminders." />
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 style={{ fontWeight: 600, color: '#e2e8f0', fontSize: '14px' }}>Enable Auto-Messaging</h4>
-                    <p style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>Automatically send reminders daily for overdue members.</p>
-                  </div>
-                  <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <input type="checkbox" name="autoMessagingEnabled" checked={profile.autoMessagingEnabled || false} onChange={handleChange} style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }} />
-                    <div onClick={() => setProfile(p => ({ ...p, autoMessagingEnabled: !p.autoMessagingEnabled }))}
-                      style={{
-                        width: '44px', height: '24px', borderRadius: '99px', cursor: 'pointer',
-                        background: profile.autoMessagingEnabled ? '#0070c4' : '#1a2540',
-                        position: 'relative', transition: 'background 0.2s ease',
-                        border: profile.autoMessagingEnabled ? '1px solid #00d4ff40' : '1px solid #1a2540'
-                      }}>
-                      <div style={{
-                        position: 'absolute', top: '2px',
-                        left: profile.autoMessagingEnabled ? '22px' : '2px',
-                        width: '18px', height: '18px', borderRadius: '50%',
-                        background: 'white', transition: 'left 0.2s ease',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.3)'
-                      }} />
+                {!isPro ? (
+                  <UpgradeBadge message="Upgrade to Pro or Pro Plus to build custom plans." />
+                ) : (
+                  <div className="space-y-4">
+                    {(profile.packages || []).length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '20px', background: '#080d14', borderRadius: '12px', border: '1px dashed #1a2540' }}>
+                        <p style={{ fontSize: '13px', color: '#475569' }}>No custom packages created yet.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3">
+                        {profile.packages.map(p => (
+                          <div key={p.id} style={{ background: '#080d14', border: '1px solid #1a2540', borderRadius: '12px', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div className="flex items-center gap-3">
+                              <div style={{ width: '4px', height: '32px', background: p.badgeColor, borderRadius: '4px' }} />
+                              <div>
+                                <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>{p.name}</h4>
+                                <p style={{ fontSize: '11px', color: '#475569' }}>Rs {p.price} • {p.duration} • {members.filter(m => m.packageId === p.id).length} members</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => openPackageModal(p)} style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}><Edit2 size={16} /></button>
+                              <button onClick={() => deletePackage(p.id)} style={{ color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ marginTop: '16px' }}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span style={{ fontSize: '11px', color: '#475569', fontWeight: 600 }}>PACKAGE LIMITS</span>
+                        <span style={{ fontSize: '11px', color: '#475569', fontWeight: 600 }}>{profile.packages?.length || 0} / {pkg === 'pro_plus' ? '7' : '3'}</span>
+                      </div>
+                      <div style={{ height: '4px', background: '#1a2540', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${((profile.packages?.length || 0) / (pkg === 'pro_plus' ? 7 : 3)) * 100}%`, background: 'linear-gradient(90deg, #0070c4, #00d4ff)', transition: 'width 0.3s ease' }} />
+                      </div>
                     </div>
-                  </label>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-                    Reminder Intervals (Days After Due)
-                  </label>
-                  <input type="text" value={profile.reminderIntervals?.join(', ') || ''} onChange={handleIntervalChange} className="input-field" placeholder="e.g. 1, 3, 7" />
-                  <p style={{ fontSize: '12px', color: '#334155', marginTop: '6px' }}>Comma-separated days to send reminders after the due date.</p>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Message Template */}
-          <div className="card">
-            <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
-              <div style={{ background: 'rgba(16,185,129,0.15)', padding: '8px', borderRadius: '10px' }}>
-                <SettingsIcon size={20} color="#34d399" />
-              </div>
-              <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Message Template</h2>
-            </div>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-              {['{name}', '{amount}', '{date}'].map(tag => (
-                <span key={tag} style={{ background: '#131f30', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', color: '#00d4ff', fontFamily: 'monospace', border: '1px solid #1a2540' }}>{tag}</span>
-              ))}
-            </div>
-
-            <textarea
-              name="template"
-              value={profile.template || ''}
-              onChange={handleChange}
-              className="input-field"
-              style={{ height: '120px', resize: 'vertical', marginBottom: '12px', opacity: isPro ? 1 : 0.5 }}
-              placeholder="Hi {name}, your gym fee is due..."
-              disabled={!isPro}
-            />
-
-            {!isPro && (
-              <UpgradeBadge message="Upgrade to Pro or Pro Plus to edit your WhatsApp message template." />
-            )}
-
-            <div style={{ background: '#080d14', padding: '12px 16px', borderRadius: '10px', border: '1px solid #1a2540', marginTop: '12px' }}>
-              <h4 style={{ fontSize: '10px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Live Preview</h4>
-              <p style={{ fontSize: '13px', color: '#94a3b8', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {(profile.template || '').replace('{name}', 'Ali').replace('{amount}', '5000').replace('{date}', 'Oct 15') || 'No template set.'}
-              </p>
-            </div>
-          </div>
-
-          {/* Payment Collection */}
-          <div className="card">
-            <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
-              <div style={{ background: 'rgba(139,92,246,0.15)', padding: '8px', borderRadius: '10px' }}>
-                <Wallet size={20} color="#a78bfa" />
-              </div>
-              <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Payment Collection Settings</h2>
-            </div>
-
-            {!isGrowth ? (
-              <UpgradeBadge message="Upgrade to Growth, Pro or Pro Plus to configure payment collection." />
-            ) : (
-              <>
-                <p style={{ fontSize: '13px', color: '#475569', marginBottom: '16px' }}>Choose payment methods and update receiving details.</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
-                  {['easypaisa', 'jazzcash', 'bank'].map(method => (
-                    <button key={method} type="button" onClick={() => toggleMethod(method)} style={{
-                      padding: '6px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
-                      cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'Syne, sans-serif',
-                      ...(profile.paymentSettings?.methods?.includes(method)
-                        ? { background: 'rgba(0,112,196,0.2)', color: '#00d4ff', border: '1px solid rgba(0,212,255,0.3)' }
-                        : { background: '#080d14', color: '#475569', border: '1px solid #1a2540' })
-                    }}>
-                      {method.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-
-                {profile.paymentSettings?.methods?.includes('easypaisa') && (
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>EasyPaisa Number</label>
-                    <input type="text" className="input-field" value={profile.paymentSettings?.easypaisaNumber || ''} onChange={e => handlePaymentField('easypaisaNumber', e.target.value)} placeholder="03XXXXXXXXX" />
                   </div>
                 )}
+              </div>
 
-                {profile.paymentSettings?.methods?.includes('jazzcash') && (
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>JazzCash Number</label>
-                    <input type="text" className="input-field" value={profile.paymentSettings?.jazzcashNumber || ''} onChange={e => handlePaymentField('jazzcashNumber', e.target.value)} placeholder="03XXXXXXXXX" />
+              {/* Automated Reminders */}
+              <div className="card">
+                <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
+                  <div style={{ background: 'rgba(251,191,36,0.15)', padding: '8px', borderRadius: '10px' }}>
+                    <Bell size={20} color="#fbbf24" />
                   </div>
-                )}
+                  <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Automated Reminders</h2>
+                </div>
 
-                {profile.paymentSettings?.methods?.includes('bank') && (
+                {!isGrowth ? (
+                  <UpgradeBadge message="Upgrade to enable automated reminders." />
+                ) : (
                   <>
-                    <div style={{ marginBottom: '12px' }}>
-                      <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Bank Account Title</label>
-                      <input type="text" className="input-field" value={profile.paymentSettings?.bankTitle || ''} onChange={e => handlePaymentField('bankTitle', e.target.value)} placeholder="Account title" />
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 style={{ fontWeight: 600, color: '#e2e8f0', fontSize: '14px' }}>Enable Auto-Messaging</h4>
+                        <p style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>Automatically send reminders daily for overdue members.</p>
+                      </div>
+                      <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <input type="checkbox" name="autoMessagingEnabled" checked={profile.autoMessagingEnabled || false} onChange={handleChange} style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }} />
+                        <div onClick={() => setProfile(p => ({ ...p, autoMessagingEnabled: !p.autoMessagingEnabled }))} style={{ width: '44px', height: '24px', borderRadius: '99px', cursor: 'pointer', background: profile.autoMessagingEnabled ? '#0070c4' : '#1a2540', position: 'relative', transition: 'background 0.2s ease', border: profile.autoMessagingEnabled ? '1px solid #00d4ff40' : '1px solid #1a2540' }}>
+                          <div style={{ position: 'absolute', top: '2px', left: profile.autoMessagingEnabled ? '22px' : '2px', width: '18px', height: '18px', borderRadius: '50%', background: 'white', transition: 'left 0.2s ease', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+                        </div>
+                      </label>
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Bank IBAN</label>
-                      <input type="text" className="input-field" value={profile.paymentSettings?.bankIban || ''} onChange={e => handlePaymentField('bankIban', e.target.value)} placeholder="PKXX...." />
+                      <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Reminder Intervals (Days After Due)</label>
+                      <input type="text" value={profile.reminderIntervals?.join(', ') || ''} onChange={handleIntervalChange} className="input-field" placeholder="e.g. 1, 3, 7" />
                     </div>
                   </>
                 )}
-              </>
-            )}
+              </div>
+
+              {/* Message Template */}
+              <div className="card">
+                <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
+                  <div style={{ background: 'rgba(16,185,129,0.15)', padding: '8px', borderRadius: '10px' }}>
+                    <SettingsIcon size={20} color="#34d399" />
+                  </div>
+                  <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Message Template</h2>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                  {['{name}', '{amount}', '{date}'].map(tag => (
+                    <span key={tag} style={{ background: '#131f30', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', color: '#00d4ff', fontFamily: 'monospace', border: '1px solid #1a2540' }}>{tag}</span>
+                  ))}
+                </div>
+                <textarea name="template" value={profile.template || ''} onChange={handleChange} className="input-field" style={{ height: '120px', resize: 'vertical', marginBottom: '12px', opacity: isPro ? 1 : 0.5 }} placeholder="Hi {name}, your gym fee is due..." disabled={!isPro} />
+              </div>
+
+              {/* Payment Settings */}
+              <div className="card">
+                <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
+                  <div style={{ background: 'rgba(139,92,246,0.15)', padding: '8px', borderRadius: '10px' }}>
+                    <Wallet size={20} color="#a78bfa" />
+                  </div>
+                  <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Payment Settings</h2>
+                </div>
+
+                {!isGrowth ? (
+                  <UpgradeBadge message="Upgrade to configure payment collection." />
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                      {['easypaisa', 'jazzcash', 'bank'].map(method => (
+                        <button key={method} type="button" onClick={() => toggleMethod(method)} style={{ padding: '6px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'Syne, sans-serif', ...(profile.paymentSettings?.methods?.includes(method) ? { background: 'rgba(0,112,196,0.2)', color: '#00d4ff', border: '1px solid rgba(0,212,255,0.3)' } : { background: '#080d14', color: '#475569', border: '1px solid #1a2540' }) }}>{method.toUpperCase()}</button>
+                      ))}
+                    </div>
+
+                    {profile.paymentSettings?.methods?.includes('easypaisa') && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>EasyPaisa Number</label>
+                        <input type="text" className="input-field" value={profile.paymentSettings?.easypaisaNumber || ''} onChange={e => handlePaymentField('easypaisaNumber', e.target.value)} placeholder="03XXXXXXXXX" />
+                      </div>
+                    )}
+                    {profile.paymentSettings?.methods?.includes('jazzcash') && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>JazzCash Number</label>
+                        <input type="text" className="input-field" value={profile.paymentSettings?.jazzcashNumber || ''} onChange={e => handlePaymentField('jazzcashNumber', e.target.value)} placeholder="03XXXXXXXXX" />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Package Modal */}
       {showPackageModal && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
-          background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(8px)'
-        }}>
-          <div className="card" style={{ maxWidth: '480px', width: '100%', border: '1px solid #1a2540', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-            <div className="flex items-center justify-between mb-6 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
-              <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#f1f5f9' }}>
-                {editingPackage ? 'Edit Package' : 'Create Package'}
-              </h2>
-              <button 
-                onClick={() => setShowPackageModal(false)} 
-                style={{ 
-                  color: '#475569', background: 'rgba(255,255,255,0.05)', 
-                  border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '8px',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-              >
-                <Plus size={20} style={{ transform: 'rotate(45deg)' }} />
-              </button>
-            </div>
-            
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(8px)' }}>
+          <div className="card" style={{ maxWidth: '480px', width: '100%', border: '1px solid #1a2540' }}>
+            <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#f1f5f9', marginBottom: '20px' }}>{editingPackage ? 'Edit Package' : 'Create Package'}</h2>
             <div className="space-y-4">
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Package Name</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  placeholder="e.g. Premium Membership" 
-                  value={packageForm.name}
-                  onChange={e => setPackageForm(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Description / Benefits (One per line)</label>
-                <textarea 
-                  className="input-field" 
-                  style={{ height: '80px', resize: 'none' }}
-                  placeholder="✓ Full Gym Access&#10;✓ Sauna Included"
-                  value={packageForm.description}
-                  onChange={e => setPackageForm(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Duration</label>
-                  <select 
-                    className="input-field"
-                    value={packageForm.duration}
-                    onChange={e => setPackageForm(prev => ({ ...prev, duration: e.target.value }))}
-                  >
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly (3 months)</option>
-                    <option value="half-yearly">Half-Yearly (6 months)</option>
-                    <option value="yearly">Yearly (12 months)</option>
-                    <option value="custom">Custom Days</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Price (PKR)</label>
-                  <input 
-                    type="number" 
-                    className="input-field" 
-                    placeholder="5000"
-                    value={packageForm.price}
-                    onChange={e => setPackageForm(prev => ({ ...prev, price: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              {packageForm.duration === 'custom' && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Duration in Days</label>
-                  <input 
-                    type="number" 
-                    className="input-field" 
-                    placeholder="e.g. 45"
-                    value={packageForm.customDays}
-                    onChange={e => setPackageForm(prev => ({ ...prev, customDays: e.target.value }))}
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Accent Color</label>
-                  <div className="flex gap-2">
-                    {['#00d4ff', '#fbbf24', '#a78bfa', '#34d399', '#f87171'].map(color => (
-                      <button 
-                        key={color}
-                        type="button"
-                        onClick={() => setPackageForm(prev => ({ ...prev, badgeColor: color }))}
-                        style={{ 
-                          width: '28px', height: '28px', borderRadius: '8px', background: color,
-                          border: packageForm.badgeColor === color ? '2px solid white' : '1px solid rgba(255,255,255,0.1)',
-                          transition: 'all 0.2s ease',
-                          transform: packageForm.badgeColor === color ? 'scale(1.1)' : 'scale(1)',
-                          boxShadow: packageForm.badgeColor === color ? `0 0 12px ${color}80` : 'none'
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center justify-end">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Is Active</span>
-                    <div 
-                      onClick={() => setPackageForm(prev => ({ ...prev, isActive: !prev.isActive }))}
-                      style={{
-                        width: '40px', height: '20px', borderRadius: '99px',
-                        background: packageForm.isActive ? 'rgba(0,212,255,0.2)' : '#1a2540',
-                        position: 'relative', border: '1px solid ' + (packageForm.isActive ? 'rgba(0,212,255,0.3)' : '#1a2540'),
-                        transition: 'all 0.3s ease'
-                      }}>
-                      <div style={{
-                        position: 'absolute', top: '2px', left: packageForm.isActive ? '22px' : '2px',
-                        width: '14px', height: '14px', borderRadius: '50%', background: packageForm.isActive ? '#00d4ff' : '#475569',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        boxShadow: packageForm.isActive ? '0 0 8px #00d4ff80' : 'none'
-                      }} />
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 mt-8 pt-4" style={{ borderTop: '1px solid #1a2540' }}>
-                <button type="button" className="btn-secondary px-6" onClick={() => setShowPackageModal(false)}>Cancel</button>
-                <button type="button" className="btn-primary px-8" onClick={handleSavePackage}>
-                  {editingPackage ? 'Update Package' : 'Create Package'}
-                </button>
+              <input type="text" className="input-field" placeholder="Package Name" value={packageForm.name} onChange={e => setPackageForm(prev => ({ ...prev, name: e.target.value }))} />
+              <textarea className="input-field" placeholder="Description" value={packageForm.description} onChange={e => setPackageForm(prev => ({ ...prev, description: e.target.value }))} />
+              <input type="number" className="input-field" placeholder="Price (PKR)" value={packageForm.price} onChange={e => setPackageForm(prev => ({ ...prev, price: e.target.value }))} />
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" className="btn-secondary" onClick={() => setShowPackageModal(false)}>Cancel</button>
+                <button type="button" className="btn-primary" onClick={handleSavePackage}>{editingPackage ? 'Update' : 'Create'}</button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

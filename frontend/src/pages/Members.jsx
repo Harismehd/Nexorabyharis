@@ -51,6 +51,20 @@ export default function Members() {
 
   const handleAddMember = async (e) => {
     e.preventDefault();
+    
+    // Pakistani Phone Validation (03xx-xxxxxxx or +92xxxxxxxxxx)
+    const phoneRegex = /^(03[0-9]{9}|\+92[0-9]{10})$/;
+    if (!phoneRegex.test(newMember.phone.replace(/[\s-]/g, ''))) {
+      return toast.error('Invalid Pakistani phone number (03XXXXXXXXX)');
+    }
+
+    // Gmail Validation (Optional but recommended for quality)
+    if (newMember.email && !newMember.email.toLowerCase().endsWith('@gmail.com')) {
+       // Just a warning or strict? Let's make it a warning for now but inform.
+       // toast.error('Only @gmail.com addresses are accepted for automation');
+       // return;
+    }
+
     try {
       const res = await api.post('/members', { gymKey, ...newMember });
       toast.success(res.data.message || 'Member added');
@@ -213,10 +227,14 @@ export default function Members() {
           <p style={{ fontFamily: 'Syne, sans-serif', fontWeight: 600 }}>No members found</p>
         </div>
       ) : (
-        <div style={{
+        <div className="custom-scrollbar" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '16px'
+          gap: '16px',
+          maxHeight: 'calc(100vh - 320px)',
+          overflowY: 'auto',
+          paddingRight: '8px',
+          paddingBottom: '20px'
         }}>
           {filteredMembers.map((m, index) => {
             const isPaid = m.status === 'Active';

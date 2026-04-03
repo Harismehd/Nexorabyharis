@@ -9,10 +9,27 @@ export default function FinanceGuard() {
   const { gymKey, packageTier } = useAuth();
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await api.get(`/finance/guard?gymKey=${gymKey}`);
+        setReport(res.data);
+      } catch (err) {
+        if (packageTier === 'pro_plus') {
+          toast.error(err.response?.data?.error || 'Failed to load finance guard');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [gymKey, packageTier]);
+
   // Finance Guard is now accessible without a PIN
   const isLocked = packageTier !== 'pro_plus';
 
-  const riskColor =kColor =
+  const riskColor =
     report?.riskScore >= 70 ? 'rgba(244, 63, 94, 0.2)' :
     report?.riskScore >= 40 ? 'rgba(245, 158, 11, 0.2)' :
     'rgba(16, 185, 129, 0.2)';
