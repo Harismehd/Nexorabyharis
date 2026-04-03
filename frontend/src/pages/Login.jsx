@@ -50,101 +50,91 @@ export default function Login() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#080d14',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '24px', fontFamily: 'DM Sans, sans-serif', position: 'relative', overflow: 'hidden'
+      minHeight: '100vh', background: '#050a10',
+      display: 'flex', flexDirection: 'row',
+      fontFamily: 'DM Sans, sans-serif', overflow: 'hidden'
     }}>
-      {/* Background effects */}
+      {/* Left Pane: Visuals & Mission */}
       <div style={{
-        position: 'absolute', top: '-20%', left: '-10%',
-        width: '600px', height: '600px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(0,112,196,0.08) 0%, transparent 70%)',
-        pointerEvents: 'none'
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '-20%', right: '-10%',
-        width: '500px', height: '500px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(0,212,255,0.05) 0%, transparent 70%)',
-        pointerEvents: 'none'
-      }} />
-
-      <div style={{
-        width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1,
-        animation: 'fadeSlideIn 0.6s ease forwards'
+        flex: 1, position: 'relative', display: 'flex', alignItems: 'flex-end', padding: '60px',
+        background: `url("/C:/Users/sa/.gemini/antigravity/brain/7ccdd7c2-88aa-459f-a576-08e0b9838f61/nexora_login_visual_1775220286456.png")`,
+        backgroundSize: 'cover', backgroundPosition: 'center'
       }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', position: 'relative', marginBottom: '20px' }}>
-            <div style={{
-              position: 'absolute', inset: '-4px', borderRadius: '20px',
-              background: 'linear-gradient(135deg, #0070c4, #00d4ff)',
-              filter: 'blur(12px)', opacity: 0.4
-            }} />
-            <div style={{
-              position: 'relative', width: '64px', height: '64px',
-              background: 'linear-gradient(135deg, #0a1018, #0e1622)',
-              border: '1px solid rgba(0,212,255,0.2)',
-              borderRadius: '18px', display: 'flex',
-              alignItems: 'center', justifyContent: 'center'
-            }}>
-              <Dumbbell size={28} color="#00d4ff" />
-            </div>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #050a10 15%, transparent 60%)' }} />
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: '500px' }}>
+          <div style={{ display: 'inline-block', padding: '6px 12px', background: 'rgba(0, 212, 255, 0.1)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '8px', color: '#00d4ff', fontSize: '10px', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '16px' }}>
+            Mission: Zero Leakage
           </div>
-          <h1 style={{
-            fontFamily: 'Syne, sans-serif', fontWeight: 800,
-            fontSize: '32px', color: '#f1f5f9', margin: 0, lineHeight: 1
-          }}>
-            Nexora
+          <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '48px', color: '#fff', lineHeight: 1.1, margin: '0 0 16px 0' }}>
+            The Apex of Gym <span style={{ color: '#00d4ff' }}>Intelligence.</span>
+          </h2>
+          <p style={{ color: '#94a3b8', fontSize: '16px', lineHeight: 1.6, margin: 0 }}>
+            Hunting for WhatsApp screenshots and paper registers is a relic of the past. Nexora automates your revenue integrity so you can focus on scale, not math.
+          </p>
+        </div>
+      </div>
+
+      {/* Right Pane: Login & Roast */}
+      <div style={{
+        width: '500px', background: '#080d14', borderLeft: '1px solid #1e293b',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px', position: 'relative'
+      }}>
+        <div style={{ position: 'absolute', top: '40px', right: '40px' }}>
+           <Dumbbell size={32} color="#1e293b" />
+        </div>
+
+        <div style={{ marginBottom: '40px' }}>
+          <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '28px', color: '#f1f5f9', margin: 0 }}>
+            Authorize Access
           </h1>
-          <p style={{ color: '#475569', marginTop: '8px', fontSize: '14px' }}>
-            Next-Level Gym Intelligence
+          <p style={{ color: '#475569', marginTop: '6px', fontSize: '14px' }}>
+            Welcome back to the future of fitness management.
           </p>
         </div>
 
         {/* Card */}
         <div style={{
           background: '#0e1622', border: '1px solid #1a2540',
-          borderRadius: '20px', padding: '32px',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+          borderRadius: '24px', padding: '32px',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.5)', marginBottom: '40px'
         }}>
           {!adminStage ? (
-            <form onSubmit={handleContinue} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <form onSubmit={handleContinue} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-                  Gym Key
+                <label style={{ display: 'block', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
+                  Tenant Identifier
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="Enter your gym key or ADMIN"
+                  placeholder="GYM KEY or ADMIN"
                   value={gymKey}
                   onChange={e => setKey(e.target.value.toUpperCase())}
+                  style={{ height: '54px', padding: '0 20px' }}
                 />
               </div>
 
               {normalizedGymKey !== 'ADMIN' && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-                    Password
+                  <label style={{ display: 'block', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
+                    Access Token
                   </label>
                   <input
                     type="password"
                     className="input-field"
-                    placeholder="Enter your password"
+                    placeholder="••••••••"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
+                    style={{ height: '54px', padding: '0 20px' }}
                   />
-                  <p style={{ fontSize: '12px', color: '#334155', marginTop: '8px' }}>
-                    Use credentials provided by your administrator.
-                  </p>
                 </div>
               )}
 
-              <button type="submit" className="btn-primary" disabled={loading} style={{ justifyContent: 'center', padding: '14px' }}>
+              <button type="submit" className="btn-primary" disabled={loading} style={{ justifyContent: 'center', padding: '16px', fontSize: '14px', fontWeight: 900 }}>
                 {normalizedGymKey === 'ADMIN' ? (
                   <><ShieldCheck size={18} /> Continue to Admin</>
-                ) : loading ? 'Authenticating...' : (
-                  <><ArrowRight size={18} /> Login Securely</>
+                ) : loading ? 'Validating...' : (
+                  <><ArrowRight size={18} /> Enter Dashboard</>
                 )}
               </button>
             </form>
@@ -158,18 +148,19 @@ export default function Login() {
                 fontFamily: 'DM Sans, sans-serif'
               }}>
                 <ShieldCheck size={16} style={{ display: 'inline', marginRight: '8px' }} />
-                Super Admin key accepted. Enter master password.
+                Root access requested.
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-                  Master Password
+                <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+                  God Mode Password
                 </label>
                 <input
                   type="password"
                   className="input-field"
-                  placeholder="Enter master password"
+                  placeholder="Master Key"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
+                  style={{ height: '54px' }}
                 />
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
@@ -177,15 +168,42 @@ export default function Login() {
                   Back
                 </button>
                 <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 2, justifyContent: 'center' }}>
-                  {loading ? 'Authenticating...' : 'Enter God Mode'}
+                  {loading ? 'Entering...' : 'Confirm Access'}
                 </button>
               </div>
             </form>
           )}
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: '#1e293b' }}>
-          Nexora © 2026 — Powered by Haris Mehmood
+        {/* Roast Section */}
+        <div style={{ borderTop: '1px solid #1e293b', paddingTop: '32px' }}>
+           <h4 style={{ color: '#f1f5f9', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>
+             Nexora Advantage
+           </h4>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                 <div style={{ color: '#00d4ff' }}>★</div>
+                 <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>
+                   <strong style={{ color: '#f1f5f9' }}>End the Scroll:</strong> Stop hunting through WhatsApp for payment screenshots. We verify them instantly.
+                 </p>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                 <div style={{ color: '#00d4ff' }}>★</div>
+                 <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>
+                   <strong style={{ color: '#f1f5f9' }}>Kill the Museum:</strong> Paper registers belong in a museum, not your gym desk. Nexora brings cloud-native flow.
+                 </p>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                 <div style={{ color: '#00d4ff' }}>★</div>
+                 <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>
+                   <strong style={{ color: '#f1f5f9' }}>Ghost Hunter:</strong> Legacy systems show members. Nexora finds "Ghost Actives" and recovers stolen revenue.
+                 </p>
+              </div>
+           </div>
+        </div>
+
+        <p style={{ position: 'absolute', bottom: '40px', left: '60px', fontSize: '11px', color: '#1e293b', fontWeight: 700 }}>
+          NEXORA OPERATING SYSTEM © 2026 — POWERED BY HARIS MEHMOOD
         </p>
       </div>
 
@@ -193,6 +211,21 @@ export default function Login() {
         @keyframes fadeSlideIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        .input-field {
+          background: #050a10 !important;
+          border: 1px solid #1e293b !important;
+          color: #fff !important;
+          transition: all 0.3s ease;
+        }
+        .input-field:focus {
+          border-color: #00d4ff !important;
+          box-shadow: 0 0 15px rgba(0, 212, 255, 0.1) !important;
+        }
+        @media (max-width: 1024px) {
+          div[style*="flexDirection: row"] { flexDirection: column !important; }
+          div[style*="width: 500px"] { width: 100% !important; border-left: none !important; border-top: 1px solid #1e293b !important; }
+          div[style*="flex: 1"] { display: none !important; }
         }
       `}</style>
     </div>

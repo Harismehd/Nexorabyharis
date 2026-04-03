@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { ShieldAlert, Power, Users, KeyRound, Ban, CheckCircle2, LogOut, Plus, Megaphone, Trash2, Radio, Activity, Monitor, Lock, RefreshCw } from 'lucide-react';
+import { ShieldAlert, Power, Users, KeyRound, Ban, LogOut, Plus, Megaphone, Trash2, Radio, Activity, Monitor, RefreshCw } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseClient = createClient(
@@ -18,7 +18,6 @@ export default function MasterAdmin() {
   const [newPassword, setNewPassword] = useState('');
   const [newPackage, setNewPackage] = useState('starter');
   const [newDeviceLimit, setNewDeviceLimit] = useState(5);
-  const [newPin, setNewPin] = useState('');
   const [creating, setCreating] = useState(false);
   const [broadcasts, setBroadcasts] = useState([]);
   const [broadcastForm, setBroadcastForm] = useState({
@@ -28,7 +27,6 @@ export default function MasterAdmin() {
   const [sending, setSending] = useState(false);
   const [msgStats, setMsgStats] = useState([]);
 
-  // Helper config for authorized admin calls
   const getAdminHeaders = () => ({
     headers: { 'x-admin-key': localStorage.getItem('adminKey') }
   });
@@ -43,7 +41,7 @@ export default function MasterAdmin() {
     } catch (err) {
       toast.error('Failed to load God Mode dashboard');
       if (err.response?.status === 403) {
-         logout(); // Bad admin key somehow
+         logout();
       }
     } finally {
       setLoading(false);
@@ -64,7 +62,6 @@ export default function MasterAdmin() {
         .select('gym_key, created_at')
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
       
-      // Group by gym_key and date
       const stats = {};
       (data || []).forEach(job => {
         const date = job.created_at?.slice(0, 10);
@@ -123,10 +120,6 @@ export default function MasterAdmin() {
     fetchMsgStats();
   }, []);
 
-  const generateRandomPin = () => {
-    setNewPin(Math.floor(1000 + Math.random() * 9000).toString());
-  };
-
   const handleCreateGym = async (e) => {
     e.preventDefault();
     if (!newKey || !newPassword) return toast.error('Fill both fields');
@@ -136,13 +129,11 @@ export default function MasterAdmin() {
         gymKey: newKey, 
         password: newPassword, 
         package: newPackage,
-        deviceLimit: newDeviceLimit,
-        securityPassword: newPin || '1234'
+        deviceLimit: newDeviceLimit
       }, getAdminHeaders());
       toast.success('New Gym Key minted successfully');
       setNewKey('');
       setNewPassword('');
-      setNewPin('');
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to generate key');
@@ -209,7 +200,6 @@ export default function MasterAdmin() {
     <div className="min-h-screen bg-slate-950 text-slate-200 p-8 font-mono" style={{ background: 'radial-gradient(circle at top right, #0f172a, #020617)' }}>
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Header */}
         <div className="flex justify-between items-center border-b border-slate-800 pb-6">
            <div className="flex items-center gap-4">
               <div className="bg-red-500/10 p-4 rounded-2xl border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
@@ -229,10 +219,8 @@ export default function MasterAdmin() {
            </button>
         </div>
 
-        {/* Top Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
            
-           {/* Kill Switch Card */}
            <div className={`lg:col-span-4 p-8 rounded-2xl border ${isOffline ? 'bg-red-950/20 border-red-500/30' : 'bg-slate-900/50 border-slate-800'} backdrop-blur-md`}>
               <div className="flex justify-between items-start mb-6">
                  <div>
@@ -247,7 +235,7 @@ export default function MasterAdmin() {
                  </span>
               </div>
               <p className="text-xs text-slate-400 mb-8 leading-relaxed">
-                 Engaging the Kill Switch immediately terminates all active tenant sessions and prevents any new API handshakes. Use only in event of critical breach or global maintenance.
+                 Engaging the Kill Switch immediately terminates all active tenant sessions and prevents any new API handshakes.
               </p>
               <button 
                 onClick={handleGlobalShutdown}
@@ -261,7 +249,6 @@ export default function MasterAdmin() {
               </button>
            </div>
            
-           {/* Key Generator Card */}
            <div className="lg:col-span-8 p-8 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md">
               <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
                  <KeyRound className="text-blue-400" /> 
@@ -274,7 +261,7 @@ export default function MasterAdmin() {
                     <input 
                       required
                       type="text" 
-                      placeholder="GYM IDENTIFIER (e.g. ULTIMATE-FIT)" 
+                      placeholder="GYM IDENTIFIER" 
                       value={newKey}
                       onChange={e => setNewKey(e.target.value.toUpperCase().replace(/\s/g, '-'))}
                       className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 uppercase text-sm font-bold"
@@ -289,7 +276,7 @@ export default function MasterAdmin() {
                     />
                  </div>
                  
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <select
                       className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm appearance-none"
                       value={newPackage}
@@ -305,32 +292,11 @@ export default function MasterAdmin() {
                       <Monitor className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
                       <input 
                         type="number"
-                        placeholder="Device Limit"
+                        placeholder="Node Device Limit"
                         value={newDeviceLimit}
                         onChange={e => setNewDeviceLimit(Number(e.target.value))}
                         className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 pl-10 w-full text-white focus:outline-none focus:border-blue-500 text-sm"
                       />
-                    </div>
-
-                    <div className="relative flex gap-2">
-                      <div className="flex-1 relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
-                        <input 
-                          type="text"
-                          maxLength={4}
-                          placeholder="Pin (1234)"
-                          value={newPin}
-                          onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))}
-                          className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 pl-10 w-full text-white focus:outline-none focus:border-blue-500 text-sm font-bold tracking-[0.3em]"
-                        />
-                      </div>
-                      <button 
-                        type="button" 
-                        onClick={generateRandomPin}
-                        className="bg-slate-800 p-3 rounded-xl border border-slate-700 hover:bg-slate-700 transition-colors"
-                      >
-                        <RefreshCw size={16} />
-                      </button>
                     </div>
                  </div>
 
@@ -345,7 +311,6 @@ export default function MasterAdmin() {
            </div>
         </div>
 
-        {/* Tenant Roster */}
         <div className="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md">
            <div className="flex items-center justify-between mb-8">
              <div>
@@ -368,8 +333,8 @@ export default function MasterAdmin() {
                <thead>
                  <tr className="border-b border-slate-800 text-slate-500 text-[10px] font-black uppercase tracking-widest">
                    <th className="py-4 px-4">Gym Identity</th>
-                   <th className="py-4 px-4">Quota</th>
-                   <th className="py-4 px-4">Device/Pin</th>
+                   <th className="py-4 px-4">Node Quota</th>
+                   <th className="py-4 px-4 text-center">Instance Limit</th>
                    <th className="py-4 px-4 text-center">Plan Override</th>
                    <th className="py-4 px-4 text-right">Sanctions</th>
                  </tr>
@@ -394,26 +359,14 @@ export default function MasterAdmin() {
                              </div>
                           </td>
                           <td className="py-5 px-4">
-                             <div className="flex flex-col gap-2">
-                               <div className="flex items-center gap-2">
-                                  <Monitor size={12} className="text-slate-600" />
-                                  <input 
-                                    type="number"
-                                    defaultValue={g.deviceLimit || 5}
-                                    onBlur={(e) => handleUpdateGymSecurity(g.gymKey, 'deviceLimit', Number(e.target.value))}
-                                    className="bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-[11px] w-12 focus:border-blue-500 focus:outline-none"
-                                  />
-                               </div>
-                               <div className="flex items-center gap-2">
-                                  <Lock size={12} className="text-slate-600" />
-                                  <input 
-                                    type="text"
-                                    maxLength={4}
-                                    defaultValue={g.securityPassword || '1234'}
-                                    onBlur={(e) => handleUpdateGymSecurity(g.gymKey, 'securityPassword', e.target.value)}
-                                    className="bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-[11px] w-14 font-bold tracking-widest focus:border-blue-500 focus:outline-none"
-                                  />
-                               </div>
+                             <div className="flex items-center justify-center gap-2">
+                                <Monitor size={12} className="text-slate-600" />
+                                <input 
+                                  type="number"
+                                  defaultValue={g.deviceLimit || 5}
+                                  onBlur={(e) => handleUpdateGymSecurity(g.gymKey, 'deviceLimit', Number(e.target.value))}
+                                  className="bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-[11px] w-12 focus:border-blue-500 focus:outline-none"
+                                />
                              </div>
                           </td>
                           <td className="py-5 px-4">
@@ -453,10 +406,8 @@ export default function MasterAdmin() {
            </div>
         </div>
 
-        {/* Broadcast & Stats Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             
-            {/* Broadcast Control */}
             <div className="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md">
               <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
                 <Radio className="text-cyan-400" /> Core Broadcast
@@ -529,7 +480,6 @@ export default function MasterAdmin() {
               </div>
             </div>
 
-            {/* Network Volume */}
             <div className="p-8 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-md">
               <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
                 <Activity className="text-purple-400" /> Traffic Analysis
@@ -584,4 +534,4 @@ export default function MasterAdmin() {
       `}</style>
     </div>
   );
-}
+}

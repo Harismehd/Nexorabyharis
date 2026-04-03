@@ -43,7 +43,6 @@ export default async function handler(req, res) {
         isActive: g.isActive !== false, 
         package: g.package || 'starter', 
         deviceLimit: g.deviceLimit || 5, // Expose for UI
-        securityPassword: g.securityPassword || '1234', // Expose for UI
         whatsappStatus: g.whatsappStatus, 
         memberCount: db.members.filter(m => m.gymKey === g.gymKey).length 
       })) 
@@ -58,7 +57,6 @@ export default async function handler(req, res) {
         isActive: g.isActive !== false, 
         package: g.package || 'starter', 
         deviceLimit: g.deviceLimit || 5, // Expose for UI
-        securityPassword: g.securityPassword || '1234', // Expose for UI
         whatsappStatus: g.whatsappStatus, 
         memberCount: db.members.filter(m => m.gymKey === g.gymKey).length 
       })) 
@@ -102,8 +100,6 @@ export default async function handler(req, res) {
     
     if (field === 'deviceLimit') {
       db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
-    } else if (field === 'securityPassword') {
-      db.gyms[gymIndex].securityPassword = String(value).slice(0, 4);
     } else {
       db.gyms[gymIndex][field] = value;
     }

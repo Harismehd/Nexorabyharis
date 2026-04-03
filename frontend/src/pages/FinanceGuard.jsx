@@ -9,104 +9,10 @@ export default function FinanceGuard() {
   const { gymKey, packageTier } = useAuth();
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState(null);
-  const [isVerified, setIsVerified] = useState(false);
-  const [pin, setPin] = useState('');
-  const [verifying, setVerifying] = useState(false);
-
-  useEffect(() => {
-    const verified = sessionStorage.getItem(`nexora_verified_${gymKey}`);
-    const expiry = sessionStorage.getItem(`nexora_verified_expiry_${gymKey}`);
-    
-    if (verified === 'true' && expiry && Date.now() < parseInt(expiry)) {
-      setIsVerified(true);
-    }
-    
-    const load = async () => {
-      // Even if locked, we might want to load some blurred data for effect
-      // But the API currently rejects non-pro-plus
-      try {
-        const res = await api.get(`/finance/guard?gymKey=${gymKey}`);
-        setReport(res.data);
-      } catch (err) {
-        if (packageTier === 'pro_plus') {
-          toast.error(err.response?.data?.error || 'Failed to load finance guard');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [gymKey, packageTier]);
-
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    setVerifying(true);
-    try {
-      const res = await api.post('/auth/verify-pin', { gymKey, pin });
-      if (res.data.success) {
-        setIsVerified(true);
-        sessionStorage.setItem(`nexora_verified_${gymKey}`, 'true');
-        sessionStorage.setItem(`nexora_verified_expiry_${gymKey}`, (Date.now() + 30 * 60 * 1000).toString());
-        toast.success('Access Granted');
-      }
-    } catch (err) {
-      toast.error('Invalid Security PIN');
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', color: '#475569', fontFamily: 'Syne, sans-serif' }}>
-      Analyzing financial integrity...
-    </div>
-  );
-
-  // Task 1: Lock for non-Pro Plus
+  // Finance Guard is now accessible without a PIN
   const isLocked = packageTier !== 'pro_plus';
 
-  if (!isVerified && !isLocked) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '40px' }}>
-          <div style={{
-            width: '64px', height: '64px', borderRadius: '50%',
-            background: 'rgba(0, 212, 255, 0.1)', border: '1px solid rgba(0, 212, 255, 0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px',
-            boxShadow: '0 0 20px rgba(0, 212, 255, 0.2)'
-          }}>
-            <Lock size={28} color="#00d4ff" />
-          </div>
-          <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '22px', color: '#f1f5f9', marginBottom: '8px' }}>
-            Nexora Security
-          </h2>
-          <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '24px' }}>
-            Enter your 4-digit security password to access the Revenue Leak Guard.
-          </p>
-          <form onSubmit={handleVerify} className="space-y-4">
-            <input 
-              type="password" 
-              maxLength={4}
-              placeholder="••••"
-              className="input-field"
-              style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '12px', height: '60px' }}
-              value={pin}
-              onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
-              required
-            />
-            <button type="submit" className="btn-primary w-full py-4 text-sm font-extrabold" disabled={verifying}>
-              {verifying ? 'Verifying...' : 'Unlock Data'}
-            </button>
-          </form>
-          <p style={{ marginTop: '20px', fontSize: '11px', color: '#475569' }}>
-            Lost your password? Contact Master Admin.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const riskColor =
+  const riskColor =kColor =
     report?.riskScore >= 70 ? 'rgba(244, 63, 94, 0.2)' :
     report?.riskScore >= 40 ? 'rgba(245, 158, 11, 0.2)' :
     'rgba(16, 185, 129, 0.2)';

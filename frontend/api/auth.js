@@ -57,19 +57,7 @@ export default async function handler(req, res) {
   const db = await readDB();
   ensureSystem(db);
 
-  // 1. PIN Verification logic
-  if (url.includes('verify-pin')) {
-    const { gymKey, pin } = req.body;
-    const gym = db.gyms.find(g => g.gymKey === gymKey);
-    if (!gym) return res.status(404).json({ error: 'Gym not found' });
-    
-    if (gym.securityPassword === pin) {
-      return res.json({ success: true, message: 'Identity verified' });
-    }
-    return res.status(401).json({ error: 'Invalid security PIN' });
-  }
-
-  // 2. Normal Login logic
+  // 1. Normal Login logic
   const { gymKey, password } = req.body;
 
   if (gymKey === 'ADMIN') {

@@ -77,7 +77,6 @@ function ensureGymDefaults(gym) {
   if (typeof gym.isActive !== 'boolean') gym.isActive = true;
   if (!gym.package) gym.package = 'starter';
   if (gym.deviceLimit === undefined) gym.deviceLimit = 5;
-  if (!gym.securityPassword) gym.securityPassword = '0000';
   if (!gym.paymentSettings) {
     gym.paymentSettings = {
       methods: ['easypaisa'],
@@ -195,20 +194,6 @@ app.post('/api/auth/login', async (req, res) => {
   });
 });
 
-// Verify PIN for sensitive sections (Task 3)
-app.post('/api/auth/verify-pin', async (req, res) => {
-  const { gymKey, pin } = req.body;
-  const db = await readDB();
-  const gym = db.gyms.find(g => g.gymKey === gymKey);
-  if (!gym) return res.status(404).json({ error: 'Gym not found' });
-  
-  if (gym.securityPassword === pin) {
-    res.json({ success: true, message: 'Identity verified' });
-  } else {
-    res.status(401).json({ error: 'Invalid security PIN' });
-  }
-});
-
 // Middleware for Admin validation (Simplified for this architecture)
 const verifyAdmin = async (req, res, next) => {
   try {
@@ -252,7 +237,6 @@ app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
       isActive: g.isActive !== false, // Default to true
       package: g.package || 'starter',
       deviceLimit: g.deviceLimit || 5, // Task 4
-      securityPassword: g.securityPassword || '0000', // Task 3
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -268,7 +252,6 @@ app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
       isActive: g.isActive !== false,
       package: g.package || 'starter',
       deviceLimit: g.deviceLimit || 5,
-      securityPassword: g.securityPassword || '0000',
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -337,17 +320,6 @@ app.post('/api/admin/gyms/device-limit', verifyAdmin, async (req, res) => {
   res.json({ message: `Device limit updated to ${limit}` });
 });
 
-app.post('/api/admin/gyms/security-password', verifyAdmin, async (req, res) => {
-  const { gymKey, password } = req.body;
-  const db = await readDB();
-  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-
-  db.gyms[gymIndex].securityPassword = String(password).slice(0, 4);
-  await writeDB(db);
-  res.json({ message: `Security password updated` });
-});
-
 app.post('/api/admin/gyms/update', verifyAdmin, async (req, res) => {
   const { gymKey, field, value } = req.body;
   const db = await readDB();
@@ -357,8 +329,6 @@ app.post('/api/admin/gyms/update', verifyAdmin, async (req, res) => {
   // Dynamically update the field
   if (field === 'deviceLimit') {
     db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
-  } else if (field === 'securityPassword') {
-    db.gyms[gymIndex].securityPassword = String(value).slice(0, 4);
   } else {
     // Generic fallback for other fields if needed
     db.gyms[gymIndex][field] = value;
