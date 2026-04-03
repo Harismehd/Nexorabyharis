@@ -1,3 +1,7 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Dumbbell, ShieldCheck, HelpCircle, Check, Upload, ArrowLeft, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { supabase } from '../supabase';
 
 const Register = () => {

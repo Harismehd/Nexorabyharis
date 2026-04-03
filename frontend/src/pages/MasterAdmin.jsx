@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
 import { ShieldAlert, Power, Users, KeyRound, Ban, LogOut, Plus, Megaphone, Trash2, Radio, Activity, Monitor, RefreshCw } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 
 import { supabase } from '../supabase';
 
