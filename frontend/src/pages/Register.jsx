@@ -23,10 +23,10 @@ const Register = () => {
   const [submitted, setSubmitted] = useState(false);
 
   const pricingMap = {
-    'Starter': '5,999',
+    'Starter': '3,999',
     'Growth': '7,999',
     'Pro': '11,999',
-    'Pro Plus': '16,999'
+    'Pro Plus': '15,999'
   };
 
   const handleInputChange = (e) => {

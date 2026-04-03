@@ -26,16 +26,16 @@ const PackagesModal = ({ isOpen, onClose }) => {
   const packages = [
     {
       name: 'Starter',
-      price: '5,999',
-      original: '7,999',
+      price: '3,999',
+      original: '5,399',
       badge: 'Save 25%',
       color: '#94a3b8',
       features: [
-        { text: 'Up to 100 Members', included: true },
-        { text: 'WhatsApp Reminders', included: true },
-        { text: 'Finance Dashboard', included: true },
-        { text: 'CSV Exports', included: false },
-        { text: 'Finance Guard Suite', included: false },
+        { text: 'Basic Member Management', included: true },
+        { text: 'Manual Payment Entry', included: true },
+        { text: 'Basic WhatsApp Reminders', included: true },
+        { text: 'Payment Verification', included: false },
+        { text: 'Revenue Leak Guard', included: false },
       ],
       cta: 'Register Now'
     },
@@ -43,15 +43,14 @@ const PackagesModal = ({ isOpen, onClose }) => {
       name: 'Growth',
       price: '7,999',
       original: '10,699',
-      badge: 'Most Popular',
+      badge: 'Best Value',
       color: '#00d4ff',
-      isPopular: true,
       features: [
-        { text: 'Up to 300 Members', included: true },
-        { text: 'Auto Verification', included: true },
-        { text: 'CSV Exports', included: true },
-        { text: 'Finance Guard Lite', included: true },
-        { text: 'Priority WhatsApp Support', included: false },
+        { text: 'Everything in Starter', included: true },
+        { text: 'Payment Verification', included: true },
+        { text: 'Auto WhatsApp Reminders', included: true },
+        { text: 'Payment Collection Suite', included: true },
+        { text: 'CSV Exports', included: false },
       ],
       cta: 'Choose Growth'
     },
@@ -59,32 +58,33 @@ const PackagesModal = ({ isOpen, onClose }) => {
       name: 'Pro',
       price: '11,999',
       original: '15,999',
-      badge: 'Best Value',
+      badge: 'Most Popular',
       color: '#8b5cf6',
+      isPopular: true,
       features: [
-        { text: 'Up to 1000 Members', included: true },
-        { text: 'Advanced Analytics', included: true },
-        { text: 'Finance Guard Pro', included: true },
-        { text: 'Multi-Device Access', included: true },
-        { text: '24/7 Support', included: true },
+        { text: 'Everything in Growth', included: true },
+        { text: 'Full CSV Exports', included: true },
+        { text: 'Confirmation Messages', included: true },
+        { text: 'Custom Message Templates', included: true },
+        { text: 'Revenue Leak Guard', included: false },
       ],
       cta: 'Go Pro'
     },
     {
       name: 'Pro Plus',
-      price: '16,999',
-      original: '22,699',
+      price: '15,999',
+      original: '21,399',
       badge: 'Ultimate',
       color: '#f59e0b',
       limited: true,
       features: [
-        { text: 'Unlimited Members', included: true },
-        { text: 'Full Finance Guard', included: true },
+        { text: 'Everything in Pro', included: true },
+        { text: 'Full Revenue Leak Guard', included: true },
+        { text: 'Priority VIP Support', included: true },
+        { text: 'Multi-Device (5+)', included: true },
         { text: 'Custom AI Insights', included: true },
-        { text: 'White-label Reports', included: true },
-        { text: 'VIP Dedicated Manager', included: true },
       ],
-      cta: 'Get Scaling'
+      cta: 'Scale Now'
     }
   ];
 
@@ -124,10 +124,10 @@ const PackagesModal = ({ isOpen, onClose }) => {
           <X size={20} />
         </button>
 
-        <div style={{ padding: '60px 40px', position: 'relative' }}>
+        <div style={{ padding: '80px 40px 60px 40px', position: 'relative' }}>
           {/* Social Proof & Timer Row */}
           <div style={{
-            display: 'flex', justifyContent: 'center', gap: '40px', marginBottom: '48px',
+            display: 'flex', justifyContent: 'center', gap: '24px', marginBottom: '48px',
             flexWrap: 'wrap'
           }}>
             <div style={{
