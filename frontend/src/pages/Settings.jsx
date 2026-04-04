@@ -296,12 +296,23 @@ export default function Settings() {
                         <h4 style={{ fontWeight: 600, color: '#e2e8f0', fontSize: '14px' }}>Enable Auto-Messaging</h4>
                         <p style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>Automatically send reminders daily for overdue members.</p>
                       </div>
-                      <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-                        <input type="checkbox" name="autoMessagingEnabled" checked={profile.autoMessagingEnabled || false} onChange={handleChange} style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }} />
-                        <div onClick={() => setProfile(p => ({ ...p, autoMessagingEnabled: !p.autoMessagingEnabled }))} style={{ width: '44px', height: '24px', borderRadius: '99px', cursor: 'pointer', background: profile.autoMessagingEnabled ? '#0070c4' : '#1a2540', position: 'relative', transition: 'background 0.2s ease', border: profile.autoMessagingEnabled ? '1px solid #00d4ff40' : '1px solid #1a2540' }}>
-                          <div style={{ position: 'absolute', top: '2px', left: profile.autoMessagingEnabled ? '22px' : '2px', width: '18px', height: '18px', borderRadius: '50%', background: 'white', transition: 'left 0.2s ease', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
-                        </div>
-                      </label>
+                      <div
+                        onClick={() => setProfile(p => ({ ...p, autoMessagingEnabled: !p.autoMessagingEnabled }))}
+                        style={{
+                          width: '44px', height: '24px', borderRadius: '99px', cursor: 'pointer',
+                          background: profile.autoMessagingEnabled ? '#0070c4' : '#1a2540',
+                          position: 'relative', transition: 'background 0.2s ease',
+                          border: profile.autoMessagingEnabled ? '1px solid #00d4ff40' : '1px solid #1a2540'
+                        }}
+                      >
+                        <div style={{
+                          position: 'absolute', top: '2px',
+                          left: profile.autoMessagingEnabled ? '22px' : '2px',
+                          width: '18px', height: '18px', borderRadius: '50%',
+                          background: 'white', transition: 'left 0.2s ease',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.3)'
+                        }} />
+                      </div>
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Reminder Intervals (Days After Due)</label>
