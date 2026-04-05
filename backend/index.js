@@ -293,40 +293,22 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
     return res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
   }
 
+  if (action === 'package') {
+    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+    db.gyms[gymIndex].package = pkg || 'starter';
+    await writeDB(db);
+    return res.json({ message: `Package updated to ${db.gyms[gymIndex].package.toUpperCase()}` });
+  }
+
+  if (action === 'shutdown') {
+    if (!db.system) db.system = { globalShutdown: false };
+    db.system.globalShutdown = !db.system.globalShutdown;
+    await writeDB(db);
+    return res.json({ message: `Global platform is now ${db.system.globalShutdown ? 'OFFLINE' : 'ONLINE'}` });
+  }
+
   res.status(400).json({ error: 'Invalid action' });
-});
-
-app.post('/api/admin/gyms/create', verifyAdmin, async (req, res) => {
-
-app.post('/api/admin/gyms/toggle', verifyAdmin, async (req, res) => {
-  const { gymKey } = req.body;
-  const db = await readDB();
-  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-  
-  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-  
-  const currentStatus = db.gyms[gymIndex].isActive !== false;
-  db.gyms[gymIndex].isActive = !currentStatus;
-  await writeDB(db);
-  
-  res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
-});
-
-app.post('/api/admin/system/shutdown', verifyAdmin, async (req, res) => {
-  const db = await readDB();
-  if (!db.system) db.system = { globalShutdown: false };
-  db.system.globalShutdown = !db.system.globalShutdown;
-  await writeDB(db);
-  
-  res.json({ message: `Global platform is now ${db.system.globalShutdown ? 'OFFLINE' : 'ONLINE'}` });
-});
-
-app.post('/api/admin/shutdown', verifyAdmin, async (req, res) => {
-  const db = await readDB();
-  ensureSystem(db);
-  db.system.globalShutdown = !db.system.globalShutdown;
-  await writeDB(db);
-  res.json({ message: `Global platform is now ${db.system.globalShutdown ? 'OFFLINE' : 'ONLINE'}` });
 });
 
 // ========================

@@ -211,7 +211,7 @@ export default function MasterAdmin() {
   const handleSetPackage = async (gymKey, pkg) => {
     if (!window.confirm(`Set package for ${gymKey} to ${pkg.toUpperCase()}?`)) return;
     try {
-      const res = await api.post('/admin/gyms/package', { gymKey, package: pkg }, getAdminHeaders());
+      const res = await api.post('/admin?action=package', { gymKey, package: pkg }, getAdminHeaders());
       toast.success(res.data.message || 'Package updated');
       fetchData();
     } catch (err) {
@@ -225,11 +225,11 @@ export default function MasterAdmin() {
     if (!window.confirm(`MASTER OVERRIDE: Are you absolutely sure you want to ${action} the entire platform?`)) return;
     
     try {
-      const res = await api.post('/admin/shutdown', {}, getAdminHeaders());
+      const res = await api.post('/admin?action=shutdown', {}, getAdminHeaders());
       toast.success(res.data.message);
       fetchData();
     } catch {
-      toast.error('Failed to execute Kill Switch');
+      toast.error('Shutdown override failed');
     }
   };
 

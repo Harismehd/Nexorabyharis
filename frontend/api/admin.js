@@ -107,7 +107,17 @@ export default async function handler(req, res) {
     return res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
   }
 
-  if (req.method === 'POST' && url.includes('shutdown')) {
+  if (req.method === 'POST' && (action === 'package' || url.includes('package'))) {
+    const { gymKey, package: pkg } = req.body;
+    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+    const allowedPackages = ['starter', 'growth', 'pro', 'pro_plus'];
+    db.gyms[gymIndex].package = allowedPackages.includes(pkg) ? pkg : 'starter';
+    await writeDB(db);
+    return res.json({ message: `Package updated to ${db.gyms[gymIndex].package.toUpperCase()}` });
+  }
+
+  if (req.method === 'POST' && (action === 'shutdown' || url.includes('shutdown'))) {
     if (!db.system) db.system = { globalShutdown: false };
     db.system.globalShutdown = !db.system.globalShutdown;
     await writeDB(db);
