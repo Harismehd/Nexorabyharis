@@ -78,34 +78,50 @@ export default function Layout() {
       {/* Broadcast Banners */}
       {activeBroadcasts.map(b => {
         const colors = broadcastColors[b.type] || broadcastColors.info;
+        const isUrgent = b.type === 'alert' || b.type === 'warning';
+
         return (
           <div key={b.id} style={{
-            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-            background: colors.bg,
-            borderBottom: `1px solid ${colors.border}`,
-            backdropFilter: 'blur(12px)',
-            padding: '10px 24px',
-            display: 'flex', alignItems: 'center', gap: '12px',
-            animation: 'fadeSlideIn 0.4s ease'
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+            background: isUrgent ? colors.bg : 'rgba(8,13,20,0.95)',
+            borderBottom: `2px solid ${colors.border}`,
+            backdropFilter: 'blur(20px)',
+            padding: '16px 24px',
+            display: 'flex', alignItems: 'center', gap: '16px',
+            boxShadow: isUrgent ? `0 4px 30px ${colors.border}40` : '0 4px 20px rgba(0,0,0,0.4)',
+            animation: 'slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
           }}>
-            <Megaphone size={16} color={colors.icon} style={{ flexShrink: 0 }} />
-            <span style={{
-              flex: 1, fontSize: '13px', color: colors.color,
-              fontFamily: 'DM Sans, sans-serif', fontWeight: 500
+            <div className={b.type === 'alert' ? 'animate-pulse' : ''} style={{
+              background: colors.border,
+              padding: '8px',
+              borderRadius: '10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              {b.message}
-            </span>
-            <span style={{ fontSize: '11px', color: '#334155', flexShrink: 0 }}>
-              Expires: {new Date(b.expires_at).toLocaleDateString()}
-            </span>
+              <Megaphone size={20} color="#fff" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{
+                margin: 0, fontSize: '15px', color: '#fff',
+                fontFamily: 'Syne, sans-serif', fontWeight: 700,
+                letterSpacing: '0.01em'
+              }}>
+                {b.message}
+              </p>
+              <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: colors.color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.8 }}>
+                System Announcement • Expires {new Date(b.expires_at).toLocaleDateString()}
+              </p>
+            </div>
             <button
               onClick={() => dismissBroadcast(b.id)}
               style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#334155', padding: '4px', flexShrink: 0
+                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
+                color: '#fff', padding: '8px', borderRadius: '10px', flexShrink: 0,
+                transition: 'all 0.2s'
               }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             >
-              <X size={14} />
+              <X size={18} />
             </button>
           </div>
         );

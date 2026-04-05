@@ -138,7 +138,7 @@ export default function MasterAdmin() {
     if (!newKey || !newPassword) return toast.error('Fill both fields');
     setCreating(true);
     try {
-      await api.post('/admin/gyms/create', { 
+      await api.post('/admin?action=create', { 
         gymKey: newKey, 
         password: newPassword, 
         package: newPackage,
@@ -183,7 +183,7 @@ export default function MasterAdmin() {
 
   const handleUpdateGymSecurity = async (gymKey, field, value) => {
     try {
-      await api.post('/admin/gyms/update', { 
+      await api.post('/admin?action=update', { 
         gymKey, 
         field, 
         value 
@@ -198,7 +198,9 @@ export default function MasterAdmin() {
   const handleToggleBan = async (gymKey) => {
     if (!window.confirm(`Are you sure you want to change suspension status for ${gymKey}?`)) return;
     try {
-      const res = await api.post('/admin/gyms/toggle', { gymKey }, getAdminHeaders());
+      const res = await api.post('/admin?action=toggle', { 
+        gymKey 
+      }, getAdminHeaders());
       toast.success(res.data.message);
       fetchData();
     } catch {

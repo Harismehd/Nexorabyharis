@@ -63,37 +63,27 @@ export default async function handler(req, res) {
     });
   }
 
-  if (req.method === 'POST' && url.includes('create')) {
-    const { gymKey, password, package: pkg } = req.body;
+  const action = req.query.action || (url.includes('?') ? new URL(url, 'http://localhost').searchParams.get('action') : '');
+
+  if (req.method === 'POST' && (action === 'create' || url.includes('create'))) {
+    const { gymKey, password, package: pkg, deviceLimit } = req.body;
     if (db.gyms.find(g => g.gymKey === gymKey)) return res.status(400).json({ error: 'Gym Key already exists' });
     const allowedPackages = ['starter', 'growth', 'pro', 'pro_plus'];
-    const newGym = { gymKey, password, isActive: true, package: allowedPackages.includes(pkg) ? pkg : 'starter', autoMessagingEnabled: false, template: 'Hi {name}, your gym fee Rs {amount} is due on {date}. Please pay on time.', whatsappStatus: 'disconnected', paymentSettings: { methods: ['easypaisa'], easypaisaNumberEncrypted: '', jazzcashNumberEncrypted: '', bankTitle: '', bankIbanEncrypted: '' } };
+    const newGym = { 
+      gymKey, password, isActive: true, 
+      package: allowedPackages.includes(pkg) ? pkg : 'starter', 
+      deviceLimit: deviceLimit || 5,
+      autoMessagingEnabled: false, 
+      template: 'Hi {name}, your gym fee Rs {amount} is due on {date}. Please pay on time.', 
+      whatsappStatus: 'disconnected', 
+      paymentSettings: { methods: ['easypaisa'], easypaisaNumberEncrypted: '', jazzcashNumberEncrypted: '', bankTitle: '', bankIbanEncrypted: '' } 
+    };
     db.gyms.push(newGym);
     await writeDB(db);
     return res.json({ message: 'Gym Key created successfully', gym: newGym });
   }
 
-  if (req.method === 'POST' && url.includes('package')) {
-    const { gymKey, package: pkg } = req.body;
-    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-    const allowedPackages = ['starter', 'growth', 'pro', 'pro_plus'];
-    db.gyms[gymIndex].package = allowedPackages.includes(pkg) ? pkg : 'starter';
-    ensureGymDefaults(db.gyms[gymIndex]);
-    await writeDB(db);
-    return res.json({ message: `Package updated to ${db.gyms[gymIndex].package.toUpperCase()}` });
-  }
-
-  if (req.method === 'POST' && url.includes('toggle')) {
-    const { gymKey } = req.body;
-    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-    db.gyms[gymIndex].isActive = !(db.gyms[gymIndex].isActive !== false);
-    await writeDB(db);
-    return res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
-  }
-
-  if (req.method === 'POST' && url.includes('update')) {
+  if (req.method === 'POST' && (action === 'update' || url.includes('update'))) {
     const { gymKey, field, value } = req.body;
     const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
     if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
@@ -106,6 +96,15 @@ export default async function handler(req, res) {
     
     await writeDB(db);
     return res.json({ message: `Updated ${field} successfully` });
+  }
+
+  if (req.method === 'POST' && (action === 'toggle' || url.includes('toggle'))) {
+    const { gymKey } = req.body;
+    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+    db.gyms[gymIndex].isActive = !(db.gyms[gymIndex].isActive !== false);
+    await writeDB(db);
+    return res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
   }
 
   if (req.method === 'POST' && url.includes('shutdown')) {

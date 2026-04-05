@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { Plus, Search, Trash2, DollarSign, RefreshCcw, Phone, Calendar, User, Printer, CheckCircle, Package, Clock, Eye, X } from 'lucide-react';
+import { Plus, Search, Trash2, DollarSign, RefreshCcw, Phone, Calendar, User, Printer, CheckCircle, Package, Clock, Eye, X, Edit2 } from 'lucide-react';
 import printReceiptHtml from '../utils/printReceipt';
 import LockedOverlay from '../components/LockedOverlay';
 

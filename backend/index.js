@@ -259,85 +259,44 @@ app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
   });
 });
 
+app.post('/api/admin', verifyAdmin, async (req, res) => {
+  const { action } = req.query;
+  const { gymKey, field, value, password, package: pkg, limit } = req.body;
+  const db = await readDB();
+
+  if (action === 'create') {
+    if (db.gyms.find(g => g.gymKey === gymKey)) return res.status(400).json({ error: 'Gym Key already exists' });
+    const newGym = { 
+        gymKey, password, isActive: true, package: pkg || 'starter', 
+        autoMessagingEnabled: false, whatsappStatus: 'disconnected', 
+        paymentSettings: { methods: ['easypaisa'], easypaisaNumberEncrypted: '', jazzcashNumberEncrypted: '', bankTitle: '', bankIbanEncrypted: '' } 
+    };
+    db.gyms.push(newGym);
+    await writeDB(db);
+    return res.json({ message: 'Gym Key created successfully', gym: newGym });
+  }
+
+  if (action === 'update') {
+    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+    if (field === 'deviceLimit') db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
+    else db.gyms[gymIndex][field] = value;
+    await writeDB(db);
+    return res.json({ message: `Updated ${field} successfully` });
+  }
+
+  if (action === 'toggle') {
+    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+    db.gyms[gymIndex].isActive = !(db.gyms[gymIndex].isActive !== false);
+    await writeDB(db);
+    return res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
+  }
+
+  res.status(400).json({ error: 'Invalid action' });
+});
+
 app.post('/api/admin/gyms/create', verifyAdmin, async (req, res) => {
-  const { gymKey, password, package: pkg } = req.body;
-  const db = await readDB();
-  
-  if (db.gyms.find(g => g.gymKey === gymKey)) {
-    return res.status(400).json({ error: 'Gym Key already exists' });
-  }
-
-  const normalizedPkg = String(pkg || 'starter').toLowerCase();
-  const allowedPackages = ['starter', 'growth', 'pro', 'pro_plus'];
-  const selectedPackage = allowedPackages.includes(normalizedPkg) ? normalizedPkg : 'starter';
-  
-  const newGym = {
-    gymKey,
-    password,
-    isActive: true,
-    package: selectedPackage,
-    autoMessagingEnabled: false,
-    template: 'Hi {name}, your gym fee Rs {amount} is due on {date}. Please pay on time.',
-    whatsappStatus: 'disconnected',
-    paymentSettings: {
-      methods: ['easypaisa'],
-      easypaisaNumberEncrypted: '',
-      jazzcashNumberEncrypted: '',
-      bankTitle: '',
-      bankIbanEncrypted: ''
-    }
-  };
-  
-  db.gyms.push(newGym);
-  await writeDB(db);
-  res.json({ message: 'Gym Key created successfully', gym: newGym });
-});
-
-app.post('/api/admin/gyms/package', verifyAdmin, async (req, res) => {
-  const { gymKey, package: pkg } = req.body;
-  const db = await readDB();
-  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-
-  const normalizedPkg = String(pkg || 'starter').toLowerCase();
-  const allowedPackages = ['starter', 'growth', 'pro', 'pro_plus'];
-  const selectedPackage = allowedPackages.includes(normalizedPkg) ? normalizedPkg : 'starter';
-
-  db.gyms[gymIndex].package = selectedPackage;
-  ensureGymDefaults(db.gyms[gymIndex]);
-  await writeDB(db);
-
-  res.json({ message: `Package updated to ${selectedPackage.toUpperCase()}` });
-});
-
-app.post('/api/admin/gyms/device-limit', verifyAdmin, async (req, res) => {
-  const { gymKey, limit } = req.body;
-  const db = await readDB();
-  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-
-  db.gyms[gymIndex].deviceLimit = parseInt(limit, 10) || 5;
-  await writeDB(db);
-  res.json({ message: `Device limit updated to ${limit}` });
-});
-
-app.post('/api/admin/gyms/update', verifyAdmin, async (req, res) => {
-  const { gymKey, field, value } = req.body;
-  const db = await readDB();
-  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-
-  // Dynamically update the field
-  if (field === 'deviceLimit') {
-    db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
-  } else {
-    // Generic fallback for other fields if needed
-    db.gyms[gymIndex][field] = value;
-  }
-
-  await writeDB(db);
-  res.json({ message: `Updated ${field} successfully` });
-});
 
 app.post('/api/admin/gyms/toggle', verifyAdmin, async (req, res) => {
   const { gymKey } = req.body;
