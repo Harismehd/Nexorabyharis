@@ -82,14 +82,22 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PUT') {
-    const urlParts = req.url.split('?')[0].split('/');
-    const action = urlParts[urlParts.length - 1]; // 'status' or 'checkin'
-    const memberId = urlParts[urlParts.length - 2];
-    const { gymKey, status } = req.body;
+    const urlParts = req.url.split('?')[0].split('/').filter(Boolean);
+    // URL patterns:
+    // /api/members/:id/status -> action='status', memberId=urlParts[2]
+    // /api/members/:id/checkin -> action='checkin', memberId=urlParts[2]
+    // /api/members/:id -> action=undefined, memberId=urlParts[2]
+    
+    // Default structure for nexora-api/members/[id]/[action]
+    // urlParts: ['api', 'members', 'id', 'action']
+    const action = urlParts.length > 3 ? urlParts[3] : undefined;
+    const memberId = urlParts[2];
+    const { gymKey, status, name, phone, email, amount, packageName, packageId } = req.body;
 
     const memberIndex = db.members.findIndex(m => m.id === memberId && m.gymKey === gymKey);
     if (memberIndex === -1) return res.status(404).json({ error: 'Member not found' });
     const member = db.members[memberIndex];
+    const gym = db.gyms.find(g => g.gymKey === gymKey);
 
     if (action === 'checkin') {
       member.lastVisit = new Date().toISOString();
@@ -98,37 +106,70 @@ export default async function handler(req, res) {
       return res.json({ message: 'Checked in successfully', lastVisit: member.lastVisit, lastVisitFormatted: 'Today' });
     }
 
-    if (status === 'Active') {
-      // Instead of updating status, add to verification queue
-      if (!db.pendingPayments) db.pendingPayments = [];
-      const alreadyPending = db.pendingPayments.some(p => p.memberId === memberId && p.status === 'pending');
-      if (alreadyPending) return res.status(400).json({ error: 'Verification already pending for this member' });
+    if (action === 'status') {
+      if (status === 'Active') {
+        const isStarter = gym?.package === 'starter';
+        if (isStarter) {
+          // Direct update for Starter
+          let currentEnd = member.subscriptionEndDate ? parseISO(member.subscriptionEndDate) : new Date();
+          if (isBefore(currentEnd, new Date())) currentEnd = new Date();
+          const newEndDate = addMonths(currentEnd, 1).toISOString();
+          member.subscriptionEndDate = newEndDate;
+          
+          if (!db.payments) db.payments = [];
+          const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+          const receiptNumber = `INV-${todayStr}-${String(db.payments.length + 1).padStart(4, '0')}`;
+          
+          db.payments.push({
+            id: uuidv4(), gymKey, memberId, amount: String(member.amount || 0),
+            method: 'Direct (Starter)', paymentDate: new Date().toISOString(),
+            monthsCovered: 1, periodCovered: `${currentEnd.toISOString().split('T')[0]} to ${newEndDate.split('T')[0]}`,
+            receiptNumber
+          });
+          
+          db.members[memberIndex] = member;
+          await writeDB(db);
+          return res.json({ message: 'Marked as Paid. Dashboard updated.', member: { ...member, status: 'Active' } });
+        }
 
-      const pending = {
-        id: uuidv4(),
-        gymKey,
-        memberId,
-        memberName: member.name,
-        amount: String(member.amount || 0),
-        packageName: member.packageName || 'Monthly',
-        method: 'Manual Toggle',
-        transactionHash: 'INTERNAL-' + uuidv4().slice(0, 8),
-        transactionLast4: 'OFFLINE',
-        proofNote: 'Marked as Paid by Owner',
-        status: 'pending',
-        isInternal: true,
-        createdAt: new Date().toISOString()
+        // Queue for others
+        if (!db.pendingPayments) db.pendingPayments = [];
+        const alreadyPending = db.pendingPayments.some(p => p.memberId === memberId && p.status === 'pending');
+        if (alreadyPending) return res.status(400).json({ error: 'Verification already pending' });
+
+        const pending = {
+          id: uuidv4(), gymKey, memberId, memberName: member.name, 
+          amount: String(member.amount || 0), packageName: member.packageName || 'Monthly',
+          method: 'Manual Toggle', transactionHash: 'INTERNAL-' + uuidv4().slice(0, 8),
+          transactionLast4: 'OFFLINE', proofNote: 'Marked as Paid',
+          status: 'pending', isInternal: true, createdAt: new Date().toISOString()
+        };
+        db.pendingPayments.unshift(pending);
+        await writeDB(db);
+        return res.json({ message: 'Added to verification queue', member: { ...member, status: 'Due' } });
+      } else {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        member.subscriptionEndDate = yesterday.toISOString();
+        db.members[memberIndex] = member;
+        await writeDB(db);
+        return res.json({ message: 'Marked as Unpaid', member: { ...member, status: 'Due' } });
+      }
+    }
+
+    // Direct Edit
+    if (!action) {
+      db.members[memberIndex] = {
+        ...member,
+        name: name || member.name,
+        phone: phone || member.phone,
+        email: email || member.email,
+        amount: amount !== undefined ? amount : member.amount,
+        packageName: packageName !== undefined ? packageName : member.packageName,
+        packageId: packageId !== undefined ? packageId : member.packageId
       };
-      db.pendingPayments.unshift(pending);
       await writeDB(db);
-      return res.json({ message: 'Added to verification queue', member: { ...member, status: calculateMemberStatus(member) } });
-    } else {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      member.subscriptionEndDate = yesterday.toISOString();
-      db.members[memberIndex] = member;
-      await writeDB(db);
-      return res.json({ message: 'Marked as Unpaid', member: { ...member, status: calculateMemberStatus(member) } });
+      return res.json({ message: 'Member updated', member: db.members[memberIndex] });
     }
   }
 

@@ -123,7 +123,7 @@ export default function Receipts() {
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
+        <div className="custom-scrollbar pr-2" style={{ maxHeight: 'calc(100vh - 350px)', overflowY: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', whiteSpace: 'nowrap' }}>
             <thead>
               <tr style={{ background: '#080d14', borderBottom: '1px solid #1a2540' }}>

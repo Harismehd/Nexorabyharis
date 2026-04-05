@@ -165,6 +165,11 @@ export default function Settings() {
               </span>
             </div>
             <p style={{ color: '#475569', fontSize: '14px' }}>Manage your gym profile, automated sending, and message templates.</p>
+            {profile.isProfileLocked && (
+              <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold">
+                <Lock size={14} /> Profile is verified and locked by administrator. Critical details cannot be changed.
+              </div>
+            )}
           </div>
           <button onClick={handleSave} disabled={saving} className="btn-primary px-8 shadow-[0_0_20px_rgba(37,99,235,0.2)]">
             <Save size={18} /> {saving ? 'Saving...' : 'Save All Settings'}
@@ -189,22 +194,22 @@ export default function Settings() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Gym Name *</label>
-                <input type="text" name="name" value={profile.name || ''} onChange={handleChange} className="input-field" placeholder="E.g. Titan Fitness" />
+                <input type="text" name="name" value={profile.name || ''} onChange={handleChange} className={`input-field ${profile.isProfileLocked ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="E.g. Titan Fitness" disabled={profile.isProfileLocked} />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Address</label>
-                <textarea name="address" value={profile.address || ''} onChange={handleChange} className="input-field" style={{ height: '80px', resize: 'vertical' }} placeholder="Full gym address..." />
+                <textarea name="address" value={profile.address || ''} onChange={handleChange} className={`input-field ${profile.isProfileLocked ? 'opacity-60 cursor-not-allowed' : ''}`} style={{ height: '80px', resize: 'vertical' }} placeholder="Full gym address..." disabled={profile.isProfileLocked} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Contact No.</label>
-                  <input type="text" name="contact" value={profile.contact || ''} onChange={handleChange} className="input-field" placeholder="03XXXXXXXXX" />
+                  <input type="text" name="contact" value={profile.contact || ''} onChange={handleChange} className={`input-field ${profile.isProfileLocked ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="03XXXXXXXXX" disabled={profile.isProfileLocked} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Email</label>
-                  <input type="email" name="email" value={profile.email || ''} onChange={handleChange} className="input-field" placeholder="gym@gmail.com" />
+                  <input type="email" name="email" value={profile.email || ''} onChange={handleChange} className={`input-field ${profile.isProfileLocked ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="gym@gmail.com" disabled={profile.isProfileLocked} />
                 </div>
               </div>
 

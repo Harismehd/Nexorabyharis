@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { ShieldAlert, Power, Users, KeyRound, Ban, LogOut, Plus, Megaphone, Trash2, Radio, Activity, Monitor, RefreshCw } from 'lucide-react';
+import { ShieldAlert, Power, Users, KeyRound, Ban, LogOut, Plus, Megaphone, Trash2, Radio, Activity, Monitor, RefreshCw, Lock } from 'lucide-react';
 
 import { supabase } from '../supabase';
 
@@ -447,71 +447,87 @@ export default function MasterAdmin() {
                    <th className="py-4 px-4">Node Quota</th>
                    <th className="py-4 px-4 text-center">Instance Limit</th>
                    <th className="py-4 px-4 text-center">Plan Override</th>
+                   <th className="py-4 px-4 text-center">Settings Lock</th>
                    <th className="py-4 px-4 text-right">Sanctions</th>
                  </tr>
                </thead>
                <tbody>
-                 {data.gyms.length === 0 ? (
-                    <tr><td colSpan="5" className="text-center py-12 text-slate-600 text-sm italic">Zero tenants identified in local cluster.</td></tr>
-                 ) : (
+                  {data.gyms.length === 0 ? (
+                    <tr><td colSpan="6" className="text-center py-12 text-slate-600 text-sm italic">Zero tenants identified in local cluster.</td></tr>
+                  ) : (
                     data.gyms.map(g => (
-                       <tr key={g.gymKey} className={`border-b border-slate-800/50 hover:bg-white/5 transition-colors group ${g.isActive ? '' : 'bg-red-950/10 opacity-70'}`}>
-                          <td className="py-5 px-4">
-                             <div className="font-black text-blue-400 text-sm mb-1">{g.gymKey}</div>
-                             <div className="text-[11px] text-slate-400 font-bold truncate max-w-[150px]">{g.name || 'UNINITIALIZED'}</div>
-                          </td>
-                          <td className="py-5 px-4">
-                             <div className="flex items-center gap-2 mb-1">
-                                <Users size={12} className="text-slate-600" />
-                                <span className="text-sm font-bold text-slate-200">{g.memberCount}</span>
-                             </div>
-                             <div className={`text-[10px] font-black uppercase ${g.whatsappStatus === 'connected' ? 'text-emerald-500' : 'text-slate-600'}`}>
-                                {g.whatsappStatus || 'dis-linked'}
-                             </div>
-                          </td>
-                          <td className="py-5 px-4">
-                             <div className="flex items-center justify-center gap-2">
-                                <Monitor size={12} className="text-slate-600" />
-                                <input 
-                                  type="number"
-                                  defaultValue={g.deviceLimit || 5}
-                                  onBlur={(e) => handleUpdateGymSecurity(g.gymKey, 'deviceLimit', Number(e.target.value))}
-                                  className="bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-[11px] w-12 focus:border-blue-500 focus:outline-none"
-                                />
-                             </div>
-                          </td>
-                          <td className="py-5 px-4">
-                            <div className="flex gap-1.5 justify-center">
-                              {['starter', 'growth', 'pro', 'pro_plus'].map(p => (
-                                <button
-                                  key={p}
-                                  onClick={() => handleSetPackage(g.gymKey, p)}
-                                  className={`px-2 py-1 rounded text-[9px] font-black tracking-tighter transition-all border ${
-                                    (g.package || 'starter') === p
-                                      ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.3)]'
-                                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
-                                  }`}
-                                >
-                                  {p === 'pro_plus' ? 'PRO+' : p.toUpperCase()}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-5 px-4 text-right">
-                             <button
-                               onClick={() => handleToggleBan(g.gymKey)}
-                               className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all uppercase ${
-                                  g.isActive 
-                                  ? 'text-red-500 hover:bg-red-500/10 border border-red-500/20' 
-                                  : 'bg-emerald-600 text-white border border-emerald-500/30'
-                               }`}
-                             >
-                                {g.isActive ? 'Suspend' : 'Amnesty'}
-                             </button>
-                          </td>
-                       </tr>
+                      <tr key={g.gymKey} className={`border-b border-slate-800/50 hover:bg-white/5 transition-colors group ${g.isActive ? '' : 'bg-red-950/10 opacity-70'}`}>
+                        <td className="py-5 px-4">
+                          <div className="font-black text-blue-400 text-sm mb-1">{g.gymKey}</div>
+                          <div className="text-[11px] text-slate-400 font-bold truncate max-w-[150px]">{g.name || 'UNINITIALIZED'}</div>
+                        </td>
+                        <td className="py-5 px-4">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Users size={12} className="text-slate-600" />
+                            <span className="text-sm font-bold text-slate-200">{g.memberCount}</span>
+                          </div>
+                          <div className={`text-[10px] font-black uppercase ${g.whatsappStatus === 'connected' ? 'text-emerald-500' : 'text-slate-600'}`}>
+                            {g.whatsappStatus || 'dis-linked'}
+                          </div>
+                        </td>
+                        <td className="py-5 px-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <Monitor size={12} className="text-slate-600" />
+                            <input 
+                              type="number"
+                              defaultValue={g.deviceLimit || 5}
+                              onBlur={(e) => handleUpdateGymSecurity(g.gymKey, 'deviceLimit', Number(e.target.value))}
+                              className="bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-[11px] w-12 focus:border-blue-500 focus:outline-none"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-5 px-4">
+                          <div className="flex gap-1.5 justify-center">
+                            {['starter', 'growth', 'pro', 'pro_plus'].map(p => (
+                              <button
+                                key={p}
+                                onClick={() => handleSetPackage(g.gymKey, p)}
+                                className={`px-2 py-1 rounded text-[9px] font-black tracking-tighter transition-all border ${
+                                  (g.package || 'starter') === p
+                                    ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.3)]'
+                                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                                }`}
+                              >
+                                {p === 'pro_plus' ? 'PRO+' : p.toUpperCase()}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="py-5 px-4">
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => handleUpdateGymSecurity(g.gymKey, 'isProfileLocked', !g.isProfileLocked)}
+                              className={`p-2 rounded-lg transition-all border ${
+                                g.isProfileLocked 
+                                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.15)]' 
+                                  : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-slate-300'
+                              }`}
+                              title={g.isProfileLocked ? 'Profile Locked' : 'Profile Unlocked'}
+                            >
+                              {g.isProfileLocked ? <Lock size={16} /> : <KeyRound size={16} />}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-5 px-4 text-right">
+                          <button
+                            onClick={() => handleToggleBan(g.gymKey)}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all uppercase ${
+                              g.isActive 
+                                ? 'text-red-500 hover:bg-red-500/10 border border-red-500/20' 
+                                : 'bg-emerald-600 text-white border border-emerald-500/30'
+                            }`}
+                          >
+                            {g.isActive ? 'Suspend' : 'Amnesty'}
+                          </button>
+                        </td>
+                      </tr>
                     ))
-                 )}
+                  )}
                </tbody>
              </table>
            </div>

@@ -85,6 +85,14 @@ export default async function handler(req, res) {
     
     const safeProfile = { ...profile };
 
+    // Security: Enforce Profile Lock
+    if (gym.isProfileLocked) {
+      delete safeProfile.name;
+      delete safeProfile.address;
+      delete safeProfile.contact;
+      delete safeProfile.email;
+    }
+
     // Gate features strictly by package.
     if (rank < PACKAGE_RANK.growth) {
       delete safeProfile.paymentSettings;

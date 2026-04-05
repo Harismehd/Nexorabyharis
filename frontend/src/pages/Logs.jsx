@@ -29,58 +29,71 @@ export default function Logs() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h1 className="text-3xl font-bold text-slate-800">Message Logs</h1>
-        <p className="text-slate-500 mt-2">History of all WhatsApp reminders sent from your account.</p>
+        <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '28px', color: '#f1f5f9' }}>Message Logs</h1>
+        <p style={{ color: '#475569', fontSize: '14px', marginTop: '6px' }}>History of all WhatsApp reminders sent from your account.</p>
       </div>
 
       <div className="card">
         <div className="flex items-center gap-3 mb-6">
-           <div className="bg-purple-100 p-3 rounded-full text-purple-600">
-             <History size={24} />
+           <div style={{ background: 'rgba(124, 58, 237, 0.15)', padding: '10px', borderRadius: '12px' }}>
+             <History size={22} color="#a78bfa" />
            </div>
-           <h2 className="text-xl font-bold text-slate-800">Delivery History</h2>
+           <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '18px', color: '#f1f5f9' }}>Delivery History</h2>
         </div>
 
         {loading ? (
-          <div className="py-8 text-center text-slate-500">Loading logs...</div>
+          <div className="py-12 text-center text-slate-500 italic text-sm">Loading logs...</div>
         ) : logs.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 flex flex-col items-center">
-             <History size={48} className="text-slate-300 mb-4" />
-             <p>No messages have been sent yet.</p>
+          <div className="py-20 text-center text-slate-500 flex flex-col items-center">
+             <History size={48} className="text-slate-800 mb-4 opacity-20" />
+             <p className="font-medium">No messages have been sent yet.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="custom-scrollbar pr-2" style={{ maxHeight: 'calc(100vh - 350px)', overflowY: 'auto' }}>
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="py-3 px-4 font-semibold text-slate-600">Timestamp</th>
-                  <th className="py-3 px-4 font-semibold text-slate-600">Member</th>
-                  <th className="py-3 px-4 font-semibold text-slate-600">Phone</th>
-                  <th className="py-3 px-4 font-semibold text-slate-600">Status</th>
-                  <th className="py-3 px-4 font-semibold text-slate-600">Detailed Message</th>
+                <tr style={{ background: '#080d14', borderBottom: '1px solid #1a2540' }}>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Timestamp</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Member</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Phone</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Status</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Detailed Message</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((log) => (
-                  <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-4 text-sm text-slate-500">
-                       {new Date(log.timestamp).toLocaleString()}
+                  <tr key={log.id} style={{ borderBottom: '1px solid #1a254020', transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#00d4ff05'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <td style={{ padding: '12px 16px', fontSize: '12px', fontFamily: 'monospace', color: '#475569' }}>
+                       {new Date(log.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                     </td>
-                    <td className="py-3 px-4 font-medium text-slate-800">{log.memberName}</td>
-                    <td className="py-3 px-4 text-slate-600 text-sm">{log.memberPhone}</td>
-                    <td className="py-3 px-4">
+                    <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 600, color: '#e2e8f0' }}>{log.memberName}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '13px', color: '#64748b' }}>{log.memberPhone}</td>
+                    <td style={{ padding: '12px 16px' }}>
                        {log.status.includes('Sent') ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                             <CheckCircle size={14} /> Sent
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                            padding: '3px 10px', borderRadius: '99px', fontSize: '10px',
+                            fontWeight: 800, background: 'rgba(52, 211, 153, 0.1)', color: '#34d399',
+                            border: '1px solid rgba(52, 211, 153, 0.2)'
+                          }}>
+                             <CheckCircle size={12} /> SENT
                           </span>
                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" title={log.error}>
-                             <XCircle size={14} /> Failed
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                            padding: '3px 10px', borderRadius: '99px', fontSize: '10px',
+                            fontWeight: 800, background: 'rgba(248, 113, 113, 0.1)', color: '#f87171',
+                            border: '1px solid rgba(248, 113, 113, 0.2)'
+                          }} title={log.error}>
+                             <XCircle size={12} /> FAILED
                           </span>
                        )}
                     </td>
-                    <td className="py-3 px-4">
-                       <p className="text-xs text-slate-500 truncate max-w-xs" title={log.message}>
+                    <td style={{ padding: '12px 16px' }}>
+                       <p style={{ margin: 0, fontSize: '12px', color: '#475569', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.message}>
                           {log.message}
                        </p>
                     </td>

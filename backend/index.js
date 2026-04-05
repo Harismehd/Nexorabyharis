@@ -77,6 +77,7 @@ function ensureGymDefaults(gym) {
   if (typeof gym.isActive !== 'boolean') gym.isActive = true;
   if (!gym.package) gym.package = 'starter';
   if (gym.deviceLimit === undefined) gym.deviceLimit = 5;
+  if (gym.isProfileLocked === undefined) gym.isProfileLocked = false;
   if (!gym.paymentSettings) {
     gym.paymentSettings = {
       methods: ['easypaisa'],
@@ -466,6 +467,28 @@ app.post('/api/members', async (req, res) => {
   res.json({ message: 'Member added successfully', member: newMember });
 });
 
+app.put('/api/members/:id', async (req, res) => {
+  const { id } = req.params;
+  const { gymKey, name, phone, email, amount, packageName, packageId } = req.body;
+  const db = await readDB();
+  const index = db.members.findIndex(m => m.id === id && m.gymKey === gymKey);
+  if (index === -1) return res.status(404).json({ error: 'Member not found' });
+
+  const updatedMember = {
+    ...db.members[index],
+    name: name || db.members[index].name,
+    phone: phone || db.members[index].phone,
+    email: email || db.members[index].email,
+    amount: amount !== undefined ? amount : db.members[index].amount,
+    packageName: packageName !== undefined ? packageName : db.members[index].packageName,
+    packageId: packageId !== undefined ? packageId : db.members[index].packageId
+  };
+
+  db.members[index] = updatedMember;
+  await writeDB(db);
+  res.json({ message: 'Member updated successfully', member: updatedMember });
+});
+
 app.post('/api/members/upload', upload.single('file'), async (req, res) => {
   const { gymKey } = req.body;
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -527,12 +550,28 @@ app.put('/api/members/:id/status', async (req, res) => {
   if (memberIndex === -1) return res.status(404).json({ error: 'Member not found' });
   
   const member = db.members[memberIndex];
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
   
   if (status === 'Active') {
-    // Instead of updating status, add to verification queue
+    // Phase 4: Starter Package Bypass Logic
+    if (gym && gym.package === 'starter') {
+      const result = createPaymentRecord(db, {
+        gymKey,
+        memberId: id,
+        amount: String(member.amount || 0),
+        method: 'Direct (Starter)',
+        monthsCovered: 1
+      });
+      if (result.error) return res.status(404).json({ error: result.error });
+      await writeDB(db);
+      return res.json({ 
+        message: 'Marked as Paid. Dashboard tracking updated.', 
+        member: { ...db.members[memberIndex], status: 'Active' } 
+      });
+    }
+
+    // Growth/Pro: Traditional Verification Queue
     if (!db.pendingPayments) db.pendingPayments = [];
-    
-    // Check if already in queue
     const alreadyPending = db.pendingPayments.some(p => p.memberId === id && p.status === 'pending');
     if (alreadyPending) return res.status(400).json({ error: 'Verification already pending for this member' });
 
@@ -555,7 +594,7 @@ app.put('/api/members/:id/status', async (req, res) => {
     
     db.pendingPayments.unshift(pending);
     await writeDB(db);
-    res.json({ message: 'Added to verification queue', member: { ...member, status: calculateMemberStatus(member) } });
+    res.json({ message: 'Added to verification queue', member: { ...member, status: 'Due' } });
   } else {
     // Mark as Dues (Unpaid) immediately
     const yesterday = new Date();
@@ -563,7 +602,7 @@ app.put('/api/members/:id/status', async (req, res) => {
     member.subscriptionEndDate = yesterday.toISOString();
     db.members[memberIndex] = member;
     await writeDB(db);
-    res.json({ message: 'Marked as Unpaid', member: { ...member, status: calculateMemberStatus(member) } });
+    res.json({ message: 'Marked as Unpaid', member: { ...member, status: 'Due' } });
   }
 });
 
@@ -1091,12 +1130,23 @@ app.get('/api/profile', async (req, res) => {
 app.post('/api/profile', async (req, res) => {
   const { gymKey, profile } = req.body;
   const db = await readDB();
-  const gym = db.gyms.find(g => g.gymKey === gymKey);
-  if (!gym) return res.status(404).json({ error: 'Not found' });
+  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+  if (gymIndex === -1) return res.status(404).json({ error: 'Not found' });
+  
+  const gym = db.gyms[gymIndex];
   ensureGymDefaults(gym);
   const rank = getPackageRank(gym.package);
 
   const safeProfile = { ...profile };
+
+  // Security: Enforce Profile Lock
+  if (gym.isProfileLocked) {
+    // Revert critical fields if they were modified in the request
+    delete safeProfile.name;
+    delete safeProfile.address;
+    delete safeProfile.contact;
+    delete safeProfile.email;
+  }
 
   // Gate features strictly by package.
   if (rank < PACKAGE_RANK.growth) {
@@ -1117,34 +1167,9 @@ app.post('/api/profile', async (req, res) => {
     delete safeProfile.template;
   }
 
-  await updateDB('gyms', g => g.gymKey === gymKey, g => ({ ...g, ...safeProfile }));
-  res.json({ message: 'Profile updated successfully' });
-});
-
-app.put('/api/profile', async (req, res) => {
-  const gymKey = req.query.gymKey || req.body.gymKey;
-  const updates = req.body;
-  if (!gymKey) return res.status(400).json({ error: 'Missing gymKey' });
-
-  const db = await readDB();
-  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-
-  const gym = db.gyms[gymIndex];
-  ensureGymDefaults(gym);
-
-  // Partial Update logic
-  for (const [key, value] of Object.entries(updates)) {
-    if (key === 'paymentSettings' && typeof value === 'object') {
-       gym.paymentSettings = { ...gym.paymentSettings, ...value };
-    } else if (['name', 'address', 'contact', 'email', 'taxReg', 'footerMessage', 'autoMessagingEnabled', 'template'].includes(key)) {
-       gym[key] = value;
-    }
-  }
-
-  db.gyms[gymIndex] = gym;
+  db.gyms[gymIndex] = { ...gym, ...safeProfile };
   await writeDB(db);
-  res.json({ message: 'Profile updated successfully', profile: gym });
+  res.json({ message: 'Profile updated successfully', isLocked: gym.isProfileLocked });
 });
 
 // ========================

@@ -8,7 +8,7 @@ import {
 import { 
   Banknote, TrendingUp, CreditCard, AlertCircle, 
   Users, Calendar, BarChart3, Activity, ArrowUpRight,
-  Crown, Zap, Flame, Target, Layers, Lock
+  Crown, Zap, Flame, Target, Layers, Lock, Megaphone, Info, AlertTriangle, AlertOctagon
 } from 'lucide-react';
 import LockedOverlay from '../components/LockedOverlay';
 
@@ -16,6 +16,7 @@ export default function Dashboard() {
   const { gymKey, packageTier } = useAuth();
   const [members, setMembers] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [broadcasts, setBroadcasts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const isAdvancedLocked = packageTier === 'starter' || packageTier === 'growth';
@@ -23,10 +24,12 @@ export default function Dashboard() {
   useEffect(() => {
     Promise.all([
       api.get(`/members?gymKey=${gymKey}`),
-      api.get(`/payments?gymKey=${gymKey}`)
-    ]).then(([memRes, payRes]) => {
+      api.get(`/payments?gymKey=${gymKey}`),
+      api.get(`/broadcasts?gymKey=${gymKey}`)
+    ]).then(([memRes, payRes, broadRes]) => {
       setMembers(memRes.data.members || []);
       setPayments(payRes.data.payments || []);
+      setBroadcasts(broadRes.data.broadcasts || []);
     }).catch(console.error).finally(() => setLoading(false));
   }, [gymKey]);
 
@@ -165,6 +168,37 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Broadcast System Alerts */}
+      {broadcasts.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '10px' }}>
+          {broadcasts.map(b => {
+             const isAlert = b.type === 'alert';
+             const isWarning = b.type === 'warning';
+             const colors = isAlert 
+              ? { bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.2)', text: '#fca5a5', icon: <AlertOctagon size={18} /> }
+              : isWarning
+              ? { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.2)', text: '#fcd34d', icon: <AlertTriangle size={18} /> }
+              : { bg: 'rgba(0, 212, 255, 0.06)', border: 'rgba(0, 212, 255, 0.15)', text: '#00d4ff', icon: <Info size={18} /> };
+
+             return (
+               <div key={b.id} className="animate-in fade-in slide-in-from-top-2 duration-500" style={{
+                 padding: '16px 20px', borderRadius: '16px', background: colors.bg,
+                 border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: '14px',
+                 boxShadow: isAlert ? '0 0 20px rgba(239, 68, 68, 0.1)' : 'none'
+               }}>
+                 <div style={{ color: colors.text }}>{colors.icon}</div>
+                 <div style={{ flex: 1 }}>
+                   <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#f1f5f9', letterSpacing: '0.01em' }}>{b.message}</p>
+                   <p style={{ margin: '2px 0 0 0', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: colors.text, opacity: 0.7 }}>
+                     System Announcement • {new Date(b.created_at).toLocaleDateString()}
+                   </p>
+                 </div>
+               </div>
+             );
+          })}
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>

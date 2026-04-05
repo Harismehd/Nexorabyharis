@@ -13,13 +13,18 @@ export default function Members() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [memberPayments, setMemberPayments] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [filterPackageOnly, setFilterPackageOnly] = useState(false);
   const [newMember, setNewMember] = useState({ 
     name: '', phone: '', email: '', joiningDate: '', subscriptionType: 'monthly', 
     amount: '', packageId: '', packageName: '' 
+  });
+  const [editMember, setEditMember] = useState({
+    id: '', name: '', phone: '', email: '', amount: '', packageId: '', packageName: ''
   });
   const [paymentForm, setPaymentForm] = useState({ amount: '', method: 'Cash', monthsCovered: 1 });
 
@@ -41,10 +46,12 @@ export default function Members() {
     fetchData();
   }, [gymKey]);
 
-  const filteredMembers = members.filter(m =>
-    (m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (m.phone || '').includes(searchTerm)
-  );
+  const filteredMembers = members.filter(m => {
+    const matchesSearch = (m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (m.phone || '').includes(searchTerm);
+    const matchesPackage = filterPackageOnly ? (!!m.packageName && m.packageName !== 'Monthly') : true;
+    return matchesSearch && matchesPackage;
+  });
 
   const activeCount = filteredMembers.filter(m => m.status === 'Active').length;
   const dueCount = filteredMembers.filter(m => m.status !== 'Active').length;
@@ -84,6 +91,31 @@ export default function Members() {
       setMembers(prev => prev.filter(m => m.id !== id));
       toast.success('Member deleted');
     } catch { toast.error('Failed to delete member'); }
+  };
+
+  const handleEditMember = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.put(`/members/${editMember.id}`, { gymKey, ...editMember });
+      toast.success('Member updated');
+      setShowEditModal(false);
+      setMembers(prev => prev.map(m => m.id === editMember.id ? { ...m, ...res.data.member } : m));
+    } catch {
+      toast.error('Failed to update member');
+    }
+  };
+
+  const openEditModal = (member) => {
+    setEditMember({
+      id: member.id,
+      name: member.name,
+      phone: member.phone,
+      email: member.email || '',
+      amount: member.amount || '',
+      packageId: member.packageId || '',
+      packageName: member.packageName || ''
+    });
+    setShowEditModal(true);
   };
 
   const handleToggleStatus = async (member) => {
@@ -204,17 +236,31 @@ export default function Members() {
         ))}
       </div>
 
-      {/* Search */}
-      <div style={{ position: 'relative', maxWidth: '360px' }}>
-        <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#334155' }} size={16} />
-        <input
-          type="text"
-          placeholder="Search by name or phone..."
-          className="input-field"
-          style={{ paddingLeft: '42px', fontSize: '14px' }}
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-        />
+      {/* Search & Filter */}
+      <div className="flex flex-wrap items-center gap-4">
+        <div style={{ position: 'relative', maxWidth: '360px', flex: 1 }}>
+          <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#334155' }} size={16} />
+          <input
+            type="text"
+            placeholder="Search by name or phone..."
+            className="input-field"
+            style={{ paddingLeft: '42px', fontSize: '14px' }}
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <button
+          onClick={() => setFilterPackageOnly(!filterPackageOnly)}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[13px] font-bold transition-all ${
+            filterPackageOnly 
+              ? 'bg-blue-600/10 text-blue-400 border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.1)]' 
+              : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-slate-300'
+          }`}
+        >
+          <Package size={16} />
+          {filterPackageOnly ? 'All Members' : 'Package Only'}
+        </button>
       </div>
 
       {/* Member Cards Grid */}
@@ -284,13 +330,24 @@ export default function Members() {
                       display: 'flex', alignItems: 'center', gap: '6px'
                     }}>
                       {m.name}
-                      <Eye 
-                        size={14} 
-                        style={{ cursor: 'pointer', color: '#475569', transition: 'color 0.2s' }} 
-                        onClick={(e) => { e.stopPropagation(); openDetailModal(m); }}
-                        onMouseEnter={e => e.target.style.color = '#00d4ff'}
-                        onMouseLeave={e => e.target.style.color = '#475569'}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Edit2 
+                          size={13} 
+                          style={{ cursor: 'pointer', color: '#475569', transition: 'color 0.2s' }} 
+                          onClick={(e) => { e.stopPropagation(); openEditModal(m); }}
+                          onMouseEnter={e => e.target.style.color = '#34d399'}
+                          onMouseLeave={e => e.target.style.color = '#475569'}
+                          title="Edit Member"
+                        />
+                        <Eye 
+                          size={14} 
+                          style={{ cursor: 'pointer', color: '#475569', transition: 'color 0.2s' }} 
+                          onClick={(e) => { e.stopPropagation(); openDetailModal(m); }}
+                          onMouseEnter={e => e.target.style.color = '#00d4ff'}
+                          onMouseLeave={e => e.target.style.color = '#475569'}
+                          title="View History"
+                        />
+                      </div>
                     </h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                       <span style={{
@@ -574,6 +631,87 @@ export default function Members() {
               <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
                 <button type="button" className="btn-secondary" onClick={() => { setShowPayModal(false); setSelectedMember(null); }}>Cancel</button>
                 <button type="submit" className="btn-primary">Save Payment</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Member Modal */}
+      {showEditModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
+          background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(8px)'
+        }}>
+          <div className="card" style={{ maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '24px', color: '#f1f5f9', marginBottom: '20px' }}>
+              Edit Member Details
+            </h2>
+            <form onSubmit={handleEditMember} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Full Name</label>
+                  <input className="input-field" value={editMember.name} onChange={e => setEditMember(v => ({ ...v, name: e.target.value }))} required />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Phone Number</label>
+                  <input className="input-field" value={editMember.phone} onChange={e => setEditMember(v => ({ ...v, phone: e.target.value }))} required />
+                </div>
+              </div>
+
+              {/* Package Selection */}
+              {profile?.packages?.length > 0 && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>Update Membership Package</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
+                    {profile.packages.map(pkg => (
+                      <div 
+                        key={pkg.id}
+                        onClick={() => setEditMember(prev => ({ 
+                          ...prev, 
+                          packageId: pkg.id, 
+                          packageName: pkg.name,
+                          amount: pkg.price 
+                        }))}
+                        style={{
+                          background: editMember.packageId === pkg.id ? 'rgba(0,212,255,0.1)' : '#080d14',
+                          border: `1px solid ${editMember.packageId === pkg.id ? '#00d4ff' : '#1a2540'}`,
+                          borderRadius: '12px', padding: '12px', cursor: 'pointer', transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#f1f5f9', margin: '0 0 2px 0' }}>{pkg.name}</h4>
+                        <p style={{ fontSize: '11px', color: '#00d4ff', fontWeight: 600, margin: 0 }}>Rs {pkg.price}</p>
+                      </div>
+                    ))}
+                    <div 
+                      onClick={() => setEditMember(prev => ({ ...prev, packageId: '', packageName: '' }))}
+                      style={{
+                        background: !editMember.packageId ? 'rgba(71, 85, 105, 0.1)' : '#080d14',
+                        border: `1px solid ${!editMember.packageId ? '#64748b' : '#1a2540'}`,
+                        borderRadius: '12px', padding: '12px', cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                    >
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: !editMember.packageId ? '#f1f5f9' : '#475569' }}>Manual</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Monthly Fee (PKR)</label>
+                  <input className="input-field" placeholder="5000" value={editMember.amount} onChange={e => setEditMember(v => ({ ...v, amount: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Email (Optional)</label>
+                  <input className="input-field" placeholder="alex@gmail.com" value={editMember.email} onChange={e => setEditMember(v => ({ ...v, email: e.target.value }))} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px', pt: '16px', borderTop: '1px solid #1a2540' }}>
+                <button type="button" className="btn-secondary px-6" onClick={() => setShowEditModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary px-8">Update Member</button>
               </div>
             </form>
           </div>
