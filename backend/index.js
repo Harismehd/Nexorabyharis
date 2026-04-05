@@ -62,8 +62,7 @@ function normalizePaymentSettings(raw) {
     easypaisaNumber: raw?.easypaisaNumber ? String(raw.easypaisaNumber).trim() : '',
     jazzcashNumber: raw?.jazzcashNumber ? String(raw.jazzcashNumber).trim() : '',
     bankTitle: raw?.bankTitle ? String(raw.bankTitle).trim() : '',
-    bankIban: raw?.bankIban ? String(raw.bankIban).trim() : '',
-    autoConfirm: !!raw?.autoConfirm
+    bankIban: raw?.bankIban ? String(raw.bankIban).trim() : ''
   };
 }
 
@@ -84,8 +83,7 @@ function ensureGymDefaults(gym) {
       easypaisaNumberEncrypted: '',
       jazzcashNumberEncrypted: '',
       bankTitle: '',
-      bankIbanEncrypted: '',
-      autoConfirm: false // New field for Task 1
+      bankIbanEncrypted: ''
     };
   }
 }
@@ -530,20 +528,43 @@ app.put('/api/members/:id/status', async (req, res) => {
   
   const member = db.members[memberIndex];
   
-  // Quick toggle logic
   if (status === 'Active') {
-    // Set expiry to 30 days from today
-    member.subscriptionEndDate = addMonths(new Date(), 1).toISOString();
+    // Instead of updating status, add to verification queue
+    if (!db.pendingPayments) db.pendingPayments = [];
+    
+    // Check if already in queue
+    const alreadyPending = db.pendingPayments.some(p => p.memberId === id && p.status === 'pending');
+    if (alreadyPending) return res.status(400).json({ error: 'Verification already pending for this member' });
+
+    const pending = {
+      id: uuidv4(),
+      gymKey,
+      memberId: id,
+      memberName: member.name,
+      amount: String(member.amount || 0),
+      packageName: member.packageName || 'Monthly',
+      method: 'Manual Toggle',
+      transactionHash: 'INTERNAL-' + uuidv4().slice(0, 8),
+      transactionLast4: 'OFFLINE',
+      proofNote: 'Marked as Paid by Owner',
+      status: 'pending',
+      verificationStrength: 'high',
+      isInternal: true,
+      createdAt: new Date().toISOString()
+    };
+    
+    db.pendingPayments.unshift(pending);
+    await writeDB(db);
+    res.json({ message: 'Added to verification queue', member: { ...member, status: calculateMemberStatus(member) } });
   } else {
-    // Set expiry to yesterday to make it "Dues"
+    // Mark as Dues (Unpaid) immediately
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     member.subscriptionEndDate = yesterday.toISOString();
+    db.members[memberIndex] = member;
+    await writeDB(db);
+    res.json({ message: 'Marked as Unpaid', member: { ...member, status: calculateMemberStatus(member) } });
   }
-  
-  db.members[memberIndex] = member;
-  await writeDB(db);
-  res.json({ message: 'Status updated', member: { ...member, status: calculateMemberStatus(member) } });
 });
 
 // ========================
@@ -799,6 +820,8 @@ app.post('/api/payments/proof', async (req, res) => {
     gymKey,
     memberId,
     amount: String(amount),
+    memberName: member.name,
+    packageName: member.packageName || 'Monthly',
     method,
     transactionHash,
     transactionLast4: String(transactionId).slice(-4),
@@ -808,41 +831,14 @@ app.post('/api/payments/proof', async (req, res) => {
     createdAt: new Date().toISOString()
   };
   db.pendingPayments.unshift(pending);
-  
-  // Implementation of Task 2.1: Auto-Confirm for Pro/Pro Plus
-  const canAutoConfirm = requireMinPackage(gym, 'pro') && gym.paymentSettings?.autoConfirm;
-  
-  if (canAutoConfirm) {
-    const result = createPaymentRecord(db, {
-      gymKey,
-      memberId: pending.memberId,
-      amount: pending.amount,
-      method: `${pending.method} (Auto-Verified)`,
-      monthsCovered: 1
-    });
-
-    if (!result.error) {
-      result.payment.transactionHash = pending.transactionHash;
-      pending.status = 'verified';
-      pending.verifiedAt = new Date().toISOString();
-      pending.receiptNumber = result.payment.receiptNumber;
-      
-      const member = db.members.find(m => m.id === pending.memberId);
-      if (member && gym.whatsappStatus === 'connected') {
-        const msg = `Payment Auto-Confirmed ✅\nReceipt: ${result.payment.receiptNumber}\nAmount: Rs ${pending.amount}\nThank you for choosing Nexora.`;
-        try { sendMessage(gymKey, member.phone, msg); } catch {}
-      }
-    }
-  }
-
   await writeDB(db);
 
   res.json({
-    message: canAutoConfirm ? 'Payment auto-confirmed and recorded.' : 'Payment proof submitted. Ready for owner verification.',
-    pendingPayment: { ...pending, transactionHash: undefined },
-    autoConfirmed: !!canAutoConfirm
+    message: 'Payment proof submitted. Ready for owner verification.',
+    pendingPayment: { ...pending, transactionHash: undefined }
   });
 });
+
 
 app.post('/api/payments/pending/:id/verify', async (req, res) => {
   const { id } = req.params;
@@ -888,7 +884,7 @@ app.post('/api/payments/pending/:id/verify', async (req, res) => {
 
   const member = db.members.find(m => m.id === pending.memberId);
   if (member && gym && gym.whatsappStatus === 'connected') {
-    const confirmationMsg = `Payment confirmed ✅\nReceipt: ${result.payment.receiptNumber}\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
+    const confirmationMsg = `Payment confirmed ✅\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
     try {
       await sendMessage(gymKey, member.phone, confirmationMsg);
     } catch {
@@ -906,6 +902,59 @@ app.post('/api/payments/pending/:id/verify', async (req, res) => {
     },
     payment: result.payment
   });
+});
+
+app.post('/api/payments/pending/bulk-verify', async (req, res) => {
+  const { gymKey } = req.body;
+  const db = await readDB();
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  if (!gym || !requireMinPackage(gym, 'growth')) return res.status(403).json({ error: 'FEATURE_NOT_ENABLED' });
+  if (!db.pendingPayments) db.pendingPayments = [];
+
+  const pendingList = db.pendingPayments.filter(p => p.gymKey === gymKey && p.status === 'pending');
+  let verifiedCount = 0;
+
+  for (const pending of pendingList) {
+    const result = createPaymentRecord(db, {
+      gymKey,
+      memberId: pending.memberId,
+      amount: pending.amount,
+      method: `${pending.method} (Bulk Verified)`,
+      monthsCovered: 1
+    });
+
+    if (!result.error) {
+      result.payment.transactionHash = pending.transactionHash;
+      const verificationCode = `VER-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`;
+      pending.status = 'verified';
+      pending.verifiedAt = new Date().toISOString();
+      pending.verificationCode = verificationCode;
+      pending.receiptNumber = result.payment.receiptNumber;
+      verifiedCount++;
+
+      const member = db.members.find(m => m.id === pending.memberId);
+      if (member && gym.whatsappStatus === 'connected') {
+        const msg = `Payment confirmed ✅\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
+        try { sendMessage(gymKey, member.phone, msg); } catch {}
+      }
+    }
+  }
+
+  await writeDB(db);
+  res.json({ message: `Bulk verification complete. ${verifiedCount} payments processed.` });
+});
+
+app.post('/api/payments/pending/bulk-clear', async (req, res) => {
+  const { gymKey } = req.body;
+  const db = await readDB();
+  if (!db.pendingPayments) db.pendingPayments = [];
+  
+  const originalCount = db.pendingPayments.length;
+  db.pendingPayments = db.pendingPayments.filter(p => !(p.gymKey === gymKey && p.status === 'pending'));
+  const clearedCount = originalCount - db.pendingPayments.length;
+  
+  await writeDB(db);
+  res.json({ message: `Queue cleared. ${clearedCount} pending payments removed.` });
 });
 
 // ========================

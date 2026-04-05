@@ -98,7 +98,21 @@ export default async function handler(req, res) {
     const transactionHash = hashTx(transactionId);
     const dupCount = db.pendingPayments.filter(p => p.transactionHash === transactionHash).length + (db.payments || []).filter(p => p.transactionHash === transactionHash).length;
     if (dupCount > 0) return res.status(409).json({ error: 'Transaction ID already exists' });
-    const pending = { id: uuidv4(), gymKey, memberId, amount: String(amount), method, transactionHash, transactionLast4: String(transactionId).slice(-4), proofNote: proofNote ? String(proofNote).slice(0, 500) : '', status: 'pending', verificationStrength: 'high', createdAt: new Date().toISOString() };
+    const pending = { 
+      id: uuidv4(), 
+      gymKey, 
+      memberId, 
+      memberName: member.name, 
+      packageName: member.packageName || 'Monthly',
+      amount: String(amount), 
+      method, 
+      transactionHash, 
+      transactionLast4: String(transactionId).slice(-4), 
+      proofNote: proofNote ? String(proofNote).slice(0, 500) : '', 
+      status: 'pending', 
+      verificationStrength: 'high', 
+      createdAt: new Date().toISOString() 
+    };
     db.pendingPayments.unshift(pending);
     await writeDB(db);
     return res.json({ message: 'Payment proof submitted.', pendingPayment: { ...pending, transactionHash: undefined } });
@@ -137,7 +151,7 @@ export default async function handler(req, res) {
     try {
       const member = db.members.find(m => m.id === pending.memberId);
       if (member && gym.whatsappStatus === 'connected') {
-        const confirmationMsg = `Payment confirmed ✅\nReceipt: ${result.payment.receiptNumber}\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
+        const confirmationMsg = `Payment confirmed ✅\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
         await supabase.from('message_jobs').insert([{
           id: crypto.randomUUID(),
           gym_key: gymKey,
@@ -162,6 +176,66 @@ export default async function handler(req, res) {
       },
       payment: result.payment
     });
+  }
+  
+  if (req.method === 'POST' && url.includes('bulk-verify')) {
+    const { gymKey } = req.body;
+    const gym = db.gyms.find(g => g.gymKey === gymKey);
+    ensureGymDefaults(gym || {});
+    if (!requireMinPackage(gym, 'growth')) return res.status(403).json({ error: 'FEATURE_NOT_ENABLED' });
+    if (!db.pendingPayments) db.pendingPayments = [];
+
+    const pendingList = db.pendingPayments.filter(p => p.gymKey === gymKey && p.status === 'pending');
+    let verifiedCount = 0;
+
+    for (const pending of pendingList) {
+      const result = createPaymentRecord(db, {
+        gymKey,
+        memberId: pending.memberId,
+        amount: pending.amount,
+        method: `${pending.method} (Bulk Verified)`,
+        monthsCovered: 1
+      });
+
+      if (!result.error) {
+        result.payment.transactionHash = pending.transactionHash;
+        const verificationCode = `VER-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`;
+        pending.status = 'verified';
+        pending.verifiedAt = new Date().toISOString();
+        pending.verificationCode = verificationCode;
+        pending.receiptNumber = result.payment.receiptNumber;
+        verifiedCount++;
+
+        const member = db.members.find(m => m.id === pending.memberId);
+        if (member && gym.whatsappStatus === 'connected') {
+          const msg = `Payment confirmed ✅\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
+          try {
+            await supabase.from('message_jobs').insert([{
+              id: crypto.randomUUID(),
+              gym_key: gymKey,
+              member_id: member.id,
+              member_name: member.name,
+              member_phone: member.phone,
+              message: msg,
+              status: 'pending',
+              created_at: new Date().toISOString()
+            }]);
+          } catch {}
+        }
+      }
+    }
+
+    await writeDB(db);
+    return res.json({ message: `Bulk verification complete. ${verifiedCount} payments processed.` });
+  }
+
+  if (req.method === 'POST' && url.includes('bulk-clear')) {
+    const { gymKey } = req.body;
+    if (!db.pendingPayments) db.pendingPayments = [];
+    const originalCount = db.pendingPayments.length;
+    db.pendingPayments = db.pendingPayments.filter(p => !(p.gymKey === gymKey && p.status === 'pending'));
+    await writeDB(db);
+    return res.json({ message: `Queue cleared. ${originalCount - db.pendingPayments.length} pending payments removed.` });
   }
 
   res.status(405).json({ error: 'Method not allowed' });

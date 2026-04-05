@@ -66,8 +66,7 @@ export default async function handler(req, res) {
       easypaisaNumber: decryptSensitive(raw.easypaisaNumberEncrypted || ''), 
       jazzcashNumber: decryptSensitive(raw.jazzcashNumberEncrypted || ''), 
       bankTitle: raw.bankTitle || '', 
-      bankIban: decryptSensitive(raw.bankIbanEncrypted || ''),
-      autoConfirm: !!raw.autoConfirm
+      bankIban: decryptSensitive(raw.bankIbanEncrypted || '')
     };
     return res.json({ profile: profileData });
   }
@@ -99,8 +98,7 @@ export default async function handler(req, res) {
         easypaisaNumberEncrypted: p.easypaisaNumber ? encryptSensitive(p.easypaisaNumber) : (currentPS.easypaisaNumberEncrypted || ''),
         jazzcashNumberEncrypted: p.jazzcashNumber ? encryptSensitive(p.jazzcashNumber) : (currentPS.jazzcashNumberEncrypted || ''),
         bankTitle: p.bankTitle || currentPS.bankTitle || '',
-        bankIbanEncrypted: p.bankIban ? encryptSensitive(p.bankIban) : (currentPS.bankIbanEncrypted || ''),
-        autoConfirm: p.autoConfirm !== undefined ? !!p.autoConfirm : !!currentPS.autoConfirm
+        bankIbanEncrypted: p.bankIban ? encryptSensitive(p.bankIban) : (currentPS.bankIbanEncrypted || '')
       };
       
       safeProfile.paymentSettings = newPS;

@@ -90,7 +90,7 @@ export default function Members() {
     const newStatus = member.status === 'Active' ? 'Dues' : 'Active';
     try {
       const res = await api.put(`/members/${member.id}/status`, { gymKey, status: newStatus });
-      toast.success(`Marked as ${newStatus === 'Active' ? 'Paid' : 'Unpaid'}`);
+      toast.success(res.data.message || `Marked as ${newStatus === 'Active' ? 'Paid' : 'Unpaid'}`);
       setMembers(prev => prev.map(m => m.id === member.id ? res.data.member : m));
     } catch { toast.error('Failed to update status'); }
   };

@@ -99,15 +99,37 @@ export default async function handler(req, res) {
     }
 
     if (status === 'Active') {
-      member.subscriptionEndDate = addMonths(new Date(), 1).toISOString();
+      // Instead of updating status, add to verification queue
+      if (!db.pendingPayments) db.pendingPayments = [];
+      const alreadyPending = db.pendingPayments.some(p => p.memberId === memberId && p.status === 'pending');
+      if (alreadyPending) return res.status(400).json({ error: 'Verification already pending for this member' });
+
+      const pending = {
+        id: uuidv4(),
+        gymKey,
+        memberId,
+        memberName: member.name,
+        amount: String(member.amount || 0),
+        packageName: member.packageName || 'Monthly',
+        method: 'Manual Toggle',
+        transactionHash: 'INTERNAL-' + uuidv4().slice(0, 8),
+        transactionLast4: 'OFFLINE',
+        proofNote: 'Marked as Paid by Owner',
+        status: 'pending',
+        isInternal: true,
+        createdAt: new Date().toISOString()
+      };
+      db.pendingPayments.unshift(pending);
+      await writeDB(db);
+      return res.json({ message: 'Added to verification queue', member: { ...member, status: calculateMemberStatus(member) } });
     } else {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       member.subscriptionEndDate = yesterday.toISOString();
+      db.members[memberIndex] = member;
+      await writeDB(db);
+      return res.json({ message: 'Marked as Unpaid', member: { ...member, status: calculateMemberStatus(member) } });
     }
-    db.members[memberIndex] = member;
-    await writeDB(db);
-    return res.json({ message: 'Status updated', member: { ...member, status: calculateMemberStatus(member) } });
   }
 
   if (req.method === 'DELETE') {
