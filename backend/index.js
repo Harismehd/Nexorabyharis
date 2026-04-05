@@ -62,7 +62,8 @@ function normalizePaymentSettings(raw) {
     easypaisaNumber: raw?.easypaisaNumber ? String(raw.easypaisaNumber).trim() : '',
     jazzcashNumber: raw?.jazzcashNumber ? String(raw.jazzcashNumber).trim() : '',
     bankTitle: raw?.bankTitle ? String(raw.bankTitle).trim() : '',
-    bankIban: raw?.bankIban ? String(raw.bankIban).trim() : ''
+    bankIban: raw?.bankIban ? String(raw.bankIban).trim() : '',
+    autoConfirm: !!raw?.autoConfirm
   };
 }
 
@@ -1057,7 +1058,8 @@ app.post('/api/profile', async (req, res) => {
       easypaisaNumberEncrypted: normalized.easypaisaNumber ? encryptSensitive(normalized.easypaisaNumber) : '',
       jazzcashNumberEncrypted: normalized.jazzcashNumber ? encryptSensitive(normalized.jazzcashNumber) : '',
       bankTitle: normalized.bankTitle,
-      bankIbanEncrypted: normalized.bankIban ? encryptSensitive(normalized.bankIban) : ''
+      bankIbanEncrypted: normalized.bankIban ? encryptSensitive(normalized.bankIban) : '',
+      autoConfirm: normalized.autoConfirm
     };
   }
 
@@ -1067,6 +1069,32 @@ app.post('/api/profile', async (req, res) => {
 
   await updateDB('gyms', g => g.gymKey === gymKey, g => ({ ...g, ...safeProfile }));
   res.json({ message: 'Profile updated successfully' });
+});
+
+app.put('/api/profile', async (req, res) => {
+  const { gymKey } = req.query;
+  const updates = req.body;
+  if (!gymKey) return res.status(400).json({ error: 'Missing gymKey query parameter' });
+
+  const db = await readDB();
+  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+
+  const gym = db.gyms[gymIndex];
+  ensureGymDefaults(gym);
+
+  // Partial Update logic
+  for (const [key, value] of Object.entries(updates)) {
+    if (key === 'paymentSettings' && typeof value === 'object') {
+       gym.paymentSettings = { ...gym.paymentSettings, ...value };
+    } else if (['name', 'address', 'contact', 'email', 'taxReg', 'footerMessage', 'autoMessagingEnabled', 'template'].includes(key)) {
+       gym[key] = value;
+    }
+  }
+
+  db.gyms[gymIndex] = gym;
+  await writeDB(db);
+  res.json({ message: 'Profile updated successfully', profile: gym });
 });
 
 // ========================

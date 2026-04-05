@@ -65,20 +65,40 @@ export default async function handler(req, res) {
     return res.json({ profile: profileData });
   }
 
-  if (req.method === 'POST') {
-    const { profile } = req.body;
+  if (req.method === 'POST' || req.method === 'PUT') {
+    const isPartial = req.method === 'PUT';
+    const profile = isPartial ? req.body : req.body.profile;
+    
+    if (!profile && !isPartial) return res.status(400).json({ error: 'Missing profile in body' });
+
     const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
     if (gymIndex === -1) return res.status(404).json({ error: 'Not found' });
     const gym = db.gyms[gymIndex];
     ensureGymDefaults(gym);
     const rank = PACKAGE_RANK[gym.package] || 1;
+    
     const safeProfile = { ...profile };
+
+    // Gate features strictly by package.
     if (rank < PACKAGE_RANK.growth) {
       delete safeProfile.paymentSettings;
     } else if (safeProfile.paymentSettings) {
       const p = safeProfile.paymentSettings;
-      safeProfile.paymentSettings = { methods: p.methods || ['easypaisa'], easypaisaNumberEncrypted: p.easypaisaNumber ? encryptSensitive(p.easypaisaNumber) : '', jazzcashNumberEncrypted: p.jazzcashNumber ? encryptSensitive(p.jazzcashNumber) : '', bankTitle: p.bankTitle || '', bankIbanEncrypted: p.bankIban ? encryptSensitive(p.bankIban) : '' };
+      // If partial update, we merge with existing paymentSettings
+      const currentPS = gym.paymentSettings || {};
+      
+      const newPS = {
+        methods: p.methods || currentPS.methods || ['easypaisa'],
+        easypaisaNumberEncrypted: p.easypaisaNumber ? encryptSensitive(p.easypaisaNumber) : (currentPS.easypaisaNumberEncrypted || ''),
+        jazzcashNumberEncrypted: p.jazzcashNumber ? encryptSensitive(p.jazzcashNumber) : (currentPS.jazzcashNumberEncrypted || ''),
+        bankTitle: p.bankTitle || currentPS.bankTitle || '',
+        bankIbanEncrypted: p.bankIban ? encryptSensitive(p.bankIban) : (currentPS.bankIbanEncrypted || ''),
+        autoConfirm: p.autoConfirm !== undefined ? !!p.autoConfirm : !!currentPS.autoConfirm
+      };
+      
+      safeProfile.paymentSettings = newPS;
     }
+
     if (rank < PACKAGE_RANK.pro) {
       delete safeProfile.template;
       delete safeProfile.packages;
@@ -86,9 +106,10 @@ export default async function handler(req, res) {
       const limit = gym.package === 'pro_plus' ? 7 : 3;
       if (safeProfile.packages.length > limit) safeProfile.packages = safeProfile.packages.slice(0, limit);
     }
+
     db.gyms[gymIndex] = { ...gym, ...safeProfile };
     await writeDB(db);
-    return res.json({ message: 'Profile updated successfully' });
+    return res.json({ message: 'Profile updated successfully', profile: db.gyms[gymIndex] });
   }
 
   res.status(405).json({ error: 'Method not allowed' });
