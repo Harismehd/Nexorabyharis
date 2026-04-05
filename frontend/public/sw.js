@@ -26,8 +26,12 @@ self.addEventListener('fetch', event => {
             headers: { 'Content-Type': 'text/plain' }
           });
         }
-        // For other assets/API, re-throw to trigger a standard browser error
-        throw err;
+        // For other assets/API, return a generic error response instead of throwing
+        // Throwing inside respondWith results in a site crash on some browsers.
+        return new Response('Network or API failure occurred.', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain' }
+        });
       });
     })
   );

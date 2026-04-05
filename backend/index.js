@@ -1027,13 +1027,14 @@ app.get('/api/profile', async (req, res) => {
   // Return everything except password
   const { password, ...profileData } = gym;
   profileData.package = gym.package || 'starter';
-  const rawSettings = gym.paymentSettings || {};
+  const raw = gym.paymentSettings || {};
   profileData.paymentSettings = {
-    methods: Array.isArray(rawSettings.methods) ? rawSettings.methods : ['easypaisa'],
-    easypaisaNumber: decryptSensitive(rawSettings.easypaisaNumberEncrypted || ''),
-    jazzcashNumber: decryptSensitive(rawSettings.jazzcashNumberEncrypted || ''),
-    bankTitle: rawSettings.bankTitle || '',
-    bankIban: decryptSensitive(rawSettings.bankIbanEncrypted || '')
+    methods: Array.isArray(raw.methods) ? raw.methods : ['easypaisa'],
+    easypaisaNumber: decryptSensitive(raw.easypaisaNumberEncrypted || ''),
+    jazzcashNumber: decryptSensitive(raw.jazzcashNumberEncrypted || ''),
+    bankTitle: raw.bankTitle || '',
+    bankIban: decryptSensitive(raw.bankIbanEncrypted || ''),
+    autoConfirm: !!raw.autoConfirm
   };
   res.json({ profile: profileData });
 });

@@ -61,7 +61,14 @@ export default async function handler(req, res) {
     const { password, ...profileData } = gym;
     profileData.package = gym.package || 'starter';
     const raw = gym.paymentSettings || {};
-    profileData.paymentSettings = { methods: Array.isArray(raw.methods) ? raw.methods : ['easypaisa'], easypaisaNumber: decryptSensitive(raw.easypaisaNumberEncrypted || ''), jazzcashNumber: decryptSensitive(raw.jazzcashNumberEncrypted || ''), bankTitle: raw.bankTitle || '', bankIban: decryptSensitive(raw.bankIbanEncrypted || '') };
+    profileData.paymentSettings = {
+      methods: Array.isArray(raw.methods) ? raw.methods : ['easypaisa'], 
+      easypaisaNumber: decryptSensitive(raw.easypaisaNumberEncrypted || ''), 
+      jazzcashNumber: decryptSensitive(raw.jazzcashNumberEncrypted || ''), 
+      bankTitle: raw.bankTitle || '', 
+      bankIban: decryptSensitive(raw.bankIbanEncrypted || ''),
+      autoConfirm: !!raw.autoConfirm
+    };
     return res.json({ profile: profileData });
   }
 
