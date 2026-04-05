@@ -53,7 +53,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const db = await readDB();
-  const gymKey = req.method === 'GET' ? req.query.gymKey : req.body.gymKey;
+  const gymKey = req.query.gymKey || req.body.gymKey;
 
   if (req.method === 'GET') {
     const gym = db.gyms.find(g => g.gymKey === gymKey);

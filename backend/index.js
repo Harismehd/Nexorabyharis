@@ -1072,9 +1072,9 @@ app.post('/api/profile', async (req, res) => {
 });
 
 app.put('/api/profile', async (req, res) => {
-  const { gymKey } = req.query;
+  const gymKey = req.query.gymKey || req.body.gymKey;
   const updates = req.body;
-  if (!gymKey) return res.status(400).json({ error: 'Missing gymKey query parameter' });
+  if (!gymKey) return res.status(400).json({ error: 'Missing gymKey' });
 
   const db = await readDB();
   const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
