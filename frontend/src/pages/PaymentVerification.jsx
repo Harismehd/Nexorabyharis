@@ -24,12 +24,18 @@ export default function PaymentVerification() {
     return map;
   }, [members]);
 
+  const [loading, setLoading] = useState(true);
+
   const loadData = async () => {
+    if (!gymKey) return;
+    setLoading(true);
     try {
+      const profRes = await api.get(`/profile?gymKey=${gymKey}`);
       const pkg = profRes.data.profile?.package || 'starter';
       setGymPackage(pkg);
 
       if (!(pkg === 'growth' || pkg === 'pro' || pkg === 'pro_plus')) {
+        setLoading(false);
         return;
       }
 
@@ -41,6 +47,8 @@ export default function PaymentVerification() {
       setPendingPayments(pendingRes.data.pendingPayments || []);
     } catch {
       toast.error('Failed to load payment verification data');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,7 +120,12 @@ export default function PaymentVerification() {
         </p>
       </div>
 
-      {!(gymPackage === 'growth' || gymPackage === 'pro' || gymPackage === 'pro_plus') && (
+      {loading ? (
+        <div style={{ padding: '40px', textAlign: 'center', color: '#475569' }}>
+          <Activity className="animate-spin mb-2" size={24} style={{ margin: '0 auto' }} />
+          <p style={{ fontSize: '14px' }}>Loading verification security protocols...</p>
+        </div>
+      ) : !(gymPackage === 'growth' || gymPackage === 'pro' || gymPackage === 'pro_plus') && (
         <div style={{ padding: '20px', borderRadius: '16px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Shield color="#f59e0b" size={20} />
           <p style={{ fontSize: '14px', color: '#f59e0b', margin: 0 }}>
