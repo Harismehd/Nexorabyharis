@@ -9,7 +9,7 @@ import {
   Banknote, TrendingUp, CreditCard, AlertCircle, 
   Users, Calendar, BarChart3, Activity, ArrowUpRight,
   Crown, Zap, Flame, Target, Layers, Lock, Megaphone, Info, AlertTriangle, AlertOctagon,
-  CircleDollarSign, X, Calculator
+  BadgeDollarSign, X, History
 } from 'lucide-react';
 import LockedOverlay from '../components/LockedOverlay';
 
@@ -41,7 +41,7 @@ function DailyClosingModal({ show, onClose, payments, members }) {
 
         <div className="flex items-center gap-4 mb-8">
            <div style={{ background: 'rgba(52, 211, 153, 0.1)', padding: '12px', borderRadius: '16px', color: '#34d399' }}>
-              <CircleDollarSign size={28} />
+              <BadgeDollarSign size={28} />
            </div>
            <div>
               <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#fff', margin: 0 }}>Daily Cash Closing</h2>
@@ -73,7 +73,7 @@ function DailyClosingModal({ show, onClose, payments, members }) {
            </div>
 
            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: 'rgba(251, 191, 36, 0.05)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.1)' }}>
-              <Calculator size={16} color="#fbbf24" />
+              <History size={16} color="#fbbf24" />
               <p style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 600, margin: 0 }}>Recommendation: Count your physical cash drawer now and match it with the expected total above.</p>
            </div>
         </div>
@@ -244,7 +244,7 @@ export default function Dashboard() {
               className="glass-pane hover:bg-white/10 transition-all" 
               style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.2)' }}
             >
-              <CircleDollarSign size={14} />
+              <BadgeDollarSign size={14} />
               Daily Closing
             </button>
           )}
