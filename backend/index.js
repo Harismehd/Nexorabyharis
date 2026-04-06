@@ -281,10 +281,12 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
   if (action === 'update') {
     const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
     if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+    console.log(`[ADMIN_UPDATE] Gym: ${gymKey}, Field: ${field}, Value:`, value);
     if (field === 'deviceLimit') db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
+    else if (field === 'isProfileLocked') db.gyms[gymIndex].isProfileLocked = (value === true || value === 'true');
     else db.gyms[gymIndex][field] = value;
     await writeDB(db);
-    return res.json({ message: `Updated ${field} successfully` });
+    return res.json({ message: `Updated ${field} successfully`, newValue: db.gyms[gymIndex][field] });
   }
 
   if (action === 'toggle') {
@@ -822,6 +824,59 @@ app.post('/api/payments/proof', async (req, res) => {
 });
 
 
+app.post('/api/payments/pending/bulk-verify', async (req, res) => {
+  const { gymKey } = req.body;
+  const db = await readDB();
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  if (!gym || !requireMinPackage(gym, 'growth')) return res.status(403).json({ error: 'FEATURE_NOT_ENABLED' });
+  if (!db.pendingPayments) db.pendingPayments = [];
+
+  const pendingList = db.pendingPayments.filter(p => p.gymKey === gymKey && p.status === 'pending');
+  let verifiedCount = 0;
+
+  for (const pending of pendingList) {
+    const result = createPaymentRecord(db, {
+      gymKey,
+      memberId: pending.memberId,
+      amount: pending.amount,
+      method: `${pending.method} (Bulk Verified)`,
+      monthsCovered: 1
+    });
+
+    if (!result.error) {
+      result.payment.transactionHash = pending.transactionHash;
+      const verificationCode = `VER-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`;
+      pending.status = 'verified';
+      pending.verifiedAt = new Date().toISOString();
+      pending.verificationCode = verificationCode;
+      pending.receiptNumber = result.payment.receiptNumber;
+      verifiedCount++;
+
+      const member = db.members.find(m => m.id === pending.memberId);
+      if (member && gym.whatsappStatus === 'connected') {
+        const msg = `Payment confirmed ✅\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
+        try { sendMessage(gymKey, member.phone, msg); } catch {}
+      }
+    }
+  }
+
+  await writeDB(db);
+  res.json({ message: `Bulk verification complete. ${verifiedCount} payments processed.` });
+});
+
+app.post('/api/payments/pending/bulk-clear', async (req, res) => {
+  const { gymKey } = req.body;
+  const db = await readDB();
+  if (!db.pendingPayments) db.pendingPayments = [];
+  
+  const originalCount = db.pendingPayments.length;
+  db.pendingPayments = db.pendingPayments.filter(p => !(p.gymKey === gymKey && p.status === 'pending'));
+  const clearedCount = originalCount - db.pendingPayments.length;
+  
+  await writeDB(db);
+  res.json({ message: `Queue cleared. ${clearedCount} pending payments removed.` });
+});
+
 app.post('/api/payments/pending/:id/verify', async (req, res) => {
   const { id } = req.params;
   const { gymKey, approved, monthsCovered } = req.body;
@@ -884,59 +939,6 @@ app.post('/api/payments/pending/:id/verify', async (req, res) => {
     },
     payment: result.payment
   });
-});
-
-app.post('/api/payments/pending/bulk-verify', async (req, res) => {
-  const { gymKey } = req.body;
-  const db = await readDB();
-  const gym = db.gyms.find(g => g.gymKey === gymKey);
-  if (!gym || !requireMinPackage(gym, 'growth')) return res.status(403).json({ error: 'FEATURE_NOT_ENABLED' });
-  if (!db.pendingPayments) db.pendingPayments = [];
-
-  const pendingList = db.pendingPayments.filter(p => p.gymKey === gymKey && p.status === 'pending');
-  let verifiedCount = 0;
-
-  for (const pending of pendingList) {
-    const result = createPaymentRecord(db, {
-      gymKey,
-      memberId: pending.memberId,
-      amount: pending.amount,
-      method: `${pending.method} (Bulk Verified)`,
-      monthsCovered: 1
-    });
-
-    if (!result.error) {
-      result.payment.transactionHash = pending.transactionHash;
-      const verificationCode = `VER-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`;
-      pending.status = 'verified';
-      pending.verifiedAt = new Date().toISOString();
-      pending.verificationCode = verificationCode;
-      pending.receiptNumber = result.payment.receiptNumber;
-      verifiedCount++;
-
-      const member = db.members.find(m => m.id === pending.memberId);
-      if (member && gym.whatsappStatus === 'connected') {
-        const msg = `Payment confirmed ✅\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
-        try { sendMessage(gymKey, member.phone, msg); } catch {}
-      }
-    }
-  }
-
-  await writeDB(db);
-  res.json({ message: `Bulk verification complete. ${verifiedCount} payments processed.` });
-});
-
-app.post('/api/payments/pending/bulk-clear', async (req, res) => {
-  const { gymKey } = req.body;
-  const db = await readDB();
-  if (!db.pendingPayments) db.pendingPayments = [];
-  
-  const originalCount = db.pendingPayments.length;
-  db.pendingPayments = db.pendingPayments.filter(p => !(p.gymKey === gymKey && p.status === 'pending'));
-  const clearedCount = originalCount - db.pendingPayments.length;
-  
-  await writeDB(db);
-  res.json({ message: `Queue cleared. ${clearedCount} pending payments removed.` });
 });
 
 // ========================

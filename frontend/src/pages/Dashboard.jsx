@@ -17,10 +17,13 @@ function DailyClosingModal({ show, onClose, payments, members }) {
   if (!show) return null;
 
   const today = new Date().toISOString().slice(0, 10);
-  const cashToday = payments.filter(p => 
-    (p.paymentDate || '').startsWith(today) && 
-    String(p.method || '').toLowerCase().includes('cash')
-  );
+  const cashToday = payments.filter(p => {
+    const dMatch = (p.paymentDate || '').startsWith(today);
+    const m = String(p.method || '').toLowerCase();
+    // Include various cash-equivalent labels used in different tiers
+    const isCashEquivalent = m.includes('cash') || m.includes('direct') || m.includes('manual');
+    return dMatch && isCashEquivalent;
+  });
   
   const cashSum = cashToday.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
   

@@ -2,17 +2,17 @@ import { Flame, Shield, Zap, Target, Star, ArrowUpRight, Dumbbell, MessageSquare
 
 export default function About() {
   const stats = [
-    { label: 'Gyms Powered', value: '150+', icon: <Globe size={20} /> },
-    { label: 'Messages Sent', value: '2.4M', icon: <Zap size={20} /> },
-    { label: 'Collections Secure', value: 'Rs. 85M+', icon: <Shield size={20} /> },
-    { label: 'Service Uptime', value: '99.9%', icon: <Rocket size={20} /> },
+    { label: 'Gyms Powered', value: '150+' },
+    { label: 'Messages Sent', value: '2.4M' },
+    { label: 'Collections Secure', value: 'Rs. 85M+' },
+    { label: 'Service Uptime', value: '99.9%' },
   ];
 
   const features = [
-    { title: 'Fee Automation', desc: 'Eliminate manual tracking with smart WhatsApp triggers.', icon: <Zap color="#fbbf24" /> },
-    { title: 'Digital Receipts', desc: 'Professional PDFs generated and sent in seconds.', icon: <Award color="#34d399" /> },
-    { title: 'Finance Guard', desc: 'Predictive analytics to catch revenue leaks before they happen.', icon: <Shield color="#00d4ff" /> },
-    { title: 'Multi-Node Architecture', desc: 'High-availability infrastructure for enterprise gym chains.', icon: <Target color="#a78bfa" /> },
+    { title: 'Fee Automation', desc: 'Eliminate manual tracking with smart WhatsApp triggers.' },
+    { title: 'Digital Receipts', desc: 'Professional PDFs generated and sent in seconds.' },
+    { title: 'Finance Guard', desc: 'Predictive analytics to catch revenue leaks before they happen.' },
+    { title: 'Multi-Node Architecture', desc: 'High-availability infrastructure for enterprise gym chains.' },
   ];
 
   return (
