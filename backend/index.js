@@ -238,6 +238,7 @@ app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
       isActive: g.isActive !== false, // Default to true
       package: g.package || 'starter',
       deviceLimit: g.deviceLimit || 5, // Task 4
+      isProfileLocked: g.isProfileLocked === true,
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -253,6 +254,7 @@ app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
       isActive: g.isActive !== false,
       package: g.package || 'starter',
       deviceLimit: g.deviceLimit || 5,
+      isProfileLocked: g.isProfileLocked === true,
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))

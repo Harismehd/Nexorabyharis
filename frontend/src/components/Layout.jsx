@@ -57,6 +57,7 @@ export default function Layout() {
     ...(packageTier === 'pro_plus' ? [{ name: 'Revenue Leak Guard', path: '/finance-guard', icon: BadgeDollarSign }] : []),
     { name: 'Logs', path: '/logs', icon: History },
     { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'About Nexora', path: '/about', icon: Info },
   ];
 
   const closeSidebar = () => setSidebarOpen(false);

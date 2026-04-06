@@ -12,6 +12,7 @@ import Upload from './pages/Upload';
 import SendReminders from './pages/SendReminders';
 import Settings from './pages/Settings';
 import Logs from './pages/Logs';
+import About from './pages/About';
 import MasterAdmin from './pages/MasterAdmin';
 import PaymentVerification from './pages/PaymentVerification';
 import FinanceGuard from './pages/FinanceGuard';
@@ -86,6 +87,7 @@ function AppRoutes() {
         <Route path="finance-guard" element={<FinanceGuard />} />
         <Route path="settings" element={<Settings />} />
         <Route path="logs" element={<Logs />} />
+        <Route path="about" element={<About />} />
       </Route>
       <Route path="/admin" element={<AdminRoute><MasterAdmin /></AdminRoute>} />
       <Route path="/register" element={<Register />} />

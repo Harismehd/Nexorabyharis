@@ -8,18 +8,94 @@ import {
 import { 
   Banknote, TrendingUp, CreditCard, AlertCircle, 
   Users, Calendar, BarChart3, Activity, ArrowUpRight,
-  Crown, Zap, Flame, Target, Layers, Lock, Megaphone, Info, AlertTriangle, AlertOctagon
+  Crown, Zap, Flame, Target, Layers, Lock, Megaphone, Info, AlertTriangle, AlertOctagon,
+  CircleDollarSign, X, Calculator
 } from 'lucide-react';
 import LockedOverlay from '../components/LockedOverlay';
+
+function DailyClosingModal({ show, onClose, payments, members }) {
+  if (!show) return null;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const cashToday = payments.filter(p => 
+    (p.paymentDate || '').startsWith(today) && 
+    String(p.method || '').toLowerCase().includes('cash')
+  );
+  
+  const cashSum = cashToday.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+  
+  // Members due today (simplified: any member currently in 'Due' status)
+  const dueMembers = members.filter(m => {
+    if (!m.subscriptionEndDate) return true;
+    return new Date(m.subscriptionEndDate) < new Date();
+  });
+  
+  const dueSum = dueMembers.reduce((s, m) => s + parseFloat(m.amount || 0), 0);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(12px)' }}>
+      <div className="card animate-in zoom-in-95 duration-300" style={{ maxWidth: '420px', width: '100%', border: '1px solid rgba(0, 212, 255, 0.2)', padding: '32px', position: 'relative', background: 'linear-gradient(135deg, #0f172a 0%, #020617 100%)' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: '20px', right: '20px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
+          <X size={20} />
+        </button>
+
+        <div className="flex items-center gap-4 mb-8">
+           <div style={{ background: 'rgba(52, 211, 153, 0.1)', padding: '12px', borderRadius: '16px', color: '#34d399' }}>
+              <CircleDollarSign size={28} />
+           </div>
+           <div>
+              <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#fff', margin: 0 }}>Daily Cash Closing</h2>
+              <p style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+           </div>
+        </div>
+
+        <div className="space-y-6">
+           <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+              <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cash Collected Today</p>
+              <p style={{ fontSize: '28px', fontWeight: 900, color: '#34d399' }}>Rs. {cashSum.toLocaleString()}</p>
+              <p style={{ fontSize: '10px', color: '#34d399', fontWeight: 700 }}>{cashToday.length} successful transactions</p>
+           </div>
+
+           <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+                 <p style={{ fontSize: '9px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Pending Dues</p>
+                 <p style={{ fontSize: '18px', fontWeight: 800, color: '#f87171' }}>Rs. {dueSum.toLocaleString()}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+                 <p style={{ fontSize: '9px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Due Members</p>
+                 <p style={{ fontSize: '18px', fontWeight: 800, color: '#f87171' }}>{dueMembers.length}</p>
+              </div>
+           </div>
+
+           <div className="p-5 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-1">
+              <p style={{ fontSize: '10px', color: '#00d4ff', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expected in Drawer</p>
+              <p style={{ fontSize: '24px', fontWeight: 900, color: '#fff' }}>Rs. {cashSum.toLocaleString()}</p>
+           </div>
+
+           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: 'rgba(251, 191, 36, 0.05)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.1)' }}>
+              <Calculator size={16} color="#fbbf24" />
+              <p style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 600, margin: 0 }}>Recommendation: Count your physical cash drawer now and match it with the expected total above.</p>
+           </div>
+        </div>
+
+        <button onClick={onClose} className="w-full mt-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-black text-xs tracking-widest rounded-xl transition-all uppercase">
+          Close Report
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { gymKey, packageTier } = useAuth();
   const [members, setMembers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [broadcasts, setBroadcasts] = useState([]);
+  const [showClosingModal, setShowClosingModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const isAdvancedLocked = packageTier === 'starter' || packageTier === 'growth';
+  const canCloseCash = packageTier === 'pro' || packageTier === 'pro_plus';
 
   useEffect(() => {
     Promise.all([
@@ -162,12 +238,29 @@ export default function Dashboard() {
           <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px', opacity: 0.8 }}>Next-Level Gym Intelligence • Fee Automation by Haris</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          {canCloseCash && (
+            <button 
+              onClick={() => setShowClosingModal(true)}
+              className="glass-pane hover:bg-white/10 transition-all" 
+              style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.2)' }}
+            >
+              <CircleDollarSign size={14} />
+              Daily Closing
+            </button>
+          )}
           <div className="glass-pane" style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, color: '#00d4ff' }}>
             <Activity size={14} />
             Live System
           </div>
         </div>
       </div>
+
+      <DailyClosingModal 
+        show={showClosingModal} 
+        onClose={() => setShowClosingModal(false)} 
+        payments={payments} 
+        members={members} 
+      />
 
       {/* Broadcast System Alerts */}
       {broadcasts.length > 0 && (
