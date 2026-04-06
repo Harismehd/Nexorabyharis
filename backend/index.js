@@ -77,7 +77,8 @@ function ensureGymDefaults(gym) {
   if (typeof gym.isActive !== 'boolean') gym.isActive = true;
   if (!gym.package) gym.package = 'starter';
   if (gym.deviceLimit === undefined) gym.deviceLimit = 5;
-  if (gym.isProfileLocked === undefined) gym.isProfileLocked = false;
+  // Rigorous boolean cast: ensure field exists and is a real boolean
+  gym.isProfileLocked = gym.isProfileLocked === true || gym.isProfileLocked === 'true';
   if (!gym.paymentSettings) {
     gym.paymentSettings = {
       methods: ['easypaisa'],
@@ -283,7 +284,11 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
     if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
     console.log(`[ADMIN_UPDATE] Gym: ${gymKey}, Field: ${field}, Value:`, value);
     if (field === 'deviceLimit') db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
-    else if (field === 'isProfileLocked') db.gyms[gymIndex].isProfileLocked = (value === true || value === 'true');
+    else if (field === 'isProfileLocked') {
+      // Cast incoming value strictly to boolean
+      const isLocked = (String(value).toLowerCase() === 'true' || value === true);
+      db.gyms[gymIndex].isProfileLocked = isLocked;
+    }
     else db.gyms[gymIndex][field] = value;
     await writeDB(db);
     return res.json({ message: `Updated ${field} successfully`, newValue: db.gyms[gymIndex][field] });
