@@ -6,7 +6,7 @@ import {
   LayoutDashboard, MessageSquare, UploadCloud, Send,
   Settings, History, LogOut, Dumbbell, Users, Menu,
   ShieldCheck, BadgeDollarSign, ChevronRight, FileText,
-  X, Megaphone   // ← X and Megaphone added here only once
+  X, Megaphone, Info
 } from 'lucide-react';
 
 export default function Layout() {
