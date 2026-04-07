@@ -109,7 +109,10 @@ export default function Dashboard() {
       setMembers(memRes.data.members || []);
       setPayments(payRes.data.payments || []);
       setBroadcasts(broadRes.data.broadcasts || []);
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch(err => {
+      console.error('Dashboard Fetch Error:', err);
+      // Optional: set an error state here if you want to show a specific "Service Unavailable" UI
+    }).finally(() => setLoading(false));
   }, [gymKey]);
 
   const activeCount = members.filter(m => new Date(m.subscriptionEndDate) > new Date()).length;

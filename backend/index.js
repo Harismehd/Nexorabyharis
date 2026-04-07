@@ -225,11 +225,19 @@ app.use('/api', async (req, res, next) => {
     
     // Bypass if:
     // 1. It's the login route
-    // 2. It's an admin route
-    // 3. It's a profile route (needed for layout/sidebar basic data)
-    // 4. Request has a valid Admin Key
+    // 2. It's an admin/broadcast/profile route
+    // 3. It's essential dashboard data (read-only allowed during shutdown)
+    // 4. Request has a valid Admin Key (Master Admin GOD MODE)
     if (path === '/auth/login') return next();
-    if (path.startsWith('/admin') || path.startsWith('/broadcasts') || path.startsWith('/profile')) return next();
+    if (
+      path.startsWith('/admin') || 
+      path.startsWith('/broadcasts') || 
+      path.startsWith('/profile') ||
+      path.startsWith('/members') ||
+      path.startsWith('/payments') ||
+      path.startsWith('/logs')
+    ) return next();
+    
     if (adminKey && adminKey === db.system.masterPassword) return next();
 
     return res.status(503).json({ error: 'SYSTEM_OFFLINE', message: 'Platform is completely offline. Please contact the provider.' });

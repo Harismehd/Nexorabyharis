@@ -12,27 +12,13 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Network first — always get fresh content
+// Network first, fallback to cache
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    fetch(event.request).catch(err => {
-      // If network fails, try cache
-      return caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        // If it's a navigation request, show a fallback message instead of crashing
-        if (event.request.mode === 'navigate') {
-          return new Response('Offline: Network error occurred. Please check your connection.', {
-            status: 408,
-            headers: { 'Content-Type': 'text/plain' }
-          });
-        }
-        // For other assets/API, return a generic error response instead of throwing
-        // Throwing inside respondWith results in a site crash on some browsers.
-        return new Response('Network or API failure occurred.', {
-          status: 503,
-          headers: { 'Content-Type': 'text/plain' }
-        });
-      });
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
     })
   );
 });
