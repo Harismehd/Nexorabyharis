@@ -181,17 +181,13 @@ export default function MasterAdmin() {
     }
   };
 
-  const handleUpdateGymSecurity = async (gymKey, field, value) => {
+  const handleToggleLock = async (gymKey) => {
     try {
-      await api.post('/admin?action=update', { 
-        gymKey, 
-        field, 
-        value 
-      }, getAdminHeaders());
-      toast.success(`Updated ${field}`);
+      const res = await api.post(`/admin?action=lock`, { gymKey }, getAdminHeaders());
+      toast.success(res.data.message);
       fetchData();
     } catch {
-      toast.error('Update failed');
+      toast.error('Toggle lock failed');
     }
   };
 
@@ -478,7 +474,11 @@ export default function MasterAdmin() {
                             <input 
                               type="number"
                               defaultValue={g.deviceLimit || 5}
-                              onBlur={(e) => handleUpdateGymSecurity(g.gymKey, 'deviceLimit', Number(e.target.value))}
+                              onBlur={(e) => {
+                                api.post('/admin?action=update', { gymKey: g.gymKey, field: 'deviceLimit', value: e.target.value }, getAdminHeaders()).then(() => {
+                                  toast.success('Limit updated');
+                                }).catch(() => toast.error('Update failed'));
+                              }}
                               className="bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-[11px] w-12 focus:border-blue-500 focus:outline-none"
                             />
                           </div>
@@ -503,15 +503,18 @@ export default function MasterAdmin() {
                         <td className="py-5 px-4">
                           <div className="flex justify-center">
                             <button
-                              onClick={() => handleUpdateGymSecurity(g.gymKey, 'isSettingsLocked', !g.isSettingsLocked)}
-                              className={`p-2 rounded-lg transition-all border ${
+                              onClick={() => handleToggleLock(g.gymKey)}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border font-black text-[10px] tracking-widest uppercase ${
                                 g.isSettingsLocked 
-                                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.15)]' 
-                                  : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-slate-300'
+                                  ? 'bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)]' 
+                                  : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500 hover:text-white'
                               }`}
-                              title={g.isSettingsLocked ? 'Settings Locked' : 'Settings Unlocked'}
                             >
-                              {g.isSettingsLocked ? <Lock size={16} /> : <KeyRound size={16} />}
+                              {g.isSettingsLocked ? (
+                                <><Lock size={14} /> LOCKED</>
+                              ) : (
+                                <><KeyRound size={14} /> UNLOCKED</>
+                              )}
                             </button>
                           </div>
                         </td>

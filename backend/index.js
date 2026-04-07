@@ -303,6 +303,16 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
     return res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
   }
 
+  if (action === 'lock') {
+    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+    // Toggle the current state
+    const currentState = db.gyms[gymIndex].isSettingsLocked === true;
+    db.gyms[gymIndex].isSettingsLocked = !currentState;
+    await writeDB(db);
+    return res.json({ message: `Settings ${!currentState ? 'LOCKED' : 'UNLOCKED'}` });
+  }
+
   if (action === 'package') {
     const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
     if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
