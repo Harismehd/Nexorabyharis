@@ -503,15 +503,15 @@ export default function MasterAdmin() {
                         <td className="py-5 px-4">
                           <div className="flex justify-center">
                             <button
-                              onClick={() => handleUpdateGymSecurity(g.gymKey, 'isProfileLocked', !g.isProfileLocked)}
+                              onClick={() => handleUpdateGymSecurity(g.gymKey, 'isSettingsLocked', !g.isSettingsLocked)}
                               className={`p-2 rounded-lg transition-all border ${
-                                g.isProfileLocked 
+                                g.isSettingsLocked 
                                   ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.15)]' 
                                   : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-slate-300'
                               }`}
-                              title={g.isProfileLocked ? 'Profile Locked' : 'Profile Unlocked'}
+                              title={g.isSettingsLocked ? 'Settings Locked' : 'Settings Unlocked'}
                             >
-                              {g.isProfileLocked ? <Lock size={16} /> : <KeyRound size={16} />}
+                              {g.isSettingsLocked ? <Lock size={16} /> : <KeyRound size={16} />}
                             </button>
                           </div>
                         </td>

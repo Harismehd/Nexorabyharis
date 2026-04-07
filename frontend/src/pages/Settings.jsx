@@ -165,23 +165,42 @@ export default function Settings() {
               </span>
             </div>
             <p style={{ color: '#475569', fontSize: '14px' }}>Manage your gym profile, automated sending, and message templates.</p>
-            {profile.isProfileLocked === true && (
-              <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold">
-                <Lock size={14} /> Profile is verified and locked by administrator. Critical details cannot be changed.
+            {profile.isSettingsLocked === true && (
+              <div className="mt-4 flex items-center gap-2 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-sm font-bold shadow-[0_0_20px_rgba(245,158,11,0.05)] animate-pulse">
+                <Lock size={16} /> 
+                <span>Access Restrict: This configuration is currently locked by NEXORA Master Admin.</span>
               </div>
             )}
           </div>
-          <button onClick={handleSave} disabled={saving} className="btn-primary px-8 shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+          <button 
+            onClick={handleSave} 
+            disabled={saving || profile.isSettingsLocked === true} 
+            className={`btn-primary px-8 shadow-[0_0_20px_rgba(37,99,235,0.2)] ${profile.isSettingsLocked === true ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+          >
             <Save size={18} /> {saving ? 'Saving...' : 'Save All Settings'}
           </button>
         </div>
 
-        <div className="custom-scrollbar pr-4" style={{ 
+        <div className={`custom-scrollbar pr-4 ${profile.isSettingsLocked === true ? 'pointer-events-none' : ''}`} style={{ 
           maxHeight: 'calc(100vh - 250px)', 
           overflowY: 'auto',
-          paddingBottom: '40px'
+          paddingBottom: '40px',
+          filter: profile.isSettingsLocked === true ? 'grayscale(0.5) opacity(0.8)' : 'none'
         }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
+            {profile.isSettingsLocked === true && (
+              <div className="absolute inset-0 z-50 rounded-2xl flex flex-col items-center justify-center bg-slate-950/20 backdrop-blur-[1px]">
+                 <div className="bg-slate-900/90 p-8 rounded-3xl border border-amber-500/30 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center gap-4 border-dashed">
+                    <div className="p-4 bg-amber-500/10 rounded-full border border-amber-500/20">
+                      <Lock size={40} className="text-amber-500" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-white font-black text-xl uppercase tracking-tighter">Vault Protocol Active</h3>
+                      <p className="text-slate-500 text-sm mt-1 max-w-[240px]">This node's configuration is read-only. Contact Master Admin for modifications.</p>
+                    </div>
+                 </div>
+              </div>
+            )}
 
             {/* Gym Profile */}
             <div className="card space-y-4">
@@ -194,22 +213,22 @@ export default function Settings() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Gym Name *</label>
-                <input type="text" name="name" value={profile.name || ''} onChange={handleChange} className={`input-field ${profile.isProfileLocked === true ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="E.g. Titan Fitness" disabled={profile.isProfileLocked === true} />
+                <input type="text" name="name" value={profile.name || ''} onChange={handleChange} className="input-field" placeholder="E.g. Titan Fitness" />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Address</label>
-                <textarea name="address" value={profile.address || ''} onChange={handleChange} className={`input-field ${profile.isProfileLocked === true ? 'opacity-60 cursor-not-allowed' : ''}`} style={{ height: '80px', resize: 'vertical' }} placeholder="Full gym address..." disabled={profile.isProfileLocked === true} />
+                <textarea name="address" value={profile.address || ''} onChange={handleChange} className="input-field" style={{ height: '80px', resize: 'vertical' }} placeholder="Full gym address..." />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Contact No.</label>
-                  <input type="text" name="contact" value={profile.contact || ''} onChange={handleChange} className={`input-field ${profile.isProfileLocked === true ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="03XXXXXXXXX" disabled={profile.isProfileLocked === true} />
+                  <input type="text" name="contact" value={profile.contact || ''} onChange={handleChange} className="input-field" placeholder="03XXXXXXXXX" />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Email</label>
-                  <input type="email" name="email" value={profile.email || ''} onChange={handleChange} className={`input-field ${profile.isProfileLocked === true ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="gym@gmail.com" disabled={profile.isProfileLocked === true} />
+                  <input type="email" name="email" value={profile.email || ''} onChange={handleChange} className="input-field" placeholder="gym@gmail.com" />
                 </div>
               </div>
 

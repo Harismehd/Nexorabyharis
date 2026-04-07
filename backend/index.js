@@ -20,6 +20,7 @@ function ensureSystem(db) {
     if (typeof db.system.globalShutdown !== 'boolean') db.system.globalShutdown = false;
     if (!db.system.masterPassword) db.system.masterPassword = defaultData.system.masterPassword;
   }
+  if (!db.broadcasts) db.broadcasts = [];
 }
 
 function getSecurityKey() {
@@ -78,7 +79,7 @@ function ensureGymDefaults(gym) {
   if (!gym.package) gym.package = 'starter';
   if (gym.deviceLimit === undefined) gym.deviceLimit = 5;
   // Rigorous boolean cast: ensure field exists and is a real boolean
-  gym.isProfileLocked = gym.isProfileLocked === true || gym.isProfileLocked === 'true';
+  gym.isSettingsLocked = gym.isSettingsLocked === true || gym.isSettingsLocked === 'true';
   if (!gym.paymentSettings) {
     gym.paymentSettings = {
       methods: ['easypaisa'],
@@ -220,7 +221,7 @@ app.use('/api', async (req, res, next) => {
     if (!db.system.globalShutdown) return next();
 
     if (req.path === '/auth/login') return next();
-    if (req.path.startsWith('/admin')) return next();
+    if (req.path.startsWith('/admin') || req.path.startsWith('/broadcasts')) return next();
 
     return res.status(503).json({ error: 'SYSTEM_OFFLINE', message: 'Platform is completely offline. Please contact the provider.' });
   } catch (e) {
@@ -239,7 +240,7 @@ app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
       isActive: g.isActive !== false, // Default to true
       package: g.package || 'starter',
       deviceLimit: g.deviceLimit || 5, // Task 4
-      isProfileLocked: g.isProfileLocked === true,
+      isSettingsLocked: g.isSettingsLocked === true,
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -255,7 +256,7 @@ app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
       isActive: g.isActive !== false,
       package: g.package || 'starter',
       deviceLimit: g.deviceLimit || 5,
-      isProfileLocked: g.isProfileLocked === true,
+      isSettingsLocked: g.isSettingsLocked === true,
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -284,10 +285,10 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
     if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
     console.log(`[ADMIN_UPDATE] Gym: ${gymKey}, Field: ${field}, Value:`, value);
     if (field === 'deviceLimit') db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
-    else if (field === 'isProfileLocked') {
+    else if (field === 'isSettingsLocked') {
       // Cast incoming value strictly to boolean
       const isLocked = (String(value).toLowerCase() === 'true' || value === true);
-      db.gyms[gymIndex].isProfileLocked = isLocked;
+      db.gyms[gymIndex].isSettingsLocked = isLocked;
     }
     else db.gyms[gymIndex][field] = value;
     await writeDB(db);
@@ -318,6 +319,55 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
   }
 
   res.status(400).json({ error: 'Invalid action' });
+});
+
+// Broadcast Endpoints (Task: Fix 404s)
+app.get('/api/broadcasts', async (req, res) => {
+  const { gymKey } = req.query;
+  const db = await readDB();
+  const now = new Date().toISOString();
+  
+  // Clean up expired broadcasts
+  db.broadcasts = (db.broadcasts || []).filter(b => b.expires_at > now);
+  await writeDB(db);
+
+  if (gymKey === 'ADMIN') {
+    return res.json({ broadcasts: db.broadcasts });
+  }
+
+  const gymBroadcasts = db.broadcasts.filter(b => 
+    b.recipients.includes('ALL') || b.recipients.includes(gymKey)
+  );
+  res.json({ broadcasts: gymBroadcasts });
+});
+
+app.post('/api/broadcasts', verifyAdmin, async (req, res) => {
+  const { message, type, recipients, durationHours } = req.body;
+  if (!message || !recipients || !durationHours) return res.status(400).json({ error: 'Missing broadcast data' });
+
+  const db = await readDB();
+  const newBroadcast = {
+    id: uuidv4(),
+    message,
+    type: type || 'info',
+    recipients: Array.isArray(recipients) ? recipients : ['ALL'],
+    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString()
+  };
+
+  db.broadcasts = db.broadcasts || [];
+  db.broadcasts.unshift(newBroadcast);
+  await writeDB(db);
+
+  res.json({ message: 'Broadcast deployed', broadcast: newBroadcast });
+});
+
+app.delete('/api/broadcasts', verifyAdmin, async (req, res) => {
+  const { id } = req.body;
+  const db = await readDB();
+  db.broadcasts = (db.broadcasts || []).filter(b => b.id !== id);
+  await writeDB(db);
+  res.json({ message: 'Broadcast terminated' });
 });
 
 // ========================
@@ -1089,13 +1139,9 @@ app.post('/api/profile', async (req, res) => {
 
   const safeProfile = { ...profile };
 
-  // Security: Enforce Profile Lock
-  if (gym.isProfileLocked) {
-    // Revert critical fields if they were modified in the request
-    delete safeProfile.name;
-    delete safeProfile.address;
-    delete safeProfile.contact;
-    delete safeProfile.email;
+  // Security: Enforce Settings Lock
+  if (gym.isSettingsLocked) {
+    return res.status(403).json({ error: 'SETTINGS_LOCKED', message: 'This settings page is locked by the administrator.' });
   }
 
   // Gate features strictly by package.
@@ -1119,7 +1165,7 @@ app.post('/api/profile', async (req, res) => {
 
   db.gyms[gymIndex] = { ...gym, ...safeProfile };
   await writeDB(db);
-  res.json({ message: 'Profile updated successfully', isLocked: gym.isProfileLocked });
+  res.json({ message: 'Profile updated successfully', isLocked: gym.isSettingsLocked });
 });
 
 // ========================
