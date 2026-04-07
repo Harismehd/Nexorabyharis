@@ -78,8 +78,8 @@ function ensureGymDefaults(gym) {
   if (typeof gym.isActive !== 'boolean') gym.isActive = true;
   if (!gym.package) gym.package = 'starter';
   if (gym.deviceLimit === undefined) gym.deviceLimit = 5;
-  // Rigorous boolean cast: ensure field exists and is a real boolean
-  gym.isSettingsLocked = gym.isSettingsLocked === true || gym.isSettingsLocked === 'true';
+  // Force strict boolean normalization
+  gym.isSettingsLocked = gym.isSettingsLocked === true || String(gym.isSettingsLocked) === 'true';
   if (!gym.paymentSettings) {
     gym.paymentSettings = {
       methods: ['easypaisa'],
@@ -220,8 +220,9 @@ app.use('/api', async (req, res, next) => {
     ensureSystem(db);
     if (!db.system.globalShutdown) return next();
 
-    if (req.path === '/auth/login') return next();
-    if (req.path.startsWith('/admin') || req.path.startsWith('/broadcasts')) return next();
+    const path = req.path.toLowerCase();
+    if (path === '/auth/login') return next();
+    if (path.startsWith('/admin') || path.startsWith('/broadcasts')) return next();
 
     return res.status(503).json({ error: 'SYSTEM_OFFLINE', message: 'Platform is completely offline. Please contact the provider.' });
   } catch (e) {
@@ -239,8 +240,7 @@ app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
       name: g.name || 'Unnamed Gym',
       isActive: g.isActive !== false, // Default to true
       package: g.package || 'starter',
-      deviceLimit: g.deviceLimit || 5, // Task 4
-      isSettingsLocked: g.isSettingsLocked === true,
+      isSettingsLocked: g.isSettingsLocked === true || String(g.isSettingsLocked) === 'true',
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -256,7 +256,7 @@ app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
       isActive: g.isActive !== false,
       package: g.package || 'starter',
       deviceLimit: g.deviceLimit || 5,
-      isSettingsLocked: g.isSettingsLocked === true,
+      isSettingsLocked: g.isSettingsLocked === true || String(g.isSettingsLocked) === 'true',
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -1134,6 +1134,7 @@ app.get('/api/profile', async (req, res) => {
     bankIban: decryptSensitive(raw.bankIbanEncrypted || ''),
     autoConfirm: !!raw.autoConfirm
   };
+  profileData.isSettingsLocked = gym.isSettingsLocked === true || String(gym.isSettingsLocked) === 'true';
   res.json({ profile: profileData });
 });
 

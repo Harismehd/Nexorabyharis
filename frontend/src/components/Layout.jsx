@@ -19,6 +19,7 @@ export default function Layout() {
     try { return JSON.parse(localStorage.getItem('dismissedBroadcasts') || '[]'); }
     catch { return []; }
   });
+  const [profile, setProfile] = useState({ isSettingsLocked: false });
 
   useEffect(() => {
     setMounted(true);
@@ -26,8 +27,15 @@ export default function Layout() {
 
   useEffect(() => {
     if (!gymKey || role === 'admin') return;
+    
+    // Fetch broadcasts
     api.get(`/broadcasts?gymKey=${gymKey}`)
       .then(res => setBroadcasts(res.data.broadcasts || []))
+      .catch(() => {});
+
+    // Fetch profile for lock status
+    api.get(`/profile?gymKey=${gymKey}`)
+      .then(res => setProfile(res.data.profile || {}))
       .catch(() => {});
   }, [gymKey, role]);
 
@@ -178,13 +186,21 @@ export default function Layout() {
         {/* Nav Items */}
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto pb-4">
           {navItems.map((item, index) => {
-            const Icon = item.icon;
+            const isLockedSettings = item.name === 'Settings' && profile.isSettingsLocked;
+            const Icon = isLockedSettings ? Lock : item.icon;
             const isActive = location.pathname === item.path;
+            
             return (
               <Link
                 key={item.path}
-                to={item.path}
-                onClick={closeSidebar}
+                to={isLockedSettings ? '#' : item.path}
+                onClick={(e) => {
+                  if (isLockedSettings) {
+                    e.preventDefault();
+                    return;
+                  }
+                  closeSidebar();
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -196,10 +212,16 @@ export default function Layout() {
                   animationDelay: `${index * 40}ms`,
                   position: 'relative',
                   overflow: 'hidden',
+                  cursor: isLockedSettings ? 'not-allowed' : 'pointer',
                   ...(isActive ? {
                     background: 'linear-gradient(135deg, rgba(0,112,196,0.3), rgba(0,212,255,0.1))',
                     border: '1px solid rgba(0,212,255,0.2)',
                     color: '#00d4ff',
+                  } : isLockedSettings ? {
+                    background: 'rgba(239,68,68,0.05)',
+                    border: '1px solid rgba(239,68,68,0.1)',
+                    color: '#94a3b8',
+                    opacity: 0.7
                   } : {
                     background: 'transparent',
                     border: '1px solid transparent',
@@ -207,14 +229,14 @@ export default function Layout() {
                   })
                 }}
                 onMouseEnter={e => {
-                  if (!isActive) {
+                  if (!isActive && !isLockedSettings) {
                     e.currentTarget.style.background = 'rgba(0,212,255,0.05)';
                     e.currentTarget.style.borderColor = 'rgba(0,212,255,0.1)';
                     e.currentTarget.style.color = '#94a3b8';
                   }
                 }}
                 onMouseLeave={e => {
-                  if (!isActive) {
+                  if (!isActive && !isLockedSettings) {
                     e.currentTarget.style.background = 'transparent';
                     e.currentTarget.style.borderColor = 'transparent';
                     e.currentTarget.style.color = '#64748b';
@@ -228,12 +250,20 @@ export default function Layout() {
                     background: 'linear-gradient(to bottom, #00d4ff, #0070c4)'
                   }} />
                 )}
-                <Icon size={18} />
-                <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: isActive ? 600 : 400, fontSize: '14px' }}>
-                  {item.name}
+                <Icon size={18} className={isLockedSettings ? 'text-red-500' : ''} />
+                <span style={{ 
+                  fontFamily: 'DM Sans, sans-serif', 
+                  fontWeight: isActive ? 600 : 400, 
+                  fontSize: '14px',
+                  color: isLockedSettings ? '#f87171' : 'inherit'
+                }}>
+                  {isLockedSettings ? 'Settings Locked' : item.name}
                 </span>
                 {isActive && (
                   <ChevronRight size={14} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+                )}
+                {isLockedSettings && (
+                  <Lock size={12} className="ml-auto text-red-500/50" />
                 )}
               </Link>
             );
