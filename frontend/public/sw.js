@@ -12,13 +12,8 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Network first, fallback to cache
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
+// SAFE NETWORK LOGIC: Bypass Service Worker for all fetch requests to prevent "Illegal constructor" crashes.
+// The browser will handle networking natively, while the PWA still detects updates when this file changes.
+self.addEventListener('fetch', () => {
+  return; // No-op: Let the network handle everything normally.
 });

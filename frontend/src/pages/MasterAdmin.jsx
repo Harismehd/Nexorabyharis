@@ -505,8 +505,8 @@ export default function MasterAdmin() {
                             <button
                               onClick={() => handleToggleLock(g.gymKey)}
                               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border font-black text-[10px] tracking-widest uppercase ${
-                                g.isSettingsLocked === true || String(g.isSettingsLocked) === 'true'
-                                  ? 'bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)]' 
+                                (g.isSettingsLocked === true || String(g.isSettingsLocked) === 'true')
+                                  ? 'bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:bg-red-600' 
                                   : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500 hover:text-white'
                               }`}
                             >

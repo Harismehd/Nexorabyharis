@@ -225,9 +225,8 @@ app.use('/api', async (req, res, next) => {
     
     // Bypass if:
     // 1. It's the login route
-    // 2. It's an admin/broadcast/profile route
-    // 3. It's essential dashboard data (read-only allowed during shutdown)
-    // 4. Request has a valid Admin Key (Master Admin GOD MODE)
+    // 2. It's an admin/broadcast/profile/members/payments/logs/receipts/packages route
+    // 3. Request has a valid Admin Key
     if (path === '/auth/login') return next();
     if (
       path.startsWith('/admin') || 
@@ -235,7 +234,9 @@ app.use('/api', async (req, res, next) => {
       path.startsWith('/profile') ||
       path.startsWith('/members') ||
       path.startsWith('/payments') ||
-      path.startsWith('/logs')
+      path.startsWith('/logs') ||
+      path.startsWith('/receipts') ||
+      path.startsWith('/packages')
     ) return next();
     
     if (adminKey && adminKey === db.system.masterPassword) return next();
