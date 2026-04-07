@@ -223,22 +223,13 @@ app.use('/api', async (req, res, next) => {
     const path = req.path.toLowerCase();
     const adminKey = req.headers['x-admin-key'];
     
-    // Bypass if:
-    // 1. It's the login route
-    // 2. It's an admin/broadcast/profile/members/payments/logs/receipts/packages route
-    // 3. Request has a valid Admin Key
-    if (path === '/auth/login') return next();
-    if (
-      path.startsWith('/admin') || 
-      path.startsWith('/broadcasts') || 
-      path.startsWith('/profile') ||
-      path.startsWith('/members') ||
-      path.startsWith('/payments') ||
-      path.startsWith('/logs') ||
-      path.startsWith('/receipts') ||
-      path.startsWith('/packages')
-    ) return next();
-    
+    // Bypass shutdown for:
+    // 1. All GET requests (Read-Only access is always allowed)
+    // 2. The login route
+    // 3. Admin management routes
+    // 4. Request with valid God Mode (x-admin-key)
+    if (req.method === 'GET' || path === '/auth/login') return next();
+    if (path.startsWith('/admin') || path.startsWith('/broadcasts')) return next();
     if (adminKey && adminKey === db.system.masterPassword) return next();
 
     return res.status(503).json({ error: 'SYSTEM_OFFLINE', message: 'Platform is completely offline. Please contact the provider.' });
