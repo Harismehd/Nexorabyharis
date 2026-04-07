@@ -165,42 +165,22 @@ export default function Settings() {
               </span>
             </div>
             <p style={{ color: '#475569', fontSize: '14px' }}>Manage your gym profile, automated sending, and message templates.</p>
-            {profile.isSettingsLocked === true && (
-              <div className="mt-4 flex items-center gap-2 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-sm font-bold shadow-[0_0_20px_rgba(245,158,11,0.05)] animate-pulse">
-                <Lock size={16} /> 
-                <span>Access Restrict: This configuration is currently locked by NEXORA Master Admin.</span>
-              </div>
-            )}
           </div>
           <button 
             onClick={handleSave} 
-            disabled={saving || profile.isSettingsLocked === true} 
-            className={`btn-primary px-8 shadow-[0_0_20px_rgba(37,99,235,0.2)] ${profile.isSettingsLocked === true ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+            disabled={saving} 
+            className="btn-primary px-8 shadow-[0_0_20px_rgba(37,99,235,0.2)]"
           >
             <Save size={18} /> {saving ? 'Saving...' : 'Save All Settings'}
           </button>
         </div>
 
-        <div className={`custom-scrollbar pr-4 ${profile.isSettingsLocked === true ? 'pointer-events-none' : ''}`} style={{ 
+        <div className="custom-scrollbar pr-4" style={{ 
           maxHeight: 'calc(100vh - 250px)', 
           overflowY: 'auto',
-          paddingBottom: '40px',
-          filter: profile.isSettingsLocked === true ? 'grayscale(0.5) opacity(0.8)' : 'none'
+          paddingBottom: '40px'
         }}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
-            {profile.isSettingsLocked === true && (
-              <div className="absolute inset-0 z-50 rounded-2xl flex flex-col items-center justify-center bg-slate-950/20 backdrop-blur-[1px]">
-                 <div className="bg-slate-900/90 p-8 rounded-3xl border border-amber-500/30 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center gap-4 border-dashed">
-                    <div className="p-4 bg-amber-500/10 rounded-full border border-amber-500/20">
-                      <Lock size={40} className="text-amber-500" />
-                    </div>
-                    <div className="text-center">
-                      <h3 className="text-white font-black text-xl uppercase tracking-tighter">Vault Protocol Active</h3>
-                      <p className="text-slate-500 text-sm mt-1 max-w-[240px]">This node's configuration is read-only. Contact Master Admin for modifications.</p>
-                    </div>
-                 </div>
-              </div>
-            )}
 
             {/* Gym Profile */}
             <div className="card space-y-4">

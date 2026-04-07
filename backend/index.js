@@ -78,8 +78,6 @@ function ensureGymDefaults(gym) {
   if (typeof gym.isActive !== 'boolean') gym.isActive = true;
   if (!gym.package) gym.package = 'starter';
   if (gym.deviceLimit === undefined) gym.deviceLimit = 5;
-  // Force strict boolean normalization
-  gym.isSettingsLocked = gym.isSettingsLocked === true || String(gym.isSettingsLocked) === 'true';
   if (!gym.paymentSettings) {
     gym.paymentSettings = {
       methods: ['easypaisa'],
@@ -248,7 +246,6 @@ app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
       name: g.name || 'Unnamed Gym',
       isActive: g.isActive !== false, // Default to true
       package: g.package || 'starter',
-      isSettingsLocked: g.isSettingsLocked === true || String(g.isSettingsLocked) === 'true',
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -264,7 +261,6 @@ app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
       isActive: g.isActive !== false,
       package: g.package || 'starter',
       deviceLimit: g.deviceLimit || 5,
-      isSettingsLocked: g.isSettingsLocked === true || String(g.isSettingsLocked) === 'true',
       whatsappStatus: g.whatsappStatus,
       memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
     }))
@@ -293,11 +289,6 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
     if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
     console.log(`[ADMIN_UPDATE] Gym: ${gymKey}, Field: ${field}, Value:`, value);
     if (field === 'deviceLimit') db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
-    else if (field === 'isSettingsLocked') {
-      // Cast incoming value strictly to boolean
-      const isLocked = (String(value).toLowerCase() === 'true' || value === true);
-      db.gyms[gymIndex].isSettingsLocked = isLocked;
-    }
     else db.gyms[gymIndex][field] = value;
     await writeDB(db);
     return res.json({ message: `Updated ${field} successfully`, newValue: db.gyms[gymIndex][field] });
@@ -309,16 +300,6 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
     db.gyms[gymIndex].isActive = !(db.gyms[gymIndex].isActive !== false);
     await writeDB(db);
     return res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
-  }
-
-  if (action === 'lock') {
-    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-    // Toggle the current state
-    const currentState = db.gyms[gymIndex].isSettingsLocked === true;
-    db.gyms[gymIndex].isSettingsLocked = !currentState;
-    await writeDB(db);
-    return res.json({ message: `Settings ${!currentState ? 'LOCKED' : 'UNLOCKED'}` });
   }
 
   if (action === 'package') {

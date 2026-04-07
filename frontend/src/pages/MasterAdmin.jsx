@@ -181,15 +181,7 @@ export default function MasterAdmin() {
     }
   };
 
-  const handleToggleLock = async (gymKey) => {
-    try {
-      const res = await api.post(`/admin?action=lock`, { gymKey }, getAdminHeaders());
-      toast.success(res.data.message);
-      fetchData();
-    } catch {
-      toast.error('Toggle lock failed');
-    }
-  };
+
 
   const handleToggleBan = async (gymKey) => {
     if (!window.confirm(`Are you sure you want to change suspension status for ${gymKey}?`)) return;
@@ -445,7 +437,7 @@ export default function MasterAdmin() {
                    <th className="py-4 px-4">Node Quota</th>
                    <th className="py-4 px-4 text-center">Instance Limit</th>
                    <th className="py-4 px-4 text-center">Plan Override</th>
-                   <th className="py-4 px-4 text-center">Settings Lock</th>
+
                    <th className="py-4 px-4 text-right">Sanctions</th>
                  </tr>
                </thead>
@@ -498,24 +490,6 @@ export default function MasterAdmin() {
                                 {p === 'pro_plus' ? 'PRO+' : p.toUpperCase()}
                               </button>
                             ))}
-                          </div>
-                        </td>
-                        <td className="py-5 px-4">
-                          <div className="flex justify-center">
-                            <button
-                              onClick={() => handleToggleLock(g.gymKey)}
-                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border font-black text-[10px] tracking-widest uppercase ${
-                                (g.isSettingsLocked === true || String(g.isSettingsLocked) === 'true')
-                                  ? 'bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:bg-red-600' 
-                                  : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500 hover:text-white'
-                              }`}
-                            >
-                              {(g.isSettingsLocked === true || String(g.isSettingsLocked) === 'true') ? (
-                                <><Lock size={14} /> LOCKED</>
-                              ) : (
-                                <><KeyRound size={14} /> UNLOCKED</>
-                              )}
-                            </button>
                           </div>
                         </td>
                         <td className="py-5 px-4 text-right">
