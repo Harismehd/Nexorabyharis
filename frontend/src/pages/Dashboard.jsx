@@ -94,7 +94,7 @@ function DailyClosingModal({ show, onClose, payments, members }) {
 }
 
 export default function Dashboard() {
-  const { gymKey, packageTier } = useAuth();
+  const { gymKey, packageTier, subscriptionEndDate, subscriptionStatus } = useAuth();
   const [members, setMembers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [broadcasts, setBroadcasts] = useState([]);
@@ -271,6 +271,64 @@ export default function Dashboard() {
         payments={payments} 
         members={members} 
       />
+
+      {/* Subscription Expiry Badge */}
+      {subscriptionEndDate && (
+        <div className="animate-in fade-in slide-in-from-top-4 duration-700">
+          {(() => {
+            const daysLeft = Math.ceil((new Date(subscriptionEndDate) - new Date()) / (1000 * 60 * 60 * 24));
+            const isExpired = subscriptionStatus === 'expired' || daysLeft <= 0;
+            
+            let color = '#34d399'; // Green
+            let bg = 'rgba(52, 211, 153, 0.1)';
+            let border = 'rgba(52, 211, 153, 0.2)';
+            let text = 'Subscription active — ' + daysLeft + ' days remaining';
+            let icon = <ShieldCheck size={18} />;
+
+            if (isExpired) {
+              color = '#ef4444'; // Red
+              bg = 'rgba(239, 68, 68, 0.1)';
+              border = 'rgba(239, 68, 68, 0.2)';
+              text = 'EXPIRED — Access restricted';
+              icon = <AlertOctagon size={18} />;
+            } else if (daysLeft <= 2) {
+              color = '#f97316'; // Orange
+              bg = 'rgba(249, 115, 22, 0.1)';
+              border = 'rgba(249, 115, 22, 0.2)';
+              text = 'Expires in ' + daysLeft + ' days — Contact admin';
+              icon = <AlertTriangle size={18} />;
+            } else if (daysLeft <= 6) {
+              color = '#fbbf24'; // Yellow
+              bg = 'rgba(251, 191, 36, 0.1)';
+              border = 'rgba(251, 191, 36, 0.2)';
+              text = 'Renewal due in ' + daysLeft + ' days';
+              icon = <Info size={18} />;
+            }
+
+            return (
+              <div style={{
+                padding: '16px 24px', borderRadius: '20px', background: bg,
+                border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: '16px',
+                marginBottom: '10px', backdropFilter: 'blur(10px)',
+                boxShadow: isExpired ? '0 0 30px rgba(239, 68, 68, 0.15)' : 'none'
+              }}>
+                <div style={{ color }}>{icon}</div>
+                <div style={{ flex: 1 }}>
+                   <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#f1f5f9', letterSpacing: '0.01em' }}>{text}</p>
+                   <p style={{ margin: '2px 0 0 0', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color, opacity: 0.8 }}>
+                     Cycle End: {new Date(subscriptionEndDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                   </p>
+                </div>
+                {!isExpired && daysLeft <= 6 && (
+                   <div style={{ padding: '4px 12px', background: color, color: '#000', borderRadius: '8px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}>
+                      Urgent
+                   </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Broadcast System Alerts */}
       {broadcasts.length > 0 && (

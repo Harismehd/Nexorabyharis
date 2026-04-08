@@ -197,13 +197,36 @@ export default function MasterAdmin() {
   };
 
   const handleSetPackage = async (gymKey, pkg) => {
-    if (!window.confirm(`Set package for ${gymKey} to ${pkg.toUpperCase()}?`)) return;
+    if (!window.confirm(`Set package for ${gymKey} to ${pkg.toUpperCase()}? This will also restart their 30-day cycle.`)) return;
     try {
       const res = await api.post('/admin?action=package', { gymKey, package: pkg }, getAdminHeaders());
       toast.success(res.data.message || 'Package updated');
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update package');
+    }
+  };
+
+  const handleRenewGym = async (gymKey) => {
+    if (!window.confirm(`Add 30 days to ${gymKey}'s existing subscription?`)) return;
+    try {
+      await api.post('/admin?action=renew', { gymKey }, getAdminHeaders());
+      toast.success('Subscription renewed successfully');
+      fetchData();
+    } catch {
+      toast.error('Renewal failed');
+    }
+  };
+
+  const handleExtendGym = async (gymKey) => {
+    const days = window.prompt(`How many days to extend ${gymKey}?`, '7');
+    if (!days || isNaN(days)) return;
+    try {
+      await api.post('/admin?action=extend', { gymKey, days: parseInt(days, 10) }, getAdminHeaders());
+      toast.success(`Extended by ${days} days`);
+      fetchData();
+    } catch {
+      toast.error('Extension failed');
     }
   };
 
@@ -436,6 +459,7 @@ export default function MasterAdmin() {
                    <th className="py-4 px-4">Gym Identity</th>
                    <th className="py-4 px-4">Node Quota</th>
                    <th className="py-4 px-4 text-center">Instance Limit</th>
+                   <th className="py-4 px-4 text-center">Subscription Status</th>
                    <th className="py-4 px-4 text-center">Plan Override</th>
 
                    <th className="py-4 px-4 text-right">Sanctions</th>
@@ -474,6 +498,31 @@ export default function MasterAdmin() {
                               className="bg-slate-800 border border-slate-700 rounded px-2 py-0.5 text-[11px] w-12 focus:border-blue-500 focus:outline-none"
                             />
                           </div>
+                        </td>
+                        <td className="py-5 px-4">
+                           <div className="flex flex-col items-center justify-center gap-1">
+                             {(() => {
+                               const daysLeft = Math.ceil((new Date(g.subscriptionEndDate) - new Date()) / (1000 * 60 * 60 * 24));
+                               const status = g.subscriptionStatus === 'expired' ? 'Expired ❌' : daysLeft <= 6 ? '⚠️ Expiring' : 'Active ✅';
+                               const color = g.subscriptionStatus === 'expired' ? 'text-red-500' : daysLeft <= 6 ? 'text-amber-500' : 'text-emerald-500';
+                               return (
+                                 <>
+                                   <span className={`text-[10px] font-black uppercase ${color}`}>{status}</span>
+                                   <div className="text-[9px] text-slate-500 font-bold tabular-nums">
+                                      {new Date(g.subscriptionEndDate).toLocaleDateString('en-GB')} ({daysLeft}d left)
+                                   </div>
+                                   <div className="flex gap-1 mt-1">
+                                      <button onClick={() => handleRenewGym(g.gymKey)} title="Renew +30 Days" className="p-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded border border-emerald-500/20 transition-all">
+                                         <RefreshCw size={10} />
+                                      </button>
+                                      <button onClick={() => handleExtendGym(g.gymKey)} title="Custom Extension" className="p-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 rounded border border-blue-500/20 transition-all">
+                                         <Plus size={10} />
+                                      </button>
+                                   </div>
+                                 </>
+                               );
+                             })()}
+                           </div>
                         </td>
                         <td className="py-5 px-4">
                           <div className="flex gap-1.5 justify-center">
