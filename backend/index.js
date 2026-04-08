@@ -89,25 +89,25 @@ function ensureGymDefaults(gym) {
   }
   
   // Subscription Expiry System
-  if (!gym.subscriptionStartDate) {
+  if (!gym.subscriptionStartDate || gym.subscriptionStartDate === "") {
     gym.subscriptionStartDate = new Date().toISOString();
   }
-  if (!gym.subscriptionEndDate) {
+  if (!gym.subscriptionEndDate || gym.subscriptionEndDate === "") {
     // Default 30 days for existing/new gyms
     const end = new Date();
     end.setDate(end.getDate() + 30);
     gym.subscriptionEndDate = end.toISOString();
   }
-  if (!gym.subscriptionStatus) {
+  if (!gym.subscriptionStatus || gym.subscriptionStatus === "") {
     gym.subscriptionStatus = 'active';
   }
 
   // Auto-update status based on date
   const now = new Date();
   const endDate = new Date(gym.subscriptionEndDate);
-  if (now > endDate) {
+  if (!isNaN(endDate.getTime()) && now > endDate) {
     gym.subscriptionStatus = 'expired';
-  } else {
+  } else if (!isNaN(endDate.getTime())) {
     gym.subscriptionStatus = 'active';
   }
 }
@@ -432,44 +432,17 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
     return res.json({ message: `Global platform is now ${db.system.globalShutdown ? 'OFFLINE' : 'ONLINE'}` });
   }
 
+  if (action === 'sync') {
+    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+    ensureGymDefaults(db.gyms[gymIndex]);
+    await writeDB(db);
+    return res.json({ message: 'Sync successful', gym: db.gyms[gymIndex] });
+  }
+
   res.status(400).json({ error: 'Invalid action' });
 });
 
-app.post('/api/admin/renew', verifyAdmin, async (req, res) => {
-  const { gymKey } = req.body;
-  const db = await readDB();
-  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-  
-  const now = new Date();
-  let currentEnd = new Date(db.gyms[gymIndex].subscriptionEndDate);
-  if (isNaN(currentEnd.getTime()) || currentEnd < now) currentEnd = now;
-  
-  currentEnd.setDate(currentEnd.getDate() + 30);
-  db.gyms[gymIndex].subscriptionEndDate = currentEnd.toISOString();
-  db.gyms[gymIndex].subscriptionStatus = 'active';
-
-  await writeDB(db);
-  return res.json({ message: 'Subscription renewed (+30 days)', newEndDate: db.gyms[gymIndex].subscriptionEndDate });
-});
-
-app.post('/api/admin/extend', verifyAdmin, async (req, res) => {
-  const { gymKey, days } = req.body;
-  const db = await readDB();
-  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-  
-  const now = new Date();
-  let currentEnd = new Date(db.gyms[gymIndex].subscriptionEndDate);
-  if (isNaN(currentEnd.getTime()) || currentEnd < now) currentEnd = now;
-  
-  currentEnd.setDate(currentEnd.getDate() + parseInt(days || 0, 10));
-  db.gyms[gymIndex].subscriptionEndDate = currentEnd.toISOString();
-  db.gyms[gymIndex].subscriptionStatus = 'active';
-
-  await writeDB(db);
-  return res.json({ message: `Subscription extended by ${days} days`, newEndDate: db.gyms[gymIndex].subscriptionEndDate });
-});
 
 // Broadcast Endpoints (Task: Fix 404s)
 app.get('/api/broadcasts', async (req, res) => {

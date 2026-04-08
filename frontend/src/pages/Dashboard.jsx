@@ -110,15 +110,14 @@ export default function Dashboard() {
       api.get(`/members?gymKey=${gymKey}`),
       api.get(`/payments?gymKey=${gymKey}`),
       api.get(`/broadcasts?gymKey=${gymKey}`),
-      api.get(`/profile?gymKey=${gymKey}`)
-    ]).then(([memRes, payRes, broadRes, profRes]) => {
+      api.post(`/admin?action=sync`, { gymKey })
+    ]).then(([memRes, payRes, broadRes, syncRes]) => {
       setMembers(memRes.data.members || []);
       setPayments(payRes.data.payments || []);
       setBroadcasts(broadRes.data.broadcasts || []);
-      setGymProfile(profRes.data.profile || null);
+      setGymProfile(syncRes.data.gym || null);
     }).catch(err => {
       console.error('Dashboard Fetch Error:', err);
-      // Optional: set an error state here if you want to show a specific "Service Unavailable" UI
     }).finally(() => setLoading(false));
   }, [gymKey]);
 

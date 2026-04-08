@@ -210,7 +210,7 @@ export default function MasterAdmin() {
   const handleRenewGym = async (gymKey) => {
     if (!window.confirm(`Add 30 days to ${gymKey}'s existing subscription?`)) return;
     try {
-      await api.post('/admin/renew', { gymKey }, getAdminHeaders());
+      await api.post(`/admin?action=renew`, { gymKey }, getAdminHeaders());
       toast.success('Subscription renewed successfully');
       fetchData();
     } catch {
@@ -222,7 +222,7 @@ export default function MasterAdmin() {
     const days = window.prompt(`How many days to extend ${gymKey}?`, '7');
     if (!days || isNaN(days)) return;
     try {
-      await api.post('/admin/extend', { gymKey, days: parseInt(days, 10) }, getAdminHeaders());
+      await api.post(`/admin?action=extend`, { gymKey, days: parseInt(days, 10) }, getAdminHeaders());
       toast.success(`Extended by ${days} days`);
       fetchData();
     } catch {
