@@ -22,11 +22,12 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const SETUP_FEE = 5000;
   const pricingMap = {
-    'Starter': '3,999',
-    'Growth': '7,999',
-    'Pro': '11,999',
-    'Pro Plus': '15,999'
+    'Starter': 3999,
+    'Growth': 7999,
+    'Pro': 11999,
+    'Pro Plus': 15999
   };
 
   const handleInputChange = (e) => {
@@ -219,18 +220,36 @@ const Register = () => {
               <div style={{ background: '#0e1622', border: '1px solid #1a2540', padding: '32px', borderRadius: '24px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 24px 0', color: '#f1f5f9' }}>Plan Summary</h3>
                 
-                <div style={{ 
-                  background: 'rgba(0, 212, 255, 0.05)', border: '1px solid rgba(0, 212, 255, 0.1)', 
-                  padding: '20px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                }}>
-                  <div>
-                    <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: '#00d4ff', textTransform: 'uppercase' }}>{formData.packageName}</p>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#94a3b8' }}>Lifetime 25% Discount</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#94a3b8' }}>
+                    <span>One-time Setup & Activation</span>
+                    <span style={{ color: '#f1f5f9', fontWeight: 700 }}>PKR {SETUP_FEE.toLocaleString()}</span>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>PKR {pricingMap[formData.packageName]}</p>
-                    <p style={{ margin: 0, fontSize: '11px', color: '#475569' }}>/month</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#94a3b8' }}>
+                    <span>{formData.packageName} Subscription</span>
+                    <span style={{ color: '#f1f5f9', fontWeight: 700 }}>PKR {pricingMap[formData.packageName]?.toLocaleString()}</span>
                   </div>
+                  
+                  <div style={{ height: '1px', background: '#1e293b', margin: '8px 0' }} />
+                  
+                  <div style={{ 
+                    background: 'rgba(0, 212, 255, 0.05)', border: '1px solid rgba(0, 212, 255, 0.1)', 
+                    padding: '24px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                  }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: '#00d4ff', textTransform: 'uppercase' }}>Total Due Today</p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#475569' }}>Includes setup & first month</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: '#00d4ff' }}>
+                        PKR {(SETUP_FEE + (pricingMap[formData.packageName] || 0)).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: '12px', color: '#f59e0b', background: 'rgba(245,158,11,0.05)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(245,158,11,0.1)', lineHeight: 1.5 }}>
+                    <strong>Note:</strong> Please transfer the exact <strong>Total Due</strong> amount shown above. This screenshot will be used by Master Admin for account activation.
+                  </p>
                 </div>
               </div>
 

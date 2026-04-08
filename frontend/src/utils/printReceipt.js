@@ -21,91 +21,82 @@ export default function printReceiptHtml(payment, profile, member) {
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@800&display=swap" rel="stylesheet">
-        <style>
+    <style>
           body { 
             font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: #1a202c; 
-            padding: 40px; 
-            background: #f8fafc;
-            line-height: 1.5;
+            padding: 0; 
+            margin: 0;
+            background: #fff;
+            line-height: 1.3;
+            width: 280px;
           }
           .receipt-outer {
-            background: #fff;
-            max-width: 500px;
-            margin: 0 auto;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #e2e8f0;
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
           }
           .brand-header {
             background: #0f172a;
             color: white;
-            padding: 30px;
+            padding: 15px 10px;
             text-align: center;
+            -webkit-print-color-adjust: exact;
           }
           .brand-header h2 { 
             margin: 0; 
             font-family: 'Syne', sans-serif; 
             font-weight: 800; 
-            letter-spacing: -0.02em;
-            font-size: 24px;
+            font-size: 18px;
             color: #38bdf8;
           }
           .brand-header p {
-            margin: 4px 0 0;
-            font-size: 11px;
+            margin: 2px 0 0;
+            font-size: 9px;
             text-transform: uppercase;
-            letter-spacing: 0.2em;
+            letter-spacing: 0.1em;
             opacity: 0.8;
             font-weight: 700;
           }
-          .content { padding: 40px; }
-          .gym-info { text-align: center; margin-bottom: 40px; }
-          .gym-info h1 { margin: 0; font-size: 20px; font-weight: 700; color: #0f172a; text-transform: uppercase; }
-          .gym-info p { margin: 4px 0 0; font-size: 13px; color: #64748b; }
+          .content { padding: 15px 5px; }
+          .gym-info { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 15px; }
+          .gym-info h1 { margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; text-transform: uppercase; }
+          .gym-info p { margin: 2px 0 0; font-size: 11px; color: #64748b; }
           
-          .meta-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 40px;
-            padding: 20px;
-            background: #f1f5f9;
-            border-radius: 8px;
+          .meta-section {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 6px;
           }
-          .meta-item label { display: block; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
-          .meta-item span { display: block; font-size: 14px; font-weight: 600; color: #1e293b; }
+          .meta-item { border-bottom: 1px solid #f1f5f9; padding: 6px 0; }
+          .meta-item:last-child { border-bottom: none; }
+          .meta-item label { display: block; font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px; }
+          .meta-item span { display: block; font-size: 12px; font-weight: 600; color: #1e293b; }
 
-          .transaction-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-          .transaction-table th { text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; padding-bottom: 12px; border-bottom: 2px solid #f1f5f9; }
-          .transaction-table td { padding: 16px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+          .transaction-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+          .transaction-table th { text-align: left; font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
+          .transaction-table td { padding: 10px 0; border-bottom: 1px dashed #f1f5f9; font-size: 12px; }
           
-          .total-row { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; }
-          .total-label { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; }
-          .total-amount { font-size: 24px; font-weight: 800; color: #0f172a; font-family: 'Syne', sans-serif; }
+          .total-row { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 2px solid #0f172a; }
+          .total-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+          .total-amount { font-size: 18px; font-weight: 800; color: #0f172a; font-family: 'Syne', sans-serif; }
 
           .footer { 
             text-align: center; 
-            margin-top: 40px; 
-            padding-top: 30px;
+            margin-top: 25px; 
+            padding-top: 15px;
             border-top: 1px solid #f1f5f9;
-            font-size: 12px; 
+            font-size: 10px; 
             color: #94a3b8;
           }
-          .footer-note { font-style: italic; color: #64748b; margin-top: 8px; font-size: 13px; }
-          
-          .watermark {
-            text-align: center;
-            margin-top: 30px;
-            opacity: 0.5;
-            filter: grayscale(1);
-          }
+          .footer-note { font-style: italic; color: #64748b; margin-top: 5px; font-size: 11px; }
 
           @media print {
-            body { padding: 0; background: white; }
-            .receipt-outer { box-shadow: none; border: 1px solid #eee; border-radius: 0; max-width: 100%; }
-            .brand-header { -webkit-print-color-adjust: exact; }
+            @page { margin: 0; size: auto; }
+            body { width: 58mm; }
+            .receipt-outer { width: 58mm; border: none; }
           }
         </style>
       </head>
@@ -120,24 +111,24 @@ export default function printReceiptHtml(payment, profile, member) {
             <div class="gym-info">
               <h1>${gymName}</h1>
               <p>${gymAddress}</p>
-              ${gymContact ? `<p>Contact: ${gymContact}</p>` : ''}
+              ${gymContact ? `<p>${gymContact}</p>` : ''}
             </div>
             
-            <div class="meta-grid">
+            <div class="meta-section">
               <div class="meta-item">
-                <label>Receipt Number</label>
+                <label>Receipt No.</label>
                 <span>${payment.receiptNumber}</span>
               </div>
               <div class="meta-item">
-                <label>Issue Date</label>
+                <label>Date</label>
                 <span>${new Date(payment.paymentDate).toLocaleDateString()}</span>
               </div>
               <div class="meta-item">
-                <label>Member Name</label>
+                <label>Member</label>
                 <span>${member.name}</span>
               </div>
               <div class="meta-item">
-                <label>Contact Info</label>
+                <label>Contact</label>
                 <span>${member.phone}</span>
               </div>
             </div>
@@ -146,36 +137,32 @@ export default function printReceiptHtml(payment, profile, member) {
               <thead>
                 <tr>
                   <th>Description</th>
-                  <th>Payment Method</th>
                   <th style="text-align: right;">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>
-                    <strong>Gym Fee Installation</strong><br/>
-                    <small style="color:#94a3b8;">${payment.periodCovered}</small>
+                    <strong>Gym Fee</strong><br/>
+                    <small style="color:#94a3b8;">${payment.periodCovered}</small><br/>
+                    <small style="color:#64748b;">Method: ${payment.method}</small>
                   </td>
-                  <td>${payment.method}</td>
-                  <td style="text-align: right; font-weight: 700;">Rs. ${payment.amount}</td>
+                  <td style="text-align: right; font-weight: 700; vertical-align: top;">Rs. ${payment.amount}</td>
                 </tr>
               </tbody>
             </table>
             
             <div class="total-row">
-              <span class="total-label">Grand Total Paid</span>
+              <span class="total-label">Total Paid</span>
               <span class="total-amount">RS ${payment.amount}</span>
             </div>
             
             <div class="footer">
-              <p>Thank you for choosing ${gymName}. This is an electronically generated document verifying your commitment to excellence.</p>
+              <p>Electronically generated by NEXORA for ${gymName}.</p>
               ${profile.footerMessage ? `<p class="footer-note">"${profile.footerMessage}"</p>` : ''}
               
-              <div style="margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                 <div style="width: 60px; height: 60px; border: 4px solid #f1f5f9; display: flex; align-items: center; justify-content: center; opacity: 0.3;">
-                    <small style="font-size: 8px; font-weight: 800; transform: rotate(-45deg);">VERIFIED</small>
-                 </div>
-                 <span style="font-size: 9px; font-weight: 800; letter-spacing: 0.1em; color: #cbd5e1;">NEXORA SECURITY AUDITED</span>
+              <div style="margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                 <span style="font-size: 8px; font-weight: 800; letter-spacing: 0.1em; color: #cbd5e1; text-transform: uppercase;">Nexora Security Audited</span>
               </div>
             </div>
           </div>

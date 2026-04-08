@@ -152,9 +152,17 @@ const PackagesModal = ({ isOpen, onClose }) => {
             <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: '42px', fontWeight: 800, color: '#fff', margin: '0 0 16px 0' }}>
               Select Your <span style={{ color: '#00d4ff' }}>Empire Tier</span>
             </h2>
-            <p style={{ color: '#64748b', fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>
+            <p style={{ color: '#64748b', fontSize: '18px', maxWidth: '600px', margin: '0 auto 24px auto' }}>
               First 50 gyms get <span style={{ color: '#fff', fontWeight: 700 }}>Lifetime 25% Discount</span>. Scale your gym operations with Nexora.
             </p>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px', 
+              background: 'rgba(0, 212, 255, 0.05)', border: '1px solid rgba(0, 212, 255, 0.15)',
+              padding: '12px 24px', borderRadius: '16px', color: '#94a3b8', fontSize: '13px'
+            }}>
+              <ShieldCheck size={16} color="#00d4ff" />
+              <span>One-time <strong style={{ color: '#00d4ff' }}>PKR 5,000</strong> activation fee covers full profile setup, WhatsApp integration, and desktop optimization.</span>
+            </div>
           </div>
 
           <div style={{
