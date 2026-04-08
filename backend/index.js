@@ -249,21 +249,7 @@ app.use('/api', async (req, res, next) => {
   try {
     const db = await readDB();
     ensureSystem(db);
-    if (!db.system.globalShutdown) return next();
-
-    const path = req.path.toLowerCase();
-    const adminKey = req.headers['x-admin-key'];
-    
-    // Bypass shutdown for:
-    // 1. All GET requests (Read-Only access is always allowed)
-    // 2. The login route
-    // 3. Admin management routes
-    // 4. Request with valid God Mode (x-admin-key)
-    if (req.method === 'GET' || path === '/auth/login') return next();
-    if (path.startsWith('/admin') || path.startsWith('/broadcasts')) return next();
-    if (adminKey && adminKey === db.system.masterPassword) return next();
-
-    // 2. Check Subscription Block for Gyms
+    // 1. Check Subscription Block for Gyms (Must come before shutdown/GET bypass)
     const gymKeyHeader = req.headers['x-gym-key'];
     if (gymKeyHeader) {
       const gym = (db.gyms || []).find(g => g.gymKey === gymKeyHeader);
@@ -278,6 +264,20 @@ app.use('/api', async (req, res, next) => {
       }
     }
 
+    if (!db.system.globalShutdown) return next();
+
+    const path = req.path.toLowerCase();
+    const adminKey = req.headers['x-admin-key'];
+    
+    // Bypass shutdown for:
+    // 1. All GET requests (Read-Only access is always allowed)
+    // 2. The login route
+    // 3. Admin management routes
+    // 4. Request with valid God Mode (x-admin-key)
+    if (req.method === 'GET' || path === '/auth/login') return next();
+    if (path.startsWith('/admin') || path.startsWith('/broadcasts')) return next();
+    if (adminKey && adminKey === db.system.masterPassword) return next();
+
     return res.status(503).json({ error: 'SYSTEM_OFFLINE', message: 'Platform is completely offline. Please contact the provider.' });
   } catch (e) {
     next(e);
@@ -287,10 +287,12 @@ app.use('/api', async (req, res, next) => {
 // Admin Endpoints
 app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
   const db = await readDB();
+  db.gyms.forEach(g => ensureGymDefaults(g));
+  await writeDB(db);
   res.json({
     system: db.system || { globalShutdown: false },
     gyms: db.gyms.map(g => {
-      ensureGymDefaults(g);
+      // Return with fields
       return {
         gymKey: g.gymKey,
         name: g.name || 'Unnamed Gym',
@@ -308,9 +310,10 @@ app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
 
 app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
   const db = await readDB();
+  db.gyms.forEach(g => ensureGymDefaults(g));
+  await writeDB(db);
   res.json({
     gyms: db.gyms.map(g => {
-      ensureGymDefaults(g);
       return {
         gymKey: g.gymKey,
         name: g.name || 'Unnamed Gym',
@@ -430,6 +433,42 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
   }
 
   res.status(400).json({ error: 'Invalid action' });
+});
+
+app.post('/api/admin/renew', verifyAdmin, async (req, res) => {
+  const { gymKey } = req.body;
+  const db = await readDB();
+  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+  
+  const now = new Date();
+  let currentEnd = new Date(db.gyms[gymIndex].subscriptionEndDate);
+  if (isNaN(currentEnd.getTime()) || currentEnd < now) currentEnd = now;
+  
+  currentEnd.setDate(currentEnd.getDate() + 30);
+  db.gyms[gymIndex].subscriptionEndDate = currentEnd.toISOString();
+  db.gyms[gymIndex].subscriptionStatus = 'active';
+
+  await writeDB(db);
+  return res.json({ message: 'Subscription renewed (+30 days)', newEndDate: db.gyms[gymIndex].subscriptionEndDate });
+});
+
+app.post('/api/admin/extend', verifyAdmin, async (req, res) => {
+  const { gymKey, days } = req.body;
+  const db = await readDB();
+  const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
+  if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
+  
+  const now = new Date();
+  let currentEnd = new Date(db.gyms[gymIndex].subscriptionEndDate);
+  if (isNaN(currentEnd.getTime()) || currentEnd < now) currentEnd = now;
+  
+  currentEnd.setDate(currentEnd.getDate() + parseInt(days || 0, 10));
+  db.gyms[gymIndex].subscriptionEndDate = currentEnd.toISOString();
+  db.gyms[gymIndex].subscriptionStatus = 'active';
+
+  await writeDB(db);
+  return res.json({ message: `Subscription extended by ${days} days`, newEndDate: db.gyms[gymIndex].subscriptionEndDate });
 });
 
 // Broadcast Endpoints (Task: Fix 404s)
@@ -1223,6 +1262,9 @@ app.get('/api/profile', async (req, res) => {
   const gym = db.gyms.find(g => g.gymKey === gymKey);
   if (!gym) return res.status(404).json({ error: 'Not found' });
   
+  ensureGymDefaults(gym);
+  await writeDB(db); // Persist initialized dates if any
+
   // Return everything except password
   const { password, ...profileData } = gym;
   profileData.package = gym.package || 'starter';

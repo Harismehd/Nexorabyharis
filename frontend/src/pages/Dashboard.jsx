@@ -100,6 +100,7 @@ export default function Dashboard() {
   const [broadcasts, setBroadcasts] = useState([]);
   const [showClosingModal, setShowClosingModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [gymProfile, setGymProfile] = useState(null);
 
   const isAdvancedLocked = packageTier === 'starter' || packageTier === 'growth';
   const canCloseCash = packageTier === 'pro' || packageTier === 'pro_plus';
@@ -108,11 +109,13 @@ export default function Dashboard() {
     Promise.all([
       api.get(`/members?gymKey=${gymKey}`),
       api.get(`/payments?gymKey=${gymKey}`),
-      api.get(`/broadcasts?gymKey=${gymKey}`)
-    ]).then(([memRes, payRes, broadRes]) => {
+      api.get(`/broadcasts?gymKey=${gymKey}`),
+      api.get(`/profile?gymKey=${gymKey}`)
+    ]).then(([memRes, payRes, broadRes, profRes]) => {
       setMembers(memRes.data.members || []);
       setPayments(payRes.data.payments || []);
       setBroadcasts(broadRes.data.broadcasts || []);
+      setGymProfile(profRes.data.profile || null);
     }).catch(err => {
       console.error('Dashboard Fetch Error:', err);
       // Optional: set an error state here if you want to show a specific "Service Unavailable" UI
@@ -273,11 +276,14 @@ export default function Dashboard() {
       />
 
       {/* Subscription Expiry Badge */}
-      {subscriptionEndDate && (
+      {(subscriptionEndDate || gymProfile?.subscriptionEndDate) && (
         <div className="animate-in fade-in slide-in-from-top-4 duration-700">
           {(() => {
-            const daysLeft = Math.ceil((new Date(subscriptionEndDate) - new Date()) / (1000 * 60 * 60 * 24));
-            const isExpired = subscriptionStatus === 'expired' || daysLeft <= 0;
+            const endDateStr = subscriptionEndDate || gymProfile?.subscriptionEndDate;
+            const statusStr = subscriptionStatus || gymProfile?.subscriptionStatus || 'active';
+            
+            const daysLeft = Math.ceil((new Date(endDateStr) - new Date()) / (1000 * 60 * 60 * 24));
+            const isExpired = statusStr === 'expired' || daysLeft <= 0;
             
             let color = '#34d399'; // Green
             let bg = 'rgba(52, 211, 153, 0.1)';
@@ -316,7 +322,7 @@ export default function Dashboard() {
                 <div style={{ flex: 1 }}>
                    <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#f1f5f9', letterSpacing: '0.01em' }}>{text}</p>
                    <p style={{ margin: '2px 0 0 0', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color, opacity: 0.8 }}>
-                     Cycle End: {new Date(subscriptionEndDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                     Cycle End: {new Date(endDateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                    </p>
                 </div>
                 {!isExpired && daysLeft <= 6 && (

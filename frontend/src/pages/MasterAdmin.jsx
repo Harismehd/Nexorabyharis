@@ -210,7 +210,7 @@ export default function MasterAdmin() {
   const handleRenewGym = async (gymKey) => {
     if (!window.confirm(`Add 30 days to ${gymKey}'s existing subscription?`)) return;
     try {
-      await api.post('/admin?action=renew', { gymKey }, getAdminHeaders());
+      await api.post('/admin/renew', { gymKey }, getAdminHeaders());
       toast.success('Subscription renewed successfully');
       fetchData();
     } catch {
@@ -222,7 +222,7 @@ export default function MasterAdmin() {
     const days = window.prompt(`How many days to extend ${gymKey}?`, '7');
     if (!days || isNaN(days)) return;
     try {
-      await api.post('/admin?action=extend', { gymKey, days: parseInt(days, 10) }, getAdminHeaders());
+      await api.post('/admin/extend', { gymKey, days: parseInt(days, 10) }, getAdminHeaders());
       toast.success(`Extended by ${days} days`);
       fetchData();
     } catch {
@@ -502,14 +502,17 @@ export default function MasterAdmin() {
                         <td className="py-5 px-4">
                            <div className="flex flex-col items-center justify-center gap-1">
                              {(() => {
-                               const daysLeft = Math.ceil((new Date(g.subscriptionEndDate) - new Date()) / (1000 * 60 * 60 * 24));
+                               const end = g.subscriptionEndDate ? new Date(g.subscriptionEndDate) : null;
+                               const daysLeft = end && !isNaN(end.getTime()) 
+                                 ? Math.ceil((end - new Date()) / (1000 * 60 * 60 * 24))
+                                 : 30; // Default fallback for UI
                                const status = g.subscriptionStatus === 'expired' ? 'Expired ❌' : daysLeft <= 6 ? '⚠️ Expiring' : 'Active ✅';
                                const color = g.subscriptionStatus === 'expired' ? 'text-red-500' : daysLeft <= 6 ? 'text-amber-500' : 'text-emerald-500';
                                return (
                                  <>
                                    <span className={`text-[10px] font-black uppercase ${color}`}>{status}</span>
                                    <div className="text-[9px] text-slate-500 font-bold tabular-nums">
-                                      {new Date(g.subscriptionEndDate).toLocaleDateString('en-GB')} ({daysLeft}d left)
+                                      {end ? end.toLocaleDateString('en-GB') : '--/--/--'} ({daysLeft}d left)
                                    </div>
                                    <div className="flex gap-1 mt-1">
                                       <button onClick={() => handleRenewGym(g.gymKey)} title="Renew +30 Days" className="p-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded border border-emerald-500/20 transition-all">
