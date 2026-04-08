@@ -17,22 +17,22 @@ function DailyClosingModal({ show, onClose, payments, members }) {
   if (!show) return null;
 
   const today = new Date().toISOString().slice(0, 10);
-  const cashToday = payments.filter(p => {
-    const dMatch = (p.paymentDate || '').startsWith(today);
+  
+  // 1. Calculate Multi-Method Payments
+  const paymentsToday = payments.filter(p => (p.paymentDate || '').startsWith(today));
+  const totalCollectedToday = paymentsToday.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+  
+  const cashToday = paymentsToday.filter(p => {
     const m = String(p.method || '').toLowerCase();
-    // Include various cash-equivalent labels used in different tiers
-    const isCashEquivalent = m.includes('cash') || m.includes('direct') || m.includes('manual');
-    return dMatch && isCashEquivalent;
+    return m === 'cash';
   });
+  const totalCashCollected = cashToday.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
   
-  const cashSum = cashToday.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
-  
-  // Members due today (simplified: any member currently in 'Due' status)
+  // 2. Clear Pending Dues calculation
   const dueMembers = members.filter(m => {
     if (!m.subscriptionEndDate) return true;
     return new Date(m.subscriptionEndDate) < new Date();
   });
-  
   const dueSum = dueMembers.reduce((s, m) => s + parseFloat(m.amount || 0), 0);
 
   return (
@@ -52,32 +52,36 @@ function DailyClosingModal({ show, onClose, payments, members }) {
            </div>
         </div>
 
-        <div className="space-y-6">
-           <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-              <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cash Collected Today</p>
-              <p style={{ fontSize: '28px', fontWeight: 900, color: '#34d399' }}>Rs. {cashSum.toLocaleString()}</p>
-              <p style={{ fontSize: '10px', color: '#34d399', fontWeight: 700 }}>{cashToday.length} successful transactions</p>
-           </div>
-
-           <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-                 <p style={{ fontSize: '9px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Pending Dues</p>
-                 <p style={{ fontSize: '18px', fontWeight: 800, color: '#f87171' }}>Rs. {dueSum.toLocaleString()}</p>
+        <div className="space-y-4">
+           {/* Detailed Metrics */}
+           <div className="space-y-3">
+              <div style={{ padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                 <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>💰 Cash Collected Today</p>
+                 <p style={{ fontSize: '22px', fontWeight: 900, color: '#34d399', margin: 0 }}>Rs. {totalCashCollected.toLocaleString()}</p>
+                 <p style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>{cashToday.length} cash entries</p>
               </div>
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-                 <p style={{ fontSize: '9px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Due Members</p>
-                 <p style={{ fontSize: '18px', fontWeight: 800, color: '#f87171' }}>{dueMembers.length}</p>
+
+              <div style={{ padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                 <p style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>💳 Total Collected (All Methods)</p>
+                 <p style={{ fontSize: '20px', fontWeight: 800, color: '#f1f5f9', margin: 0 }}>Rs. {totalCollectedToday.toLocaleString()}</p>
+                 <p style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>{paymentsToday.length} total transactions</p>
+              </div>
+              
+              <div style={{ padding: '16px', borderRadius: '16px', background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.15)' }}>
+                 <p style={{ fontSize: '10px', color: '#00d4ff', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>💵 Expected Cash in Drawer</p>
+                 <p style={{ fontSize: '22px', fontWeight: 900, color: '#fff', margin: 0 }}>Rs. {totalCashCollected.toLocaleString()}</p>
+              </div>
+
+              <div style={{ padding: '16px', borderRadius: '16px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                 <p style={{ fontSize: '10px', color: '#f87171', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>⚠️ Pending Dues</p>
+                 <p style={{ fontSize: '20px', fontWeight: 800, color: '#f87171', margin: 0 }}>Rs. {dueSum.toLocaleString()}</p>
+                 <p style={{ fontSize: '10px', color: '#f87171', fontWeight: 700 }}>{dueMembers.length} members outstanding</p>
               </div>
            </div>
 
-           <div className="p-5 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-1">
-              <p style={{ fontSize: '10px', color: '#00d4ff', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expected in Drawer</p>
-              <p style={{ fontSize: '24px', fontWeight: 900, color: '#fff' }}>Rs. {cashSum.toLocaleString()}</p>
-           </div>
-
-           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: 'rgba(251, 191, 36, 0.05)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.1)' }}>
+           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '12px', borderRadius: '12px', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.1)' }}>
               <History size={16} color="#fbbf24" />
-              <p style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 600, margin: 0 }}>Recommendation: Count your physical cash drawer now and match it with the expected total above.</p>
+              <p style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 600, margin: 0 }}>Match your physical cash drawer with the "Expected" total above.</p>
            </div>
         </div>
 

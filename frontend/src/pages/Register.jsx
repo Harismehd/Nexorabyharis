@@ -222,7 +222,7 @@ const Register = () => {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#94a3b8' }}>
-                    <span>One-time Setup & Activation</span>
+                    <span>One-time Setup & Training Fee</span>
                     <span style={{ color: '#f1f5f9', fontWeight: 700 }}>PKR {SETUP_FEE.toLocaleString()}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#94a3b8' }}>

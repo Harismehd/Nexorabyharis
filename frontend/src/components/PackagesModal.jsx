@@ -161,7 +161,7 @@ const PackagesModal = ({ isOpen, onClose }) => {
               padding: '12px 24px', borderRadius: '16px', color: '#94a3b8', fontSize: '13px'
             }}>
               <ShieldCheck size={16} color="#00d4ff" />
-              <span>One-time <strong style={{ color: '#00d4ff' }}>PKR 5,000</strong> activation fee covers full profile setup, WhatsApp integration, and desktop optimization.</span>
+              <span>One-time <strong style={{ color: '#00d4ff' }}>PKR 5,000</strong> activation fee covers full profile setup, one <strong>30-minute training session</strong>, WhatsApp integration, and desktop optimization.</span>
             </div>
           </div>
 

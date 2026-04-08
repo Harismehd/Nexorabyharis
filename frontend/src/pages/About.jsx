@@ -57,18 +57,17 @@ export default function About() {
             <div className="w-full h-full bg-slate-950 rounded-xl p-8 space-y-6">
                <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '28px', color: '#fff' }}>Meet the Architect</h2>
                <p className="text-slate-400 leading-relaxed">
-                 Developed by <b>Haris Mehmood</b>, Nexora was born from a vision to simplify gym administration through smart automation and predictive finance tools.
+                 Developed by <b>Haris Mehmood</b>, Nexora is a premium Intelligence Platform for Gym Automation. It transforms complex membership tracking, high-volume WhatsApp communication, and revenue management into a seamless digital experience.
                </p>
                <div className="flex gap-4">
-                 <button className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-slate-400 hover:text-white transition-colors">
-                   <Zap size={20} />
-                 </button>
-                 <button className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-slate-400 hover:text-white transition-colors">
-                   <Activity size={20} />
-                 </button>
-                 <button className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-slate-400 hover:text-white transition-colors">
+                 <a href="https://wa.me/923125969155" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-[#34d399] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all flex items-center gap-2">
+                   <MessageSquare size={20} />
+                   <span className="text-[10px] font-black uppercase tracking-widest">WhatsApp</span>
+                 </a>
+                 <a href="mailto:harismehmd1@gmail.com" className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-[#00d4ff] hover:bg-blue-500/10 hover:border-blue-500/30 transition-all flex items-center gap-2">
                    <ShieldCheck size={20} />
-                 </button>
+                   <span className="text-[10px] font-black uppercase tracking-widest">Email</span>
+                 </a>
                </div>
             </div>
           </div>

@@ -6,7 +6,7 @@ import {
   LayoutDashboard, MessageSquare, UploadCloud, Send,
   Settings, History, LogOut, Dumbbell, Users, Menu,
   ShieldCheck, BadgeDollarSign, ChevronRight, FileText,
-  X, Megaphone, Info
+  X, Megaphone, Info, LifeBuoy
 } from 'lucide-react';
 
 export default function Layout() {
@@ -59,6 +59,7 @@ export default function Layout() {
     ...(packageTier === 'pro_plus' ? [{ name: 'Revenue Leak Guard', path: '/finance-guard', icon: BadgeDollarSign }] : []),
     { name: 'Logs', path: '/logs', icon: History },
     { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Support', path: '/support', icon: LifeBuoy },
     { name: 'About Nexora', path: '/about', icon: Info },
   ];
 
