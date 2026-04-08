@@ -589,48 +589,160 @@ export default function Members() {
         </div>
       )}
 
-      {/* Pay Modal */}
       {showPayModal && selectedMember && (
         <div style={{
-          position: 'fixed', inset: 0, zGenerateSessionId: 50,
+          position: 'fixed', inset: 0, zIndex: 1000,
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
-          background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000
+          background: 'rgba(8,13,20,0.85)', backdropFilter: 'blur(12px)',
+          animation: 'fadeIn 0.3s ease'
         }}>
-          <div className="card" style={{ maxWidth: '520px', width: '100%' }}>
-            <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#f1f5f9', marginBottom: '6px' }}>
-              Record Payment
-            </h2>
+          <div className="card" style={{ 
+            maxWidth: '480px', width: '100%', padding: '32px', border: '1px solid rgba(0,212,255,0.2)',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5), 0 0 40px rgba(0,212,255,0.05)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ background: 'rgba(0,212,255,0.1)', padding: '10px', borderRadius: '12px' }}>
+                  <DollarSign size={24} color="#00d4ff" />
+                </div>
+                <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '22px', color: '#f1f5f9', margin: 0 }}>
+                  Record Payment
+                </h2>
+              </div>
+              <button onClick={() => { setShowPayModal(false); setSelectedMember(null); }} style={{ color: '#475569', cursor: 'pointer', background: 'none', border: 'none' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Member Preview Card */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '12px',
-              marginBottom: '20px', padding: '12px 16px', borderRadius: '12px',
-              background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.15)'
+              display: 'flex', alignItems: 'center', gap: '16px',
+              marginBottom: '28px', padding: '16px', borderRadius: '16px',
+              background: 'linear-gradient(135deg, rgba(15,23,42,0.6), rgba(8,13,20,0.8))',
+              border: '1px solid rgba(255,255,255,0.03)',
+              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)'
             }}>
               <div style={{
-                width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                width: '52px', height: '52px', borderRadius: '14px', flexShrink: 0,
                 background: getAvatarColor(selectedMember.name),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '13px', color: 'white'
+                fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '18px', color: 'white',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.4)'
               }}>
                 {getInitials(selectedMember.name)}
               </div>
-              <div>
-                <p style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9', fontSize: '14px', margin: 0 }}>{selectedMember.name}</p>
-                <p style={{ color: '#475569', fontSize: '12px', margin: 0 }}>{selectedMember.phone}</p>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9', fontSize: '16px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {selectedMember.name}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                  <span style={{ color: '#00d4ff', fontSize: '13px', fontWeight: 600 }}>{selectedMember.phone}</span>
+                  <span style={{ color: '#334155' }}>|</span>
+                  <span style={{ color: '#475569', fontSize: '12px' }}>{selectedMember.packageName || 'Monthly Plan'}</span>
+                </div>
               </div>
             </div>
-            <form onSubmit={handleRecordPayment} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <input className="input-field" type="number" placeholder="Amount (Rs)" value={paymentForm.amount} onChange={e => setPaymentForm(v => ({ ...v, amount: e.target.value }))} required />
-              <select className="input-field" value={paymentForm.method} onChange={e => setPaymentForm(v => ({ ...v, method: e.target.value }))}>
-                <option value="Cash">Cash</option>
-                <option value="EasyPaisa">EasyPaisa</option>
-                <option value="JazzCash">JazzCash</option>
-                <option value="Bank">Bank Transfer</option>
-              </select>
-              <input className="input-field" type="number" min="1" placeholder="Months Covered" value={paymentForm.monthsCovered} onChange={e => setPaymentForm(v => ({ ...v, monthsCovered: e.target.value }))} />
-              <div />
-              <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
-                <button type="button" className="btn-secondary" onClick={() => { setShowPayModal(false); setSelectedMember(null); }}>Cancel</button>
-                <button type="submit" className="btn-primary">Save Payment</button>
+
+            <form onSubmit={handleRecordPayment} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {/* Amount */}
+                <div className="space-y-2">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Amount (PKR)</label>
+                  <div style={{ position: 'relative' }}>
+                    <DollarSign size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00d4ff' }} />
+                    <input 
+                      className="input-field" 
+                      type="number" 
+                      style={{ paddingLeft: '40px' }} 
+                      placeholder="5000" 
+                      value={paymentForm.amount} 
+                      onChange={e => setPaymentForm(v => ({ ...v, amount: e.target.value }))} 
+                      required 
+                    />
+                  </div>
+                </div>
+
+                {/* Method */}
+                <div className="space-y-2">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Payment Method</label>
+                  <div style={{ position: 'relative' }}>
+                    <Plus size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00d4ff' }} />
+                    <select 
+                      className="input-field" 
+                      style={{ paddingLeft: '40px' }} 
+                      value={paymentForm.method} 
+                      onChange={e => setPaymentForm(v => ({ ...v, method: e.target.value }))}
+                    >
+                      <option value="Cash">Cash Entry</option>
+                      <option value="EasyPaisa">EasyPaisa</option>
+                      <option value="JazzCash">JazzCash</option>
+                      <option value="Bank">Bank Transfer</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Months */}
+                <div className="space-y-2">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Duration (Months)</label>
+                  <div style={{ position: 'relative' }}>
+                    <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00d4ff' }} />
+                    <input 
+                      className="input-field" 
+                      type="number" 
+                      min="1" 
+                      style={{ paddingLeft: '40px' }} 
+                      placeholder="1" 
+                      value={paymentForm.monthsCovered} 
+                      onChange={e => setPaymentForm(v => ({ ...v, monthsCovered: e.target.value }))} 
+                    />
+                  </div>
+                </div>
+
+                {/* Expiry Preview */}
+                <div className="space-y-2">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Expiry Preview</label>
+                  <div style={{ 
+                    height: '46px', display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '0 16px', borderRadius: '12px', background: 'rgba(52,211,153,0.06)',
+                    border: '1px solid rgba(52,211,153,0.15)', color: '#34d399', fontSize: '13px', fontWeight: 700
+                  }}>
+                    <Clock size={16} />
+                    <span>
+                      {(() => {
+                        let current = selectedMember.subscriptionEndDate ? new Date(selectedMember.subscriptionEndDate) : new Date();
+                        if (current < new Date()) current = new Date();
+                        const next = new Date(current);
+                        next.setMonth(next.getMonth() + parseInt(paymentForm.monthsCovered || 1));
+                        return next.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  style={{ flex: 1, padding: '14px' }} 
+                  onClick={() => { setShowPayModal(false); setSelectedMember(null); }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-primary" 
+                  style={{ 
+                    flex: 2, padding: '14px',
+                    background: 'linear-gradient(135deg, #0070c4 0%, #00d4ff 100%)',
+                    boxShadow: '0 10px 20px -5px rgba(0,212,255,0.3)',
+                    border: 'none',
+                    fontSize: '14px',
+                    letterSpacing: '0.02em'
+                  }}
+                >
+                  Confirm & Save Payment
+                </button>
               </div>
             </form>
           </div>
