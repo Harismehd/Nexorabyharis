@@ -39,13 +39,11 @@ export default function Login() {
       } else {
         localStorage.removeItem('adminKey');
       }
-      login(res.data.gymKey, res.data.role, res.data.package, res.data.subscriptionEndDate, res.data.subscriptionStatus);
+      login(res.data.gymKey, res.data.role, res.data.package);
     } catch (err) {
       const code = err.response?.data?.error;
-      const message = err.response?.data?.message;
       if (code === 'ACCOUNT_SUSPENDED') toast.error('Account Suspended. Contact support.');
       else if (code === 'SYSTEM_OFFLINE') toast.error('Platform Offline. Try again later.');
-      else if (code === 'SUBSCRIPTION_EXPIRED') toast.error(message || 'Subscription Expired. Contact Admin.');
       else toast.error(err.response?.data?.message || err.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);

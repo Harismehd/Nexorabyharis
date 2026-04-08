@@ -87,29 +87,6 @@ function ensureGymDefaults(gym) {
       bankIbanEncrypted: ''
     };
   }
-  
-  // Subscription Expiry System
-  if (!gym.subscriptionStartDate || gym.subscriptionStartDate === "") {
-    gym.subscriptionStartDate = new Date().toISOString();
-  }
-  if (!gym.subscriptionEndDate || gym.subscriptionEndDate === "") {
-    // Default 30 days for existing/new gyms
-    const end = new Date();
-    end.setDate(end.getDate() + 30);
-    gym.subscriptionEndDate = end.toISOString();
-  }
-  if (!gym.subscriptionStatus || gym.subscriptionStatus === "") {
-    gym.subscriptionStatus = 'active';
-  }
-
-  // Auto-update status based on date
-  const now = new Date();
-  const endDate = new Date(gym.subscriptionEndDate);
-  if (!isNaN(endDate.getTime()) && now > endDate) {
-    gym.subscriptionStatus = 'expired';
-  } else if (!isNaN(endDate.getTime())) {
-    gym.subscriptionStatus = 'active';
-  }
 }
 
 function requireMinPackage(gym, minPackage) {
@@ -249,20 +226,6 @@ app.use('/api', async (req, res, next) => {
   try {
     const db = await readDB();
     ensureSystem(db);
-    // 1. Check Subscription Block for Gyms (Must come before shutdown/GET bypass)
-    const gymKeyHeader = req.headers['x-gym-key'];
-    if (gymKeyHeader) {
-      const gym = (db.gyms || []).find(g => g.gymKey === gymKeyHeader);
-      if (gym) {
-        ensureGymDefaults(gym); // Sync status
-        if (gym.subscriptionStatus === 'expired') {
-          return res.status(403).json({ 
-            error: 'SUBSCRIPTION_EXPIRED', 
-            message: `Access blocked. Subscription expired on ${new Date(gym.subscriptionEndDate).toLocaleDateString()}.` 
-          });
-        }
-      }
-    }
 
     if (!db.system.globalShutdown) return next();
 
@@ -287,22 +250,17 @@ app.use('/api', async (req, res, next) => {
 // Admin Endpoints
 app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
   const db = await readDB();
-  db.gyms.forEach(g => ensureGymDefaults(g));
-  await writeDB(db);
   res.json({
     system: db.system || { globalShutdown: false },
     gyms: db.gyms.map(g => {
-      // Return with fields
+      ensureGymDefaults(g);
       return {
         gymKey: g.gymKey,
         name: g.name || 'Unnamed Gym',
         isActive: g.isActive !== false,
         package: g.package || 'starter',
         whatsappStatus: g.whatsappStatus,
-        memberCount: db.members.filter(m => m.gymKey === g.gymKey).length,
-        subscriptionStatus: g.subscriptionStatus,
-        subscriptionEndDate: g.subscriptionEndDate,
-        subscriptionStartDate: g.subscriptionStartDate
+        memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
       };
     })
   });
@@ -310,10 +268,9 @@ app.get('/api/admin/dashboard', verifyAdmin, async (req, res) => {
 
 app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
   const db = await readDB();
-  db.gyms.forEach(g => ensureGymDefaults(g));
-  await writeDB(db);
   res.json({
     gyms: db.gyms.map(g => {
+      ensureGymDefaults(g);
       return {
         gymKey: g.gymKey,
         name: g.name || 'Unnamed Gym',
@@ -321,10 +278,7 @@ app.get('/api/admin/gyms', verifyAdmin, async (req, res) => {
         package: g.package || 'starter',
         deviceLimit: g.deviceLimit || 5,
         whatsappStatus: g.whatsappStatus,
-        memberCount: db.members.filter(m => m.gymKey === g.gymKey).length,
-        subscriptionStatus: g.subscriptionStatus,
-        subscriptionEndDate: g.subscriptionEndDate,
-        subscriptionStartDate: g.subscriptionStartDate
+        memberCount: db.members.filter(m => m.gymKey === g.gymKey).length
       };
     })
   });
@@ -338,16 +292,9 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
   if (action === 'create') {
     if (db.gyms.find(g => g.gymKey === gymKey)) return res.status(400).json({ error: 'Gym Key already exists' });
     
-    const start = new Date();
-    const end = new Date();
-    end.setDate(end.getDate() + 30);
-
     const newGym = { 
         gymKey, password, isActive: true, package: pkg || 'starter', 
         autoMessagingEnabled: false, whatsappStatus: 'disconnected', 
-        subscriptionStartDate: start.toISOString(),
-        subscriptionEndDate: end.toISOString(),
-        subscriptionStatus: 'active',
         paymentSettings: { methods: ['easypaisa'], easypaisaNumberEncrypted: '', jazzcashNumberEncrypted: '', bankTitle: '', bankIbanEncrypted: '' } 
     };
     db.gyms.push(newGym);
@@ -377,17 +324,8 @@ app.post('/api/admin', verifyAdmin, async (req, res) => {
     const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
     if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
     db.gyms[gymIndex].package = pkg || 'starter';
-    
-    // Reset cycle on package change
-    const start = new Date();
-    const end = new Date();
-    end.setDate(end.getDate() + 30);
-    db.gyms[gymIndex].subscriptionStartDate = start.toISOString();
-    db.gyms[gymIndex].subscriptionEndDate = end.toISOString();
-    db.gyms[gymIndex].subscriptionStatus = 'active';
-
     await writeDB(db);
-    return res.json({ message: `Package updated and cycle restarted for ${db.gyms[gymIndex].package.toUpperCase()}` });
+    return res.json({ message: `Package updated for ${db.gyms[gymIndex].package.toUpperCase()}` });
   }
 
   if (action === 'renew') {
@@ -1235,9 +1173,6 @@ app.get('/api/profile', async (req, res) => {
   const gym = db.gyms.find(g => g.gymKey === gymKey);
   if (!gym) return res.status(404).json({ error: 'Not found' });
   
-  ensureGymDefaults(gym);
-  await writeDB(db); // Persist initialized dates if any
-
   // Return everything except password
   const { password, ...profileData } = gym;
   profileData.package = gym.package || 'starter';
