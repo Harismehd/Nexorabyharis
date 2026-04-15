@@ -48,7 +48,7 @@ export default function MemberDashboard() {
       const [meRes, payRes, attRes] = await Promise.all([
         api.get(`/member/me?gymKey=${gymKey}&phone=${memberPhone}`),
         api.get(`/member/payments?gymKey=${gymKey}&memberId=${memberId}`),
-        api.get(`/member/attendance?gymKey=${gymKey}&memberId=${memberId}`)
+        api.get(`/member/attendance?gymKey=${gymKey}&memberId=${memberId}&phone=${memberPhone}`)
       ]);
       setData(meRes.data);
       setPayments(payRes.data.payments || []);

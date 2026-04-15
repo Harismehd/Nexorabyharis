@@ -53,7 +53,34 @@ export default async function handler(req, res) {
   const db = await readDB();
 
   if (req.method === 'GET') {
-    const { gymKey } = req.query;
+    const { gymKey, action, memberId, phone } = req.query;
+
+    // --- MEMBER PORTAL ACTIONS ---
+    if (action === 'me') {
+      const member = db.members.find(m => m.gymKey === gymKey && String(m.phone).trim() === String(phone).trim());
+      if (!member) return res.status(404).json({ error: 'Profile not found' });
+      const gym = db.gyms.find(g => g.gymKey === gymKey);
+      return res.json({
+        profile: { ...member, status: calculateMemberStatus(member) },
+        gymInfo: { name: gym?.name, address: gym?.address, contact: gym?.contact }
+      });
+    }
+
+    if (action === 'payments') {
+      const payments = db.payments.filter(p => p.gymKey === gymKey && p.memberId === memberId)
+                       .sort((a,b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+      return res.json({ payments });
+    }
+
+    if (action === 'attendance') {
+      // For now, use logs that match member checkins or mock from lastVisit
+      // In a real scenario, you'd have an attendance table.
+      // We'll return logs for this member.
+      const logs = db.logs.filter(l => l.gymKey === gymKey && l.memberPhone === phone).slice(0, 20);
+      return res.json({ attendance: logs });
+    }
+
+    // --- STANDARD GYM FETCH ---
     const members = db.members.filter(m => m.gymKey === gymKey).map(m => ({ 
       ...m, 
       status: calculateMemberStatus(m), 
@@ -101,6 +128,19 @@ export default async function handler(req, res) {
 
     if (action === 'checkin') {
       member.lastVisit = new Date().toISOString();
+      
+      // Log attendance for history
+      if (!db.logs) db.logs = [];
+      db.logs.push({
+        id: uuidv4(),
+        gymKey,
+        memberName: member.name,
+        memberPhone: member.phone,
+        message: 'Manual Check-in',
+        status: 'Attendance',
+        timestamp: member.lastVisit
+      });
+
       db.members[memberIndex] = member;
       await writeDB(db);
       return res.json({ message: 'Checked in successfully', lastVisit: member.lastVisit, lastVisitFormatted: 'Today' });

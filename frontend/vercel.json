@@ -1,6 +1,10 @@
 {
   "rewrites": [
     { "source": "/api/auth/login", "destination": "/api/auth" },
+    { "source": "/api/auth/member-login", "destination": "/api/auth" },
+    { "source": "/api/member/me", "destination": "/api/members?action=me" },
+    { "source": "/api/member/payments", "destination": "/api/members?action=payments" },
+    { "source": "/api/member/attendance", "destination": "/api/members?action=attendance" },
     { "source": "/api/members/upload", "destination": "/api/upload" },
     { "source": "/api/members/:id/checkin", "destination": "/api/members" },
     { "source": "/api/members/:id/status", "destination": "/api/members" },

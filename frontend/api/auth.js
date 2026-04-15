@@ -57,9 +57,10 @@ export default async function handler(req, res) {
   const db = await readDB();
   ensureSystem(db);
 
-  // 1. Normal Login logic
-  const { gymKey, password } = req.body;
+  // 1. Unified Login logic
+  const { gymKey, password, phone } = req.body;
 
+  // Master Admin Login
   if (gymKey === 'ADMIN') {
     if (password === db.system.masterPassword) {
       return res.json({ message: 'Welcome, Master Admin', gymKey: 'ADMIN', role: 'admin' });
@@ -67,21 +68,41 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Invalid Master Password' });
   }
 
+  // Global Kill Switch check
   if (db.system.globalShutdown) {
-    return res.status(403).json({ error: 'SYSTEM_OFFLINE', message: 'Platform is completely offline.' });
+    return res.status(503).json({ error: 'SYSTEM_OFFLINE', message: 'Platform is completely offline. Please contact the provider.' });
   }
 
+  // Gym Validation
   const gym = db.gyms.find(g => g.gymKey === gymKey);
-  if (!gym) return res.status(401).json({ error: 'Gym Key not found. Contact your provider.' });
-  if (gym.password !== password) return res.status(401).json({ error: 'Invalid password' });
+  if (!gym) return res.status(404).json({ error: 'Gym not found. Contact your provider.' });
 
-  const before = JSON.stringify(gym);
-  ensureGymDefaults(gym);
-  if (before !== JSON.stringify(gym)) await writeDB(db);
-
+  // Account Suspension Check
   if (gym.isActive === false) {
     return res.status(403).json({ error: 'ACCOUNT_SUSPENDED', message: 'Your account has been suspended.' });
   }
+
+  // OPTION A: Member Login (Phone based)
+  if (phone) {
+    const member = db.members.find(m => m.gymKey === gymKey && String(m.phone).trim() === String(phone).trim());
+    if (!member) {
+      return res.status(404).json({ error: 'NO_MEMBER_FOUND', message: 'No member found with this phone number. Please contact your gym.' });
+    }
+
+    return res.json({
+      message: 'Welcome back!',
+      gymKey,
+      role: 'member',
+      memberId: member.id,
+      memberName: member.name
+    });
+  }
+
+  // OPTION B: Gym Owner/Staff Login (Password based)
+  if (gym.password !== password) return res.status(401).json({ error: 'Invalid password' });
+
+  ensureGymDefaults(gym);
+  await writeDB(db);
 
   res.json({ 
     message: 'Login successful', 
