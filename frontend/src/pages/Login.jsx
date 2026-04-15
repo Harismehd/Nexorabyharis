@@ -8,6 +8,8 @@ import PackagesModal from '../components/PackagesModal';
 export default function Login() {
   const [gymKey, setKey] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loginType, setLoginType] = useState('gym'); // 'gym' or 'member'
   const [adminStage, setAdminStage] = useState(false);
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -39,11 +41,34 @@ export default function Login() {
       } else {
         localStorage.removeItem('adminKey');
       }
-      login(res.data.gymKey, res.data.role, res.data.package);
+      login(res.data.gymKey, res.data.role, { package: res.data.package });
     } catch (err) {
       const code = err.response?.data?.error;
       if (code === 'ACCOUNT_SUSPENDED') toast.error('Account Suspended. Contact support.');
       else if (code === 'SYSTEM_OFFLINE') toast.error('Platform Offline. Try again later.');
+      else toast.error(err.response?.data?.message || err.response?.data?.error || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMemberSubmit = async (e) => {
+    e.preventDefault();
+    if (!normalizedGymKey || !phone) return toast.error('Please fill both fields');
+    setLoading(true);
+    try {
+      const res = await api.post('/auth/member-login', { gymKey: normalizedGymKey, phone });
+      toast.success(res.data.message);
+      login(res.data.gymKey, 'member', { 
+        memberId: res.data.memberId, 
+        phone: phone, 
+        name: res.data.memberName 
+      });
+    } catch (err) {
+      const code = err.response?.data?.error;
+      if (code === 'NO_MEMBER_FOUND') toast.error('No member found with this phone number.');
+      else if (code === 'ACCOUNT_SUSPENDED') toast.error('Gym account suspended.');
+      else if (code === 'SYSTEM_OFFLINE') toast.error('Platform Offline.');
       else toast.error(err.response?.data?.message || err.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);
@@ -100,6 +125,31 @@ export default function Login() {
           borderRadius: '24px', padding: '32px',
           boxShadow: '0 25px 50px rgba(0,0,0,0.5)', marginBottom: '32px'
         }}>
+          {!adminStage && (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'rgba(5, 10, 16, 0.5)', padding: '4px', borderRadius: '12px' }}>
+              <button 
+                onClick={() => setLoginType('gym')}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: '8px', border: 'none',
+                  background: loginType === 'gym' ? '#1a2540' : 'transparent',
+                  color: loginType === 'gym' ? '#00d4ff' : '#475569',
+                  fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'all 0.3s ease'
+                }}>
+                Gym Login
+              </button>
+              <button 
+                onClick={() => setLoginType('member')}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: '8px', border: 'none',
+                  background: loginType === 'member' ? '#1a2540' : 'transparent',
+                  color: loginType === 'member' ? '#00d4ff' : '#475569',
+                  fontSize: '12px', fontWeight: 800, cursor: 'pointer', transition: 'all 0.3s ease'
+                }}>
+                Member Login
+              </button>
+            </div>
+          )}
+
           {!adminStage ? (
             <>
               {/* CTA for Packages */}
@@ -117,7 +167,7 @@ export default function Login() {
                 <Zap size={16} fill="#050a10" /> See Packages & Offers
               </button>
 
-              <form onSubmit={handleContinue} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <form onSubmit={loginType === 'gym' ? handleContinue : handleMemberSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
                   Tenant Identifier
@@ -125,31 +175,47 @@ export default function Login() {
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="GYM KEY or ADMIN"
+                  placeholder="GYM KEY"
                   value={gymKey}
                   onChange={e => setKey(e.target.value.toUpperCase())}
                   style={{ height: '54px', padding: '0 20px' }}
                 />
               </div>
 
-              {normalizedGymKey !== 'ADMIN' && (
+              {loginType === 'gym' ? (
+                normalizedGymKey !== 'ADMIN' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
+                      Access Token
+                    </label>
+                    <input
+                      type="password"
+                      className="input-field"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      style={{ height: '54px', padding: '0 20px' }}
+                    />
+                  </div>
+                )
+              ) : (
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
-                    Access Token
+                    Registered Phone
                   </label>
                   <input
-                    type="password"
+                    type="text"
                     className="input-field"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    placeholder="e.g. 923000000000"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
                     style={{ height: '54px', padding: '0 20px' }}
                   />
                 </div>
               )}
 
               <button type="submit" className="btn-primary" disabled={loading} style={{ justifyContent: 'center', padding: '16px', fontSize: '14px', fontWeight: 900 }}>
-                {normalizedGymKey === 'ADMIN' ? (
+                {normalizedGymKey === 'ADMIN' && loginType === 'gym' ? (
                   <><ShieldCheck size={18} /> Continue to Admin</>
                 ) : loading ? 'Validating...' : (
                   <><ArrowRight size={18} /> Enter Dashboard</>

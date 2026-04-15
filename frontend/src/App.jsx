@@ -19,6 +19,7 @@ import FinanceGuard from './pages/FinanceGuard';
 import Terms from './pages/Terms';
 import Register from './pages/Register';
 import Support from './pages/Support';
+import MemberDashboard from './pages/MemberDashboard';
 import api from './api';
 
 const ProtectedRoute = ({ children }) => {
@@ -27,7 +28,7 @@ const ProtectedRoute = ({ children }) => {
   const [needsTerms, setNeedsTerms] = useState(false);
 
   useEffect(() => {
-    if (!gymKey || role === 'admin') {
+    if (!gymKey || role === 'admin' || role === 'member') {
       setChecking(false);
       return;
     }
@@ -52,6 +53,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (!gymKey) return <Navigate to="/login" replace />;
   if (role === 'admin') return <Navigate to="/admin" replace />;
+  if (role === 'member') return <Navigate to="/member-dashboard" replace />;
   if (checking) return (
     <div style={{
       minHeight: '100vh', background: '#080d14',
@@ -64,10 +66,10 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const AdminRoute = ({ children }) => {
+const MemberRoute = ({ children }) => {
   const { gymKey, role } = useAuth();
   if (!gymKey) return <Navigate to="/login" replace />;
-  if (role !== 'admin') return <Navigate to="/" replace />;
+  if (role !== 'member') return <Navigate to="/" replace />;
   return children;
 };
 
@@ -76,7 +78,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={gymKey ? <Navigate to={role === 'admin' ? '/admin' : '/'} replace /> : <Login />} />
+      <Route path="/login" element={gymKey ? <Navigate to={role === 'admin' ? '/admin' : role === 'member' ? '/member-dashboard' : '/'} replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="members" element={<Members />} />
@@ -92,6 +94,7 @@ function AppRoutes() {
         <Route path="support" element={<Support />} />
       </Route>
       <Route path="/admin" element={<AdminRoute><MasterAdmin /></AdminRoute>} />
+      <Route path="/member-dashboard" element={<MemberRoute><MemberDashboard /></MemberRoute>} />
       <Route path="/register" element={<Register />} />
     </Routes>
   );

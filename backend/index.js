@@ -205,6 +205,52 @@ app.post('/api/auth/login', async (req, res) => {
   });
 });
 
+app.post('/api/auth/member-login', async (req, res) => {
+  const { gymKey, phone } = req.body;
+  if (!gymKey || !phone) return res.status(400).json({ error: 'Gym Key and Phone Number are required' });
+
+  const db = await readDB();
+  ensureSystem(db);
+
+  // 1. Enforce Global Kill Switch
+  if (db.system.globalShutdown) {
+    return res.status(403).json({ error: 'SYSTEM_OFFLINE', message: 'Platform is completely offline. Please contact the provider.' });
+  }
+
+  // 2. Check Gym
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  if (!gym) return res.status(404).json({ error: 'Gym not found' });
+  if (gym.isActive === false) return res.status(403).json({ error: 'ACCOUNT_SUSPENDED' });
+
+  // 3. Check Member
+  const member = db.members.find(m => m.gymKey === gymKey && String(m.phone).trim() === String(phone).trim());
+  if (!member) {
+    return res.status(404).json({ error: 'NO_MEMBER_FOUND', message: 'No member found with this phone number. Please contact your gym.' });
+  }
+
+  // 4. Create Session (Optional but recommended for consistency)
+  const sessionId = uuidv4();
+  if (!db.activeSessions) db.activeSessions = [];
+  db.activeSessions.push({
+    id: sessionId,
+    gymKey,
+    memberPhone: phone,
+    role: 'member',
+    loginTime: new Date().toISOString(),
+    lastActive: new Date().toISOString()
+  });
+  await writeDB(db);
+
+  res.json({
+    message: 'Welcome back!',
+    gymKey,
+    role: 'member',
+    memberId: member.id,
+    memberName: member.name,
+    sessionId
+  });
+});
+
 // Middleware for Admin validation (Simplified for this architecture)
 const verifyAdmin = async (req, res, next) => {
   try {
@@ -1294,6 +1340,50 @@ cron.schedule('0 10 * * *', async () => {
       }
     }
   }
+});
+
+// ========================
+// MEMBER SELF-SERVICE
+// ========================
+app.get('/api/member/me', async (req, res) => {
+  const { gymKey, phone } = req.query;
+  const db = await readDB();
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  const member = db.members.find(m => m.gymKey === gymKey && String(m.phone).trim() === String(phone).trim());
+
+  if (!gym || !member) return res.status(404).json({ error: 'Data not found' });
+
+  const profile = {
+    name: member.name,
+    phone: member.phone,
+    joiningDate: member.joiningDate,
+    status: calculateMemberStatus(member),
+    packageName: member.packageName || 'Monthly',
+    amount: member.amount,
+    subscriptionEndDate: member.subscriptionEndDate
+  };
+
+  const gymInfo = {
+    name: gym.name || 'Nexora Gym',
+    address: gym.address || 'N/A',
+    contact: gym.phone || 'N/A'
+  };
+
+  res.json({ profile, gymInfo });
+});
+
+app.get('/api/member/payments', async (req, res) => {
+  const { gymKey, memberId } = req.query;
+  const db = await readDB();
+  const payments = (db.payments || []).filter(p => p.gymKey === gymKey && p.memberId === memberId);
+  res.json({ payments });
+});
+
+app.get('/api/member/attendance', async (req, res) => {
+  const { gymKey, memberId } = req.query;
+  const db = await readDB();
+  const attendance = (db.attendance || []).filter(a => a.gymKey === gymKey && a.memberId === memberId);
+  res.json({ attendance });
 });
 
 // ========================
