@@ -73,6 +73,13 @@ const MemberRoute = ({ children }) => {
   return children;
 };
 
+const AdminRoute = ({ children }) => {
+  const { gymKey, role } = useAuth();
+  if (!gymKey) return <Navigate to="/login" replace />;
+  if (role !== 'admin') return <Navigate to="/" replace />;
+  return children;
+};
+
 function AppRoutes() {
   const { gymKey, role } = useAuth();
 
