@@ -146,7 +146,7 @@ export default async function handler(req, res) {
       if (referrer) {
         if (referrer.phone !== phone) { // Avoid self-referral
           referredBy = referrer.id;
-          initialDiscount = 250; // New member reward
+          initialDiscount = gym.referralSettings?.newMemberReward || 250; 
         }
       }
     }
@@ -230,7 +230,8 @@ export default async function handler(req, res) {
           const isPro = gym?.package === 'pro' || gym?.package === 'pro_plus';
           
           if (isPro && member.discountBalance > 0) {
-            appliedDiscount = Math.min(member.discountBalance, 1000, finalAmount);
+            const maxDisc = gym.referralSettings?.maxMonthlyDiscount || 1000;
+            appliedDiscount = Math.min(member.discountBalance, maxDisc, finalAmount);
             finalAmount -= appliedDiscount;
             member.discountBalance -= appliedDiscount;
           }

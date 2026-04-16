@@ -188,7 +188,7 @@ export default async function handler(req, res) {
           db.members[referrerIndex].totalReferrals = (db.members[referrerIndex].totalReferrals || 0) + 1;
           db.members[referrerIndex].discountBalance = (db.members[referrerIndex].discountBalance || 0) + referrerReward;
           
-          // Mark referral as rewarded
+          // Mark referral as rewarded so it doesn't double count if they pay again later
           member.referralDiscountApplied = true;
           const memberIndex = db.members.findIndex(m => m.id === member.id);
           db.members[memberIndex] = member;

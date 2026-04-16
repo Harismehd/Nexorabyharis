@@ -142,20 +142,22 @@ export default function Members() {
 
   const openPayModal = (member) => {
     setSelectedMember(member);
-    const discount = (member.discountBalance || 0);
+    const discountBalance = (member.discountBalance || 0);
     const baseAmount = parseFloat(member.amount || 0);
-    const finalAmount = Math.max(0, baseAmount - (discount > 1000 ? 1000 : discount));
+    const maxDiscount = profile?.referralSettings?.maxMonthlyDiscount || 1000;
+    const appliedDiscount = Math.min(discountBalance, maxDiscount, baseAmount);
+    const finalAmount = Math.max(0, baseAmount - appliedDiscount);
     
     setPaymentForm({ 
       amount: String(finalAmount), 
       method: 'Cash', 
       monthsCovered: 1,
       baseAmount,
-      appliedDiscount: baseAmount - finalAmount
+      appliedDiscount
     });
     setShowPayModal(true);
   };
-
+   
   const openDetailModal = async (member) => {
     setSelectedMember(member);
     setShowDetailModal(true);
@@ -672,22 +674,30 @@ export default function Members() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {/* Amount */}
                 <div className="space-y-2">
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Amount (PKR)</label>
-                  <div style={{ position: 'relative' }}>
-                    <DollarSign size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#00d4ff' }} />
-                    <input 
-                      className="input-field" 
-                      type="number" 
-                      style={{ paddingLeft: '40px' }} 
-                      placeholder="5000" 
-                      value={paymentForm.amount} 
-                      onChange={e => setPaymentForm(v => ({ ...v, amount: e.target.value }))} 
-                      required 
-                    />
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Payment Breakdown</label>
+                  <div style={{ 
+                    padding: '16px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)',
+                    display: 'flex', flexDirection: 'column', gap: '8px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: '#64748b' }}>Base Membership Fee:</span>
+                      <span style={{ color: '#f1f5f9', fontWeight: 700 }}>Rs. {paymentForm.baseAmount}</span>
+                    </div>
+                    {paymentForm.appliedDiscount > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#34d399' }}>
+                        <span>Referral Discount:</span>
+                        <span>- Rs. {paymentForm.appliedDiscount}</span>
+                      </div>
+                    )}
+                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '4px 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 900, color: '#00d4ff' }}>
+                      <span>Amount to Collect:</span>
+                      <span>Rs. {paymentForm.amount}</span>
+                    </div>
                   </div>
                   {paymentForm.appliedDiscount > 0 && (
-                    <p style={{ fontSize: '10px', color: '#34d399', fontWeight: 700, margin: '4px 0 0 0' }}>
-                      ✨ Referral Discount of Rs. {paymentForm.appliedDiscount} applied!
+                    <p style={{ fontSize: '10px', color: '#34d399', fontWeight: 700, margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <CheckCircle size={10} /> Discount applied successfully!
                     </p>
                   )}
                 </div>
@@ -923,6 +933,28 @@ export default function Members() {
                 </div>
               </div>
             </div>
+
+            {/* Referral Insights Section */}
+            {(profile?.package === 'pro' || profile?.package === 'pro_plus') && (
+              <div style={{ marginBottom: '30px' }}>
+                <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '18px', color: '#f1f5f9', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Users size={20} color="#a855f7" /> Referral Insights
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                  {[
+                    { label: 'Referral Code', value: selectedMember.referralCode || 'N/A', color: '#34d399' },
+                    { label: 'Referred By', value: selectedMember.referredByName || 'Direct', color: '#00d4ff' },
+                    { label: 'Total Referrals', value: selectedMember.totalReferrals || 0, color: '#fbbf24' },
+                    { label: 'Discount Balance', value: `Rs. ${selectedMember.discountBalance || 0}`, color: '#a855f7' },
+                  ].map((item, idx) => (
+                    <div key={idx} style={{ padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <p style={{ fontSize: '9px', color: '#475569', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{item.label}</p>
+                      <p style={{ fontSize: '14px', fontWeight: 700, color: item.color, margin: 0 }}>{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '18px', color: '#f1f5f9', marginBottom: '16px' }}>
               Payment History

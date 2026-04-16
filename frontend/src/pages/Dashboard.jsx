@@ -165,10 +165,15 @@ export default function Dashboard() {
     const proMembers = members.filter(m => m.gymKey === gymKey);
     const totalReferrals = proMembers.reduce((s, m) => s + (m.totalReferrals || 0), 0);
     const activeReferrers = proMembers.filter(m => (m.totalReferrals || 0) > 0).length;
-    const topReferrer = proMembers.sort((a, b) => (b.totalReferrals || 0) - (a.totalReferrals || 0))[0];
+    const topReferrer = proMembers
+      .filter(m => (m.totalReferrals || 0) > 0)
+      .sort((a, b) => (b.totalReferrals || 0) - (a.totalReferrals || 0))[0] || null;
+    
     const totalDiscountGiven = payments.reduce((s, p) => s + parseFloat(p.appliedDiscount || 0), 0);
     const newMembersFromReferral = proMembers.filter(m => !!m.referredBy).length;
     const referralPercentage = proMembers.length > 0 ? ((newMembersFromReferral / proMembers.length) * 100).toFixed(1) : 0;
+    
+    const rewardAmt = profile?.referralSettings?.referrerDiscount || 500;
     
     const leaderboard = proMembers
       .filter(m => (m.totalReferrals || 0) > 0)
@@ -177,11 +182,11 @@ export default function Dashboard() {
       .map(m => ({
         name: m.name,
         count: m.totalReferrals,
-        discount: (m.totalReferrals || 0) * 500 // Assuming default 500 reward for stats if not available
+        discount: (m.totalReferrals || 0) * rewardAmt
       }));
 
     return { totalReferrals, activeReferrers, topReferrer, totalDiscountGiven, newMembersFromReferral, referralPercentage, leaderboard };
-  }, [members, payments, gymKey]);
+  }, [members, payments, gymKey, profile]);
 
   const heatmapCells = Array.from({ length: 28 }, (_, i) => ({
     value: Math.random(),
