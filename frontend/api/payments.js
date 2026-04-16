@@ -154,6 +154,7 @@ export default async function handler(req, res) {
     const { gymKey, approved, monthsCovered } = req.body;
     const gym = db.gyms.find(g => g.gymKey === gymKey);
     ensureGymDefaults(gym || {});
+    const isPro = gym?.package === 'pro' || gym?.package === 'pro_plus';
     if (!requireMinPackage(gym, 'growth')) return res.status(403).json({ error: 'FEATURE_NOT_ENABLED' });
     if (!db.pendingPayments) db.pendingPayments = [];
     const pendingIndex = db.pendingPayments.findIndex(p => p.id === pendingId && p.gymKey === gymKey && p.status === 'pending');

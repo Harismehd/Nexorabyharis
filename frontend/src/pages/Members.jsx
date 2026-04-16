@@ -142,7 +142,17 @@ export default function Members() {
 
   const openPayModal = (member) => {
     setSelectedMember(member);
-    setPaymentForm({ amount: member.amount || '', method: 'Cash', monthsCovered: 1 });
+    const discount = (member.discountBalance || 0);
+    const baseAmount = parseFloat(member.amount || 0);
+    const finalAmount = Math.max(0, baseAmount - (discount > 1000 ? 1000 : discount));
+    
+    setPaymentForm({ 
+      amount: String(finalAmount), 
+      method: 'Cash', 
+      monthsCovered: 1,
+      baseAmount,
+      appliedDiscount: baseAmount - finalAmount
+    });
     setShowPayModal(true);
   };
 
@@ -398,15 +408,23 @@ export default function Members() {
                       Expires: {m.subscriptionEndDate ? new Date(m.subscriptionEndDate).toLocaleDateString() : '—'}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                    <Clock size={13} color={m.lastVisitFormatted === 'Today' ? '#34d399' : '#334155'} />
-                    <span style={{ 
-                      fontSize: '12px', 
-                      color: m.lastVisitFormatted === 'Today' ? '#34d399' : '#475569', 
-                      fontWeight: m.lastVisitFormatted === 'Today' ? 700 : 400
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                    <div style={{ 
+                      fontSize: '10px', padding: '2px 8px', borderRadius: '6px', 
+                      background: 'rgba(52,211,153,0.1)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)',
+                      fontWeight: 700, letterSpacing: '0.05em'
                     }}>
-                      Last: {m.lastVisitFormatted || 'Never'}
-                    </span>
+                      CODE: {m.referralCode}
+                    </div>
+                    {m.referredByName && (
+                      <div style={{ 
+                        fontSize: '10px', padding: '2px 8px', borderRadius: '6px', 
+                        background: 'rgba(168,85,247,0.1)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.2)',
+                        fontWeight: 700
+                      }}>
+                        Ref by: {m.referredByName}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -667,6 +685,11 @@ export default function Members() {
                       required 
                     />
                   </div>
+                  {paymentForm.appliedDiscount > 0 && (
+                    <p style={{ fontSize: '10px', color: '#34d399', fontWeight: 700, margin: '4px 0 0 0' }}>
+                      ✨ Referral Discount of Rs. {paymentForm.appliedDiscount} applied!
+                    </p>
+                  )}
                 </div>
 
                 {/* Method */}

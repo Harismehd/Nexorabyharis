@@ -76,9 +76,13 @@ export default async function handler(req, res) {
     }
 
     if (action === 'payments') {
-      const payments = db.payments.filter(p => p.gymKey === gymKey && p.memberId === memberId)
-                       .sort((a,b) => new Date(b.paymentDate) - new Date(a.paymentDate));
-      return res.json({ payments });
+      const confirmed = db.payments.filter(p => p.gymKey === gymKey && p.memberId === memberId);
+      const pending = (db.pendingPayments || [])
+                        .filter(p => p.gymKey === gymKey && p.memberId === memberId && p.status === 'pending')
+                        .map(p => ({ ...p, method: `${p.method} (Pending Verification)`, isPending: true }));
+      
+      const combined = [...pending, ...confirmed].sort((a,b) => new Date(b.paymentDate || b.createdAt) - new Date(a.paymentDate || a.createdAt));
+      return res.json({ payments: combined });
     }
 
     if (action === 'attendance') {
@@ -100,8 +104,11 @@ export default async function handler(req, res) {
         dbChanged = true;
       }
       
+      const referrer = db.members.find(rm => rm.id === m.referredBy);
+      
       return { 
         ...m, 
+        referredByName: referrer ? referrer.name : null,
         status: calculateMemberStatus(m), 
         dueDate: getMemberDueDate(m),
         lastVisitFormatted: formatLastVisit(m.lastVisit)
@@ -218,8 +225,21 @@ export default async function handler(req, res) {
           const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
           const receiptNumber = `INV-${todayStr}-${String(db.payments.length + 1).padStart(4, '0')}`;
           
+          let appliedDiscount = 0;
+          let finalAmount = parseFloat(member.amount || 0);
+          const isPro = gym?.package === 'pro' || gym?.package === 'pro_plus';
+          
+          if (isPro && member.discountBalance > 0) {
+            appliedDiscount = Math.min(member.discountBalance, 1000, finalAmount);
+            finalAmount -= appliedDiscount;
+            member.discountBalance -= appliedDiscount;
+          }
+
           db.payments.push({
-            id: uuidv4(), gymKey, memberId, amount: String(member.amount || 0),
+            id: uuidv4(), gymKey, memberId, 
+            amount: String(finalAmount),
+            originalAmount: String(member.amount || 0),
+            appliedDiscount: String(appliedDiscount),
             method: 'Direct (Starter)', paymentDate: new Date().toISOString(),
             monthsCovered: 1, periodCovered: `${currentEnd.toISOString().split('T')[0]} to ${newEndDate.split('T')[0]}`,
             receiptNumber
@@ -272,7 +292,8 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'DELETE') {
-    const urlParts = req.url.split('/');
+    // Parse ID from URL, stripping query params
+    const urlParts = req.url.split('?')[0].split('/').filter(Boolean);
     const memberId = urlParts[urlParts.length - 1];
     db.members = db.members.filter(m => m.id !== memberId);
     await writeDB(db);
