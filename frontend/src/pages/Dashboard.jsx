@@ -98,6 +98,7 @@ export default function Dashboard() {
   const [members, setMembers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [broadcasts, setBroadcasts] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [showClosingModal, setShowClosingModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -114,6 +115,7 @@ export default function Dashboard() {
       setMembers(memRes.data.members || []);
       setPayments(payRes.data.payments || []);
       setBroadcasts(broadRes.data.broadcasts || []);
+      setProfile(profRes.data.profile || null);
     }).catch(err => {
       console.error('Dashboard Fetch Error:', err);
     }).finally(() => setLoading(false));
