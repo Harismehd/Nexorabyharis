@@ -51,6 +51,10 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
   if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method === 'GET') {
+    return res.status(200).json({ status: 'Auth service online' });
+  }
+  
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const url = req.url || '';

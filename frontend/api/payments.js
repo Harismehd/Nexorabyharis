@@ -43,15 +43,45 @@ function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCover
   const memberIndex = db.members.findIndex(m => m.id === memberId && m.gymKey === gymKey);
   if (memberIndex === -1) return { error: 'Member not found' };
   const member = db.members[memberIndex];
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  const isPro = gym?.package === 'pro' || gym?.package === 'pro_plus';
+
+  let appliedDiscount = 0;
+  let finalAmount = parseFloat(amount || 0);
+
+  // Apply Referral Discount if Pro and Balance exists
+  if (isPro && member.discountBalance > 0) {
+    const maxDiscount = gym.referralSettings?.maxMonthlyDiscount || 1000;
+    appliedDiscount = Math.min(member.discountBalance, maxDiscount, finalAmount);
+    finalAmount -= appliedDiscount;
+    member.discountBalance -= appliedDiscount;
+  }
+
   let currentEnd = member.subscriptionEndDate ? parseISO(member.subscriptionEndDate) : new Date();
   if (isBefore(currentEnd, new Date())) currentEnd = new Date();
   const newEndDate = addMonths(currentEnd, parseInt(monthsCovered, 10) || 1).toISOString();
   member.subscriptionEndDate = newEndDate;
+  
   db.members[memberIndex] = member;
+
   if (!db.payments) db.payments = [];
   const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
   const receiptNumber = `INV-${todayStr}-${String(db.payments.length + 1).padStart(4, '0')}`;
-  const payment = { id: uuidv4(), gymKey, memberId, amount, method: method || 'Cash', paymentDate: new Date().toISOString(), monthsCovered: parseInt(monthsCovered, 10) || 1, periodCovered: `${currentEnd.toISOString().split('T')[0]} to ${newEndDate.split('T')[0]}`, receiptNumber, isAdvance: parseInt(monthsCovered, 10) > 1 };
+  
+  const payment = { 
+    id: uuidv4(), 
+    gymKey, 
+    memberId, 
+    amount: String(finalAmount),
+    originalAmount: String(amount),
+    appliedDiscount: String(appliedDiscount),
+    method: method || 'Cash', 
+    paymentDate: new Date().toISOString(), 
+    monthsCovered: parseInt(monthsCovered, 10) || 1, 
+    periodCovered: `${currentEnd.toISOString().split('T')[0]} to ${newEndDate.split('T')[0]}`, 
+    receiptNumber, 
+    isAdvance: parseInt(monthsCovered, 10) > 1 
+  };
   db.payments.push(payment);
   return { payment, newEndDate };
 }
@@ -147,24 +177,24 @@ export default async function handler(req, res) {
     db.pendingPayments[pendingIndex] = pending;
     await writeDB(db);
 
-    // Queue confirmation message via WhatsApp service
-    try {
+    // Handle Referral Reward Logic (Pro/Pro Plus only)
+    if (isPro) {
       const member = db.members.find(m => m.id === pending.memberId);
-      if (member && gym.whatsappStatus === 'connected') {
-        const confirmationMsg = `Payment confirmed ✅\nVerification Code: ${verificationCode}\nAmount: Rs ${pending.amount}\nThank you for your payment.`;
-        await supabase.from('message_jobs').insert([{
-          id: crypto.randomUUID(),
-          gym_key: gymKey,
-          member_id: member.id,
-          member_name: member.name,
-          member_phone: member.phone,
-          message: confirmationMsg,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        }]);
+      if (member && member.referredBy && !member.referralDiscountApplied) {
+        const referrerIndex = db.members.findIndex(m => m.id === member.referredBy && m.gymKey === gymKey);
+        if (referrerIndex !== -1) {
+          const referrerReward = gym.referralSettings?.referrerDiscount || 500;
+          db.members[referrerIndex].totalReferrals = (db.members[referrerIndex].totalReferrals || 0) + 1;
+          db.members[referrerIndex].discountBalance = (db.members[referrerIndex].discountBalance || 0) + referrerReward;
+          
+          // Mark referral as rewarded
+          member.referralDiscountApplied = true;
+          const memberIndex = db.members.findIndex(m => m.id === member.id);
+          db.members[memberIndex] = member;
+
+          // Note: WhatsApp messages removed as per user request
+        }
       }
-    } catch (err) {
-      console.error('Failed to queue confirmation message:', err);
     }
 
     return res.json({

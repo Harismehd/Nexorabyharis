@@ -84,7 +84,8 @@ export default function MemberDashboard() {
     </div>
   );
 
-  const { profile, gymInfo } = data;
+  const { profile, gymInfo, referrals = [] } = data;
+  const isPro = gymInfo?.package === 'pro' || gymInfo?.package === 'pro_plus';
 
   const cardStyle = {
     background: 'rgba(15, 23, 42, 0.4)',
@@ -198,7 +199,93 @@ export default function MemberDashboard() {
               <PhoneCall size={14} /> {gymInfo.contact}
             </div>
           </div>
+
+          {/* Referral Card (Pro/Pro Plus) */}
+          {isPro && (
+            <div style={{ ...cardStyle }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: 'linear-gradient(135deg, #34d399, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Users size={24} color="#fff" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>Refer & Earn</h3>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Rewards Program</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div>
+                  <p style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, margin: '0 0 4px 0' }}>Est. Discount Balance</p>
+                  <p style={{ fontSize: '24px', fontWeight: 900, color: '#34d399', margin: 0 }}>Rs. {profile.discountBalance || 0}</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, margin: '0 0 4px 0' }}>Total Referrals</p>
+                  <p style={{ fontSize: '20px', fontWeight: 800, color: '#f1f5f9', margin: 0 }}>{profile.totalReferrals || 0}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Refer & Earn Section (Pro/Pro Plus) */}
+        {isPro && (
+          <div style={{ ...cardStyle, marginBottom: '40px' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <Zap size={20} color="#fbbf24" />
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>Share Your Referral Code</h3>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                <div>
+                   <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '20px', lineHeight: 1.6 }}>
+                      Spread the word and save! For every friend you bring who joins, you'll receive a **PKR 500 discount** on your next month's fee. Plus, they get **PKR 250 off** their first month!
+                   </p>
+                   <div style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ 
+                        flex: 1, padding: '12px 20px', background: 'rgba(0,0,0,0.3)', 
+                        border: '1px dashed rgba(0,212,255,0.3)', borderRadius: '12px',
+                        fontSize: '18px', fontWeight: 900, color: '#00d4ff', textAlign: 'center',
+                        letterSpacing: '0.1em'
+                      }}>
+                        {profile.referralCode}
+                      </div>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(profile.referralCode);
+                          toast.success('Code copied!');
+                        }}
+                        style={{ padding: '0 20px', borderRadius: '12px', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)', color: '#00d4ff', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                        COPY
+                      </button>
+                      <button 
+                         onClick={() => {
+                           const msg = encodeURIComponent(`Join ${gymInfo.name} with my code ${profile.referralCode} and get PKR 250 off your first month!`);
+                           window.open(`https://wa.me/?text=${msg}`);
+                         }}
+                         style={{ padding: '0 20px', borderRadius: '12px', background: '#34d399', border: 'none', color: '#050a10', fontSize: '12px', fontWeight: 900, cursor: 'pointer' }}>
+                         SHARE
+                      </button>
+                   </div>
+                </div>
+                <div>
+                   <h4 style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, marginBottom: '16px' }}>Your Referral Activity</h4>
+                   <div style={{ maxHeight: '150px', overflowY: 'auto', paddingRight: '8px' }}>
+                      {referrals.length > 0 ? referrals.map((r, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                           <div>
+                              <div style={{ fontSize: '13px', fontWeight: 700 }}>{r.name}</div>
+                              <div style={{ fontSize: '10px', color: '#64748b' }}>Joined {new Date(r.joiningDate).toLocaleDateString()}</div>
+                           </div>
+                           <div style={{ fontSize: '11px', fontWeight: 700, color: r.rewardStatus === 'Rewarded' ? '#34d399' : '#fbbf24' }}>
+                              {r.rewardStatus.toUpperCase()}
+                           </div>
+                        </div>
+                      )) : (
+                        <p style={{ fontSize: '13px', color: '#475569', textAlign: 'center', paddingTop: '20px' }}>No referrals made yet. Time to invite some friends!</p>
+                      )}
+                   </div>
+                </div>
+            </div>
+          </div>
+        )}
 
         {/* History Tabs / Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px' }}>

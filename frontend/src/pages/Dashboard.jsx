@@ -89,6 +89,98 @@ function DailyClosingModal({ show, onClose, payments, members }) {
           Close Report
         </button>
       </div>
+
+      {/* Referral Analytics (Pro/Pro Plus Only) */}
+      {(packageTier === 'pro' || packageTier === 'pro_plus') && (
+        <div style={{ ...cardStyle, marginTop: '20px' }}>
+          <div className="flex items-center gap-3 mb-8 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
+            <div style={{ background: 'rgba(52,211,153,0.15)', padding: '10px', borderRadius: '12px' }}>
+              <Zap size={24} color="#34d399" />
+            </div>
+            <div>
+              <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#fff', margin: 0 }}>Referral Intelligence</h2>
+              <p style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>Program Performance & Leaderboard</p>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+            {[
+              { label: 'Total Referrals', value: referralStats.totalReferrals, icon: <Users size={18} />, color: '#00d4ff' },
+              { label: 'Active Referrers', value: referralStats.activeReferrers, icon: <Activity size={18} />, color: '#34d399' },
+              { label: 'Total Discount Given', value: `Rs. ${referralStats.totalDiscountGiven.toLocaleString()}`, icon: <Banknote size={18} />, color: '#fbbf24' },
+              { label: 'Referral Share', value: `${referralStats.referralPercentage}%`, icon: <TrendingUp size={18} />, color: '#a855f7' },
+            ].map((stat, i) => (
+              <div key={i} style={{ padding: '20px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: stat.color, marginBottom: '12px' }}>
+                  {stat.icon}
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</span>
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: '#fff' }}>{stat.value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px' }}>
+            {/* Leaderboard */}
+            <div>
+              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Crown size={16} color="#fbbf24" /> Referral Leaderboard
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {referralStats.leaderboard.length > 0 ? referralStats.leaderboard.map((m, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 20px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: i === 0 ? '#fbbf24' : '#1a2540', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: i === 0 ? '#000' : '#94a3b8', fontSize: '14px' }}>
+                      {i + 1}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9' }}>{m.name}</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>{m.count} successful referrals</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#34d399' }}>Rs. {m.discount.toLocaleString()}</div>
+                      <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Earned</div>
+                    </div>
+                  </div>
+                )) : (
+                  <p style={{ fontSize: '13px', color: '#475569', textAlign: 'center', padding: '40px' }}>No referrals yet. Start your program to see data here!</p>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Insights */}
+            <div className="glass-pane" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(0, 212, 255, 0.1)', background: 'rgba(0, 212, 255, 0.02)' }}>
+               <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#00d4ff', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px' }}>Program Insights</h4>
+               <div className="space-y-6">
+                  <div>
+                    <div className="flex justify-between mb-2">
+                       <span style={{ fontSize: '12px', color: '#94a3b8' }}>Referral Conversion</span>
+                       <span style={{ fontSize: '12px', color: '#fff', fontWeight: 700 }}>{referralStats.referralPercentage}%</span>
+                    </div>
+                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                       <div style={{ height: '100%', width: `${referralStats.referralPercentage}%`, background: '#00d4ff' }} />
+                    </div>
+                  </div>
+                  <div style={{ padding: '16px', borderRadius: '16px', background: 'rgba(0,0,0,0.2)' }}>
+                     <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '8px' }}>Top Referrer of all time:</p>
+                     {referralStats.topReferrer ? (
+                       <div className="flex items-center gap-3">
+                         <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24' }}><Crown size={20} /></div>
+                         <div>
+                            <p style={{ fontSize: '15px', fontWeight: 800, color: '#fff', margin: 0 }}>{referralStats.topReferrer.name}</p>
+                            <p style={{ fontSize: '11px', color: '#fbbf24', margin: 0 }}>{referralStats.topReferrer.totalReferrals} referrals made</p>
+                         </div>
+                       </div>
+                     ) : <p style={{ fontSize: '12px', color: '#475569' }}>—</p>}
+                  </div>
+                  <div className="flex items-center gap-3 p-4 border border-dashed border-blue-500/20 rounded-xl">
+                      <Zap size={18} className="text-blue-400" />
+                      <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>Higher rewards usually result in 30% more referrals. Adjust settings in "Referral Settings".</p>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -161,10 +253,27 @@ export default function Dashboard() {
   const PIE_COLORS = ['#34d399', '#f87171'];
   const METHOD_COLORS = ['#0c8ee7', '#34d399', '#fbbf24', '#f87171', '#a78bfa'];
 
-  const heatmapCells = Array.from({ length: 28 }, (_, i) => ({
-    value: Math.random(),
-    day: i % 7
-  }));
+  const referralStats = useMemo(() => {
+    const proMembers = members.filter(m => m.gymKey === gymKey);
+    const totalReferrals = proMembers.reduce((s, m) => s + (m.totalReferrals || 0), 0);
+    const activeReferrers = proMembers.filter(m => (m.totalReferrals || 0) > 0).length;
+    const topReferrer = proMembers.sort((a, b) => (b.totalReferrals || 0) - (a.totalReferrals || 0))[0];
+    const totalDiscountGiven = payments.reduce((s, p) => s + parseFloat(p.appliedDiscount || 0), 0);
+    const newMembersFromReferral = proMembers.filter(m => !!m.referredBy).length;
+    const referralPercentage = proMembers.length > 0 ? ((newMembersFromReferral / proMembers.length) * 100).toFixed(1) : 0;
+    
+    const leaderboard = proMembers
+      .filter(m => (m.totalReferrals || 0) > 0)
+      .sort((a, b) => (b.totalReferrals || 0) - (a.totalReferrals || 0))
+      .slice(0, 5)
+      .map(m => ({
+        name: m.name,
+        count: m.totalReferrals,
+        discount: (m.totalReferrals || 0) * 500 // Assuming default 500 reward for stats if not available
+      }));
+
+    return { totalReferrals, activeReferrers, topReferrer, totalDiscountGiven, newMembersFromReferral, referralPercentage, leaderboard };
+  }, [members, payments, gymKey]);
 
   const cardStyle = {
     background: 'rgba(15, 23, 42, 0.3)',

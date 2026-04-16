@@ -60,9 +60,18 @@ export default async function handler(req, res) {
       const member = db.members.find(m => m.gymKey === gymKey && String(m.phone).trim() === String(phone).trim());
       if (!member) return res.status(404).json({ error: 'Profile not found' });
       const gym = db.gyms.find(g => g.gymKey === gymKey);
+      const referrals = db.members
+        .filter(m => m.gymKey === gymKey && m.referredBy === member.id)
+        .map(m => ({ 
+          name: m.name, 
+          joiningDate: m.joiningDate, 
+          rewardStatus: m.referralDiscountApplied ? 'Rewarded' : 'Pending Verification' 
+        }));
+
       return res.json({
         profile: { ...member, status: calculateMemberStatus(member) },
-        gymInfo: { name: gym?.name, address: gym?.address, contact: gym?.contact }
+        gymInfo: { name: gym?.name, address: gym?.address, contact: gym?.contact, package: gym?.package },
+        referrals
       });
     }
 
@@ -91,7 +100,30 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { gymKey, name, phone, email, joiningDate, subscriptionType, amount, packageId, packageName } = req.body;
+    const { gymKey, name, phone, email, joiningDate, subscriptionType, amount, packageId, packageName, referredByCode } = req.body;
+    
+    const gym = db.gyms.find(g => g.gymKey === gymKey);
+    const isPro = gym?.package === 'pro' || gym?.package === 'pro_plus';
+
+    // 1. Generate referral code
+    const cleanName = name.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4);
+    const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const referralCode = `${cleanName}-${randomSuffix}`;
+
+    let referredBy = null;
+    let initialDiscount = 0;
+
+    // 2. Validate referral code if provided and Pro/Pro Plus
+    if (referredByCode && isPro) {
+      const referrer = db.members.find(m => m.gymKey === gymKey && m.referralCode === referredByCode);
+      if (referrer) {
+        if (referrer.phone !== phone) { // Avoid self-referral
+          referredBy = referrer.id;
+          initialDiscount = 250; // New member reward
+        }
+      }
+    }
+
     const newMember = { 
       id: uuidv4(), gymKey, name, phone, 
       email: email || '', 
@@ -101,7 +133,13 @@ export default async function handler(req, res) {
       amount: amount || 0,
       packageId: packageId || null,
       packageName: packageName || null,
-      lastVisit: null
+      lastVisit: null,
+      // Referral System Fields
+      referralCode,
+      referredBy,
+      referralDiscountApplied: false,
+      totalReferrals: 0,
+      discountBalance: initialDiscount
     };
     db.members.push(newMember);
     await writeDB(db);

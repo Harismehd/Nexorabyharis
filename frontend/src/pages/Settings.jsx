@@ -33,7 +33,8 @@ export default function Settings() {
     autoMessagingEnabled: false, reminderIntervals: [1, 3, 7], template: '',
     paymentSettings: { methods: ['easypaisa'], easypaisaNumber: '', jazzcashNumber: '', bankTitle: '', bankIban: '' },
     package: 'starter',
-    packages: []
+    packages: [],
+    referralSettings: { enabled: true, referrerDiscount: 500, newMemberDiscount: 250, maxMonthlyDiscount: 1000 }
   });
   const [members, setMembers] = useState([]);
   const [showPackageModal, setShowPackageModal] = useState(false);
@@ -340,6 +341,58 @@ export default function Settings() {
                   ))}
                 </div>
                 <textarea name="template" value={profile.template || ''} onChange={handleChange} className="input-field" style={{ height: '120px', resize: 'vertical', marginBottom: '12px', opacity: isPro ? 1 : 0.5 }} placeholder="Hi {name}, your gym fee is due..." disabled={!isPro} />
+              </div>
+
+               {/* Referral Settings (Pro/Pro Plus Only) */}
+               <div className="card">
+                <div className="flex items-center justify-between mb-4 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
+                  <div className="flex items-center gap-3">
+                    <div style={{ background: 'rgba(52,211,153,0.15)', padding: '8px', borderRadius: '10px' }}>
+                      <Check size={20} color="#34d399" />
+                    </div>
+                    <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#f1f5f9' }}>Referral System</h2>
+                  </div>
+                  {isPro && (
+                    <div
+                      onClick={() => setProfile(p => ({ ...p, referralSettings: { ...p.referralSettings, enabled: !(p.referralSettings?.enabled ?? true) } }))}
+                      style={{
+                        width: '44px', height: '24px', borderRadius: '99px', cursor: 'pointer',
+                        background: (profile.referralSettings?.enabled ?? true) ? '#0070c4' : '#1a2540',
+                        position: 'relative', transition: 'background 0.2s ease',
+                        border: (profile.referralSettings?.enabled ?? true) ? '1px solid #00d4ff40' : '1px solid #1a2540'
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute', top: '2px',
+                        left: (profile.referralSettings?.enabled ?? true) ? '22px' : '2px',
+                        width: '18px', height: '18px', borderRadius: '50%',
+                        background: 'white', transition: 'left 0.2s ease',
+                      }} />
+                    </div>
+                  )}
+                </div>
+
+                {!isPro ? (
+                  <UpgradeBadge message="Upgrade to Pro to enable Referral System." />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Referrer Reward (PKR)</label>
+                        <input type="number" className="input-field" value={profile.referralSettings?.referrerDiscount ?? 500} onChange={e => setProfile(p => ({ ...p, referralSettings: { ...p.referralSettings, referrerDiscount: parseInt(e.target.value) } }))} />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Referee Reward (PKR)</label>
+                        <input type="number" className="input-field" value={profile.referralSettings?.newMemberDiscount ?? 250} onChange={e => setProfile(p => ({ ...p, referralSettings: { ...p.referralSettings, newMemberDiscount: parseInt(e.target.value) } }))} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Max Montly Discount (PKR)</label>
+                      <input type="number" className="input-field" value={profile.referralSettings?.maxMonthlyDiscount ?? 1000} onChange={e => setProfile(p => ({ ...p, referralSettings: { ...p.referralSettings, maxMonthlyDiscount: parseInt(e.target.value) } }))} />
+                      <p style={{ fontSize: '11px', color: '#475569', marginTop: '6px' }}>Maximum discount a member can get in a single month.</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Payment Settings */}

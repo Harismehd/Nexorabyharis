@@ -21,7 +21,7 @@ export default function Members() {
   const [filterPackageOnly, setFilterPackageOnly] = useState(false);
   const [newMember, setNewMember] = useState({ 
     name: '', phone: '', email: '', joiningDate: '', subscriptionType: 'monthly', 
-    amount: '', packageId: '', packageName: '' 
+    amount: '', packageId: '', packageName: '', referredByCode: '' 
   });
   const [editMember, setEditMember] = useState({
     id: '', name: '', phone: '', email: '', amount: '', packageId: '', packageName: ''
@@ -76,7 +76,7 @@ export default function Members() {
       const res = await api.post('/members', { gymKey, ...newMember });
       toast.success(res.data.message || 'Member added');
       setShowAddModal(false);
-      setNewMember({ name: '', phone: '', email: '', joiningDate: '', subscriptionType: 'monthly', amount: '' });
+      setNewMember({ name: '', phone: '', email: '', joiningDate: '', subscriptionType: 'monthly', amount: '', referredByCode: '' });
       const memRes = await api.get(`/members?gymKey=${gymKey}`);
       setMembers(memRes.data.members || []);
     } catch (err) {
@@ -578,6 +578,13 @@ export default function Members() {
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Email (Optional)</label>
                   <input className="input-field" placeholder="alex@example.com" value={newMember.email} onChange={e => setNewMember(v => ({ ...v, email: e.target.value }))} />
                 </div>
+                {(profile?.package === 'pro' || profile?.package === 'pro_plus') && (
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>Referral Code (Optional)</label>
+                    <input className="input-field" placeholder="CODE-123456" value={newMember.referredByCode} onChange={e => setNewMember(v => ({ ...v, referredByCode: e.target.value.toUpperCase() }))} />
+                    <p style={{ fontSize: '10px', color: '#475569', marginTop: '4px' }}>If this member was referred, enter the referrer's code here.</p>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px', pt: '16px', borderTop: '1px solid #1a2540' }}>
