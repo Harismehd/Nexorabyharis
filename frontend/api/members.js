@@ -90,12 +90,32 @@ export default async function handler(req, res) {
     }
 
     // --- STANDARD GYM FETCH ---
-    const members = db.members.filter(m => m.gymKey === gymKey).map(m => ({ 
-      ...m, 
-      status: calculateMemberStatus(m), 
-      dueDate: getMemberDueDate(m),
-      lastVisitFormatted: formatLastVisit(m.lastVisit)
-    }));
+    let dbChanged = false;
+    const members = db.members.filter(m => m.gymKey === gymKey).map(m => {
+      // Lazy generate referral code if missing
+      if (!m.referralCode) {
+        const cleanName = m.name.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4);
+        const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+        m.referralCode = `${cleanName}-${randomSuffix}`;
+        dbChanged = true;
+      }
+      
+      return { 
+        ...m, 
+        status: calculateMemberStatus(m), 
+        dueDate: getMemberDueDate(m),
+        lastVisitFormatted: formatLastVisit(m.lastVisit)
+      };
+    });
+
+    if (dbChanged) {
+      db.members = db.members.map(dm => {
+        const updated = members.find(um => um.id === dm.id);
+        return updated ? { ...dm, referralCode: updated.referralCode } : dm;
+      });
+      await writeDB(db);
+    }
+
     return res.json({ members });
   }
 
