@@ -275,6 +275,11 @@ export default function Dashboard() {
     return { totalReferrals, activeReferrers, topReferrer, totalDiscountGiven, newMembersFromReferral, referralPercentage, leaderboard };
   }, [members, payments, gymKey]);
 
+  const heatmapCells = Array.from({ length: 28 }, (_, i) => ({
+    value: Math.random(),
+    day: i % 7
+  }));
+
   const cardStyle = {
     background: 'rgba(15, 23, 42, 0.3)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
