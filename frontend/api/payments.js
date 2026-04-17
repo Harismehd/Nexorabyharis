@@ -63,8 +63,8 @@ function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCover
   const gym = db.gyms.find(g => g.gymKey === gymKey);
   const isPro = gym?.package === 'pro' || gym?.package === 'pro_plus';
 
-  let appliedDiscount = 0;
   let finalAmount = parseFloat(amount || 0);
+  appliedDiscount = Number(appliedDiscount) || 0;
 
   // Deduct applied discount if provided by frontend
   if (appliedDiscount && Number(appliedDiscount) > 0) {
