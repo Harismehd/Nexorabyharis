@@ -55,6 +55,10 @@ function hashTransactionId(input) {
   return crypto.createHash('sha256').update(String(input).trim().toUpperCase()).digest('hex');
 }
 
+function generateReferralCode() {
+  return 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
 function normalizePaymentSettings(raw) {
   const allowed = ['easypaisa', 'jazzcash', 'bank'];
   const methods = Array.isArray(raw?.methods) ? raw.methods.filter(m => allowed.includes(m)) : ['easypaisa'];
@@ -554,9 +558,20 @@ app.get('/api/members', async (req, res) => {
 });
 
 app.post('/api/members', async (req, res) => {
-  const { gymKey, name, phone, email, joiningDate, subscriptionType, amount } = req.body;
+  const { gymKey, name, phone, email, joiningDate, subscriptionType, amount, referredByCode } = req.body;
   const db = await readDB();
   
+  // referral logic
+  let referrerId = '';
+  let referrerName = '';
+  if (referredByCode) {
+    const referrer = db.members.find(m => m.gymKey === gymKey && m.referralCode === referredByCode);
+    if (referrer) {
+      referrerId = referrer.id;
+      referrerName = referrer.name;
+    }
+  }
+
   const newMember = {
     id: uuidv4(),
     gymKey,
@@ -566,7 +581,14 @@ app.post('/api/members', async (req, res) => {
     joiningDate: joiningDate || new Date().toISOString(),
     subscriptionType: subscriptionType || 'monthly',
     subscriptionEndDate: '', // No payment yet
-    amount: amount || 0
+    amount: amount || 0,
+    referralCode: generateReferralCode(),
+    referrerId,
+    referredByName: referrerName, // for UI convenience
+    referralStatus: referrerId ? 'PENDING' : '',
+    discountBalance: 0,
+    totalReferrals: 0,
+    referralRewardGiven: false
   };
   
   db.members.push(newMember);
@@ -716,11 +738,17 @@ app.put('/api/members/:id/status', async (req, res) => {
 // ========================
 // PAYMENTS
 // ========================
-function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCovered }) {
+function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCovered, appliedDiscount }) {
   const memberIndex = db.members.findIndex(m => m.id === memberId && m.gymKey === gymKey);
   if (memberIndex === -1) return { error: 'Member not found' };
 
   const member = db.members[memberIndex];
+  
+  // Deduct applied discount from member's balance
+  if (appliedDiscount && Number(appliedDiscount) > 0) {
+    member.discountBalance = Math.max(0, (Number(member.discountBalance) || 0) - Number(appliedDiscount));
+  }
+
   let currentEnd = member.subscriptionEndDate ? parseISO(member.subscriptionEndDate) : new Date();
   if (isBefore(currentEnd, new Date())) currentEnd = new Date();
 
@@ -739,6 +767,7 @@ function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCover
     gymKey,
     memberId,
     amount,
+    appliedDiscount: Number(appliedDiscount) || 0,
     method: method || 'Cash',
     paymentDate,
     monthsCovered: parseInt(monthsCovered, 10) || 1,
@@ -912,9 +941,16 @@ app.get('/api/finance/guard', async (req, res) => {
 });
 
 app.post('/api/payments', async (req, res) => {
-  const { gymKey, memberId, amount, method, monthsCovered } = req.body;
+  const { gymKey, memberId, amount, method, monthsCovered, appliedDiscount } = req.body;
   const db = await readDB();
-  const result = createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCovered });
+  const result = createPaymentRecord(db, { 
+    gymKey, 
+    memberId, 
+    amount, 
+    method, 
+    monthsCovered, 
+    appliedDiscount 
+  });
   if (result.error) return res.status(404).json({ error: result.error });
   await writeDB(db);
   
@@ -985,6 +1021,25 @@ app.post('/api/payments/proof', async (req, res) => {
   });
 });
 
+function triggerReferralReward(db, gymKey, refereeId) {
+  const referee = db.members.find(m => m.id === refereeId && m.gymKey === gymKey);
+  if (!referee || !referee.referrerId || referee.referralRewardGiven) return;
+
+  const referrer = db.members.find(m => m.id === referee.referrerId && m.gymKey === gymKey);
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  
+  if (referrer && gym) {
+    const rewardAmount = gym.referralSettings?.referrerDiscount || 500;
+    referrer.discountBalance = (Number(referrer.discountBalance) || 0) + Number(rewardAmount);
+    referrer.totalReferrals = (Number(referrer.totalReferrals) || 0) + 1;
+    
+    referee.referralRewardGiven = true;
+    referee.referralStatus = 'VERIFIED';
+    
+    // Optional: Send notification to referrer if WhatsApp connected? 
+    // The user didn't explicitly ask for this, but it's good UX.
+  }
+}
 
 app.post('/api/payments/pending/bulk-verify', async (req, res) => {
   const { gymKey } = req.body;
@@ -1013,6 +1068,9 @@ app.post('/api/payments/pending/bulk-verify', async (req, res) => {
       pending.verificationCode = verificationCode;
       pending.receiptNumber = result.payment.receiptNumber;
       verifiedCount++;
+
+      // Trigger Referral Reward
+      triggerReferralReward(db, gymKey, pending.memberId);
 
       const member = db.members.find(m => m.id === pending.memberId);
       if (member && gym.whatsappStatus === 'connected') {
@@ -1079,6 +1137,10 @@ app.post('/api/payments/pending/:id/verify', async (req, res) => {
   pending.verificationCode = verificationCode;
   pending.receiptNumber = result.payment.receiptNumber;
   db.pendingPayments[pendingIndex] = pending;
+  
+  // Trigger Referral Reward
+  triggerReferralReward(db, gymKey, pending.memberId);
+
   await writeDB(db);
 
   const member = db.members.find(m => m.id === pending.memberId);
@@ -1354,22 +1416,36 @@ app.get('/api/member/me', async (req, res) => {
   if (!gym || !member) return res.status(404).json({ error: 'Data not found' });
 
   const profile = {
+    id: member.id,
     name: member.name,
     phone: member.phone,
     joiningDate: member.joiningDate,
     status: calculateMemberStatus(member),
     packageName: member.packageName || 'Monthly',
     amount: member.amount,
-    subscriptionEndDate: member.subscriptionEndDate
+    subscriptionEndDate: member.subscriptionEndDate,
+    referralCode: member.referralCode,
+    discountBalance: member.discountBalance || 0,
+    totalReferrals: member.totalReferrals || 0,
+    referralStatus: member.referralStatus || ''
   };
+
+  const referrals = db.members
+    .filter(m => m.referrerId === member.id && m.gymKey === gymKey)
+    .map(m => ({
+      name: m.name,
+      joiningDate: m.joiningDate,
+      rewardStatus: m.referralStatus || 'PENDING'
+    }));
 
   const gymInfo = {
     name: gym.name || 'Nexora Gym',
     address: gym.address || 'N/A',
-    contact: gym.phone || 'N/A'
+    contact: gym.phone || 'N/A',
+    package: gym.package || 'starter'
   };
 
-  res.json({ profile, gymInfo });
+  res.json({ profile, gymInfo, referrals });
 });
 
 app.get('/api/member/payments', async (req, res) => {

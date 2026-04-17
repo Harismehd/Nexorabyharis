@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { Plus, Search, Trash2, DollarSign, RefreshCcw, Phone, Calendar, User, Printer, CheckCircle, Package, Clock, Eye, X, Edit2 } from 'lucide-react';
+import { Plus, Search, Trash2, DollarSign, RefreshCcw, Phone, Calendar, User, Printer, CheckCircle, Package, Clock, Eye, X, Edit2, Users } from 'lucide-react';
 import printReceiptHtml from '../utils/printReceipt';
 import LockedOverlay from '../components/LockedOverlay';
 
@@ -18,6 +18,7 @@ export default function Members() {
   const [memberPayments, setMemberPayments] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [referredMembers, setReferredMembers] = useState([]);
   const [filterPackageOnly, setFilterPackageOnly] = useState(false);
   const [newMember, setNewMember] = useState({ 
     name: '', phone: '', email: '', joiningDate: '', subscriptionType: 'monthly', 
@@ -161,6 +162,11 @@ export default function Members() {
   const openDetailModal = async (member) => {
     setSelectedMember(member);
     setShowDetailModal(true);
+    
+    // Find people referred by this member
+    const referred = members.filter(m => m.referrerId === member.id);
+    setReferredMembers(referred);
+
     try {
       const res = await api.get(`/payments?gymKey=${gymKey}`);
       const filtered = (res.data.payments || []).filter(p => p.memberId === member.id);
@@ -427,6 +433,20 @@ export default function Members() {
                         Ref by: {m.referredByName}
                       </div>
                     )}
+                    <div style={{ 
+                      fontSize: '10px', padding: '2px 8px', borderRadius: '6px', 
+                      background: 'rgba(0,212,255,0.1)', color: '#00d4ff', border: '1px solid rgba(0,212,255,0.2)',
+                      fontWeight: 700
+                    }}>
+                      Bal: Rs.{m.discountBalance || 0}
+                    </div>
+                    <div style={{ 
+                      fontSize: '10px', padding: '2px 8px', borderRadius: '6px', 
+                      background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)',
+                      fontWeight: 700
+                    }}>
+                      Refs: {m.totalReferrals || 0}
+                    </div>
                   </div>
                 </div>
 
@@ -940,7 +960,7 @@ export default function Members() {
                 <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '18px', color: '#f1f5f9', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Users size={20} color="#a855f7" /> Referral Insights
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
                   {[
                     { label: 'Referral Code', value: selectedMember.referralCode || 'N/A', color: '#34d399' },
                     { label: 'Referred By', value: selectedMember.referredByName || 'Direct', color: '#00d4ff' },
@@ -952,6 +972,41 @@ export default function Members() {
                       <p style={{ fontSize: '14px', fontWeight: 700, color: item.color, margin: 0 }}>{item.value}</p>
                     </div>
                   ))}
+                </div>
+
+                {/* Referred Members List */}
+                <h4 style={{ fontSize: '13px', color: '#64748b', fontWeight: 700, marginBottom: '12px', textTransform: 'uppercase' }}>Members Referred</h4>
+                <div style={{ background: '#080d14', borderRadius: '12px', border: '1px solid #1a2540', overflow: 'hidden' }}>
+                    {referredMembers.length > 0 ? (
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                            <thead>
+                                <tr style={{ background: 'rgba(255,255,255,0.02)', textAlign: 'left' }}>
+                                    <th style={{ padding: '10px 14px', color: '#475569' }}>Name</th>
+                                    <th style={{ padding: '10px 14px', color: '#475569' }}>Joined</th>
+                                    <th style={{ padding: '10px 14px', color: '#475569' }}>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {referredMembers.map((rm, idx) => (
+                                    <tr key={idx} style={{ borderTop: '1px solid #1a2540' }}>
+                                        <td style={{ padding: '10px 14px', color: '#f1f5f9', fontWeight: 600 }}>{rm.name}</td>
+                                        <td style={{ padding: '10px 14px', color: '#94a3b8' }}>{new Date(rm.joiningDate).toLocaleDateString()}</td>
+                                        <td style={{ padding: '10px 14px' }}>
+                                            <span style={{ 
+                                                fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
+                                                background: rm.referralStatus === 'VERIFIED' ? 'rgba(52,211,153,0.1)' : 'rgba(251,191,36,0.1)',
+                                                color: rm.referralStatus === 'VERIFIED' ? '#34d399' : '#fbbf24'
+                                            }}>
+                                                {rm.referralStatus || 'PENDING'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div style={{ padding: '20px', textAlign: 'center', color: '#475569', fontSize: '12px' }}>No referrals yet.</div>
+                    )}
                 </div>
               </div>
             )}

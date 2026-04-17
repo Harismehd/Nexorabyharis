@@ -274,8 +274,8 @@ export default function MemberDashboard() {
                               <div style={{ fontSize: '13px', fontWeight: 700 }}>{r.name}</div>
                               <div style={{ fontSize: '10px', color: '#64748b' }}>Joined {new Date(r.joiningDate).toLocaleDateString()}</div>
                            </div>
-                           <div style={{ fontSize: '11px', fontWeight: 700, color: r.rewardStatus === 'Rewarded' ? '#34d399' : '#fbbf24' }}>
-                              {r.rewardStatus.toUpperCase()}
+                           <div style={{ fontSize: '11px', fontWeight: 700, color: r.rewardStatus === 'VERIFIED' ? '#34d399' : '#fbbf24' }}>
+                              {r.rewardStatus}
                            </div>
                         </div>
                       )) : (
