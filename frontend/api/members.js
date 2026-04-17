@@ -61,6 +61,39 @@ function triggerReferralReward(db, gymKey, refereeId) {
   }
 }
 
+function triggerReferralReward(db, gymKey, refereeId) {
+  const referee = db.members.find(m => m.id === refereeId && m.gymKey === gymKey);
+  if (!referee || !referee.referredBy || referee.referralDiscountApplied) return false;
+
+  const referrer = db.members.find(m => m.id === referee.referredBy && m.gymKey === gymKey);
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  
+  if (referrer && gym) {
+    const rewardAmount = gym.referralSettings?.referrerDiscount || 500;
+    referrer.discountBalance = (Number(referrer.discountBalance) || 0) + Number(rewardAmount);
+    referrer.totalReferrals = (Number(referrer.totalReferrals) || 0) + 1;
+    
+    referee.referralDiscountApplied = true;
+    referee.referralStatus = 'VERIFIED';
+    return true;
+  }
+  return false;
+}
+
+function syncReferralRewards(db, gymKey) {
+  let changed = false;
+  db.members.forEach(m => {
+    if (m.gymKey === gymKey && m.referredBy && !m.referralDiscountApplied) {
+      if (calculateMemberStatus(m) === 'Active') {
+        if (triggerReferralReward(db, gymKey, m.id)) {
+          changed = true;
+        }
+      }
+    }
+  });
+  return changed;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
@@ -71,6 +104,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const { gymKey, action, memberId, phone } = req.query;
+
+    const dbChanged = syncReferralRewards(db, gymKey);
+    if (dbChanged) await writeDB(db);
 
     // --- MEMBER PORTAL ACTIONS ---
     if (action === 'me') {
@@ -110,8 +146,6 @@ export default async function handler(req, res) {
       return res.json({ attendance: logs });
     }
 
-    // --- STANDARD GYM FETCH ---
-    let dbChanged = false;
     const members = db.members.filter(m => m.gymKey === gymKey).map(m => {
       // Lazy generate referral code if missing
       if (!m.referralCode) {
