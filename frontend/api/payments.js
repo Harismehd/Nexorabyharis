@@ -201,9 +201,9 @@ export default async function handler(req, res) {
     pending.verificationCode = verificationCode;
     pending.receiptNumber = result.payment.receiptNumber;
     db.pendingPayments[pendingIndex] = pending;
-    await writeDB(db);
 
     triggerReferralReward(db, gymKey, pending.memberId);
+    await writeDB(db);
 
     return res.json({
       message: 'Payment verified successfully',

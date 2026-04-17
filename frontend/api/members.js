@@ -44,6 +44,23 @@ function formatLastVisit(dateStr) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+function triggerReferralReward(db, gymKey, refereeId) {
+  const referee = db.members.find(m => m.id === refereeId && m.gymKey === gymKey);
+  if (!referee || !referee.referredBy || referee.referralDiscountApplied) return;
+
+  const referrer = db.members.find(m => m.id === referee.referredBy && m.gymKey === gymKey);
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  
+  if (referrer && gym) {
+    const rewardAmount = gym.referralSettings?.referrerDiscount || 500;
+    referrer.discountBalance = (Number(referrer.discountBalance) || 0) + Number(rewardAmount);
+    referrer.totalReferrals = (Number(referrer.totalReferrals) || 0) + 1;
+    
+    referee.referralDiscountApplied = true;
+    referee.referralStatus = 'VERIFIED';
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
@@ -251,6 +268,10 @@ export default async function handler(req, res) {
           });
           
           db.members[memberIndex] = member;
+          
+          // Trigger referral reward
+          triggerReferralReward(db, gymKey, memberId);
+
           await writeDB(db);
           return res.json({ message: 'Marked as Paid. Dashboard updated.', member: { ...member, status: 'Active' } });
         }
