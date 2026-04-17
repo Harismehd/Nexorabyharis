@@ -129,32 +129,68 @@ export default function MemberDashboard() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '40px' }}>
           
-          {/* Profile Card */}
-          <div style={{ ...cardStyle, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, right: 0, padding: '24px', opacity: 0.05 }}>
-              <User size={120} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: 'linear-gradient(135deg, #00d4ff, #0072ff)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={24} color="#050a10" />
-              </div>
+          {/* Digital Membership Card */}
+          <div style={{ 
+            ...cardStyle, 
+            padding: 0,
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            position: 'relative',
+            overflow: 'hidden',
+            aspectRatio: '1.586 / 1', // Standard Credit Card ratio
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+            border: '1px solid rgba(255,255,255,0.1)'
+          }}>
+            {/* Glossy Sheen Overlay */}
+            <div style={{
+              position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
+              background: 'linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.03) 50%, transparent 55%)',
+              pointerEvents: 'none', transform: 'rotate(25deg)'
+            }} />
+
+            {/* Card Header */}
+            <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 1 }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>{profile.name}</h3>
-                <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Member since {new Date(profile.joiningDate).toLocaleDateString()}</p>
+                <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, letterSpacing: '0.2em', color: '#00d4ff', textShadow: '0 0 10px rgba(0,212,255,0.5)' }}>NEXORA SYSTEM</p>
+                <div style={{ width: '40px', height: '1px', background: 'rgba(0,212,255,0.3)', marginTop: '4px' }} />
+              </div>
+              <CreditCard size={32} color="rgba(255,255,255,0.2)" />
+            </div>
+
+            {/* Card Body */}
+            <div style={{ padding: '0 24px', zIndex: 1 }}>
+              <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 900, color: '#f1f5f9', letterSpacing: '0.05em' }}>
+                {gymInfo.name?.toUpperCase() || 'NEXORA GYM'}
+              </h2>
+              <div style={{ marginBottom: '16px', opacity: 0.8 }}>
+                <p style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#f1f5f9' }}>{profile.name}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }}>{profile.phone}</p>
               </div>
             </div>
-            <div style={{ spaceY: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#94a3b8', marginBottom: '10px' }}>
-                <Phone size={14} color="#00d4ff" /> {profile.phone}
+
+            {/* Card Footer */}
+            <div style={{ 
+              padding: '24px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.05)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ 
+                  padding: '4px 10px', borderRadius: '6px', fontSize: '9px', fontWeight: 900,
+                  background: profile.status === 'Active' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                  color: profile.status === 'Active' ? '#34d399' : '#f87171',
+                  border: `1px solid ${profile.status === 'Active' ? 'rgba(52, 211, 153, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                  textTransform: 'uppercase', letterSpacing: '0.1em'
+                }}>
+                  STATUS: {profile.status}
+                </div>
               </div>
-              <div style={{ 
-                display: 'inline-flex', alignItems: 'center', gap: '6px', 
-                padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 800,
-                background: profile.status === 'Active' ? 'rgba(52, 211, 153, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                color: profile.status === 'Active' ? '#34d399' : '#f87171',
-                border: profile.status === 'Active' ? '1px solid rgba(52, 211, 153, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
-              }}>
-                <ShieldCheck size={12} /> {profile.status.toUpperCase()}
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ margin: 0, fontSize: '9px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Expiry</p>
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#f1f5f9' }}>
+                  {profile.subscriptionEndDate ? new Date(profile.subscriptionEndDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'N/A'}
+                </p>
               </div>
             </div>
           </div>
