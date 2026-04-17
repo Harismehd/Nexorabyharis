@@ -22,12 +22,11 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const SETUP_FEE = 5000;
+  const SETUP_FEE = 8999;
   const pricingMap = {
     'Starter': 3999,
-    'Growth': 7999,
-    'Pro': 11999,
-    'Pro Plus': 15999
+    'Pro': 8999,
+    'Pro Plus': 14999
   };
 
   const handleInputChange = (e) => {

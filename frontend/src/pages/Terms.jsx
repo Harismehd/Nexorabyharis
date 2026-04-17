@@ -169,32 +169,52 @@ export default function Terms() {
             <Section title="10. Governing Law">
               <p>These Terms are governed by the laws of Pakistan. Any disputes shall be resolved under Pakistani jurisdiction.</p>
             </Section>
+            
+            <Section title="11. Multi-Branch Restriction" highlight>
+              <p>One gym key is strictly for single gym location use only. Using one gym key to manage multiple branches or separate gym locations is prohibited. If detected, the account will be suspended and legal action may be taken.</p>
+            </Section>
+
+            <Section title="12. Software Access Control">
+              <p>Only the gym owner or authorized personnel designated by the gym owner may access and use the software. Unauthorized third-party access, resale, or redistribution of gym keys is prohibited. All changes, updates, and administrative actions are reserved solely for the software provider. Gyms may not modify, reverse engineer, or attempt to self-administer server-level changes.</p>
+            </Section>
+
+            <Section title="13. Feature Updates">
+              <p>Nexora reserves the right to add, modify, or remove features at any time. Pricing changes will be communicated 30 days in advance.</p>
+            </Section>
+
+            <Section title="14. Data Ownership">
+              <p>All gym and member data belongs to the gym. However, Nexora reserves the right to aggregate anonymized data for analytics and service improvement.</p>
+            </Section>
+
+            <Section title="15. Account Termination">
+              <p>Upon account termination or non-payment, data will be retained for 30 days before permanent deletion. Gym owners may request data export during this period.</p>
+            </Section>
 
             <Section title="PRIVACY POLICY" divider>
               <p style={{ color: '#64748b', fontSize: '12px' }}>How we collect, use, and protect your data.</p>
             </Section>
 
-            <Section title="11. Data We Collect">
+            <Section title="16. Data We Collect">
               <p>Nexora collects: gym name, contact info, login credentials, member names and phone numbers, payment records, WhatsApp message logs, and your acceptance of these Terms with timestamp and device info.</p>
             </Section>
 
-            <Section title="12. Data Usage">
+            <Section title="17. Data Usage">
               <p>Your data is used solely to provide Nexora services, send WhatsApp reminders to your members, generate reports and receipts, and maintain security.</p>
             </Section>
 
-            <Section title="13. Data Storage & Security">
+            <Section title="18. Data Storage & Security">
               <p>All data is stored in Supabase cloud database. The Developer implements reasonable security measures but cannot guarantee absolute security against all threats.</p>
             </Section>
 
-            <Section title="14. Data Sharing">
+            <Section title="19. Data Sharing">
               <p>We do not sell, share, or rent your data to any third party. Data may be shared with infrastructure providers (Supabase, Vercel) solely for service operation.</p>
             </Section>
 
-            <Section title="15. Member Data Responsibility">
+            <Section title="20. Member Data Responsibility">
               <p>You are solely responsible for obtaining consent from your gym members before storing their personal information in Nexora. The Developer accepts no liability for your data handling practices toward your members.</p>
             </Section>
 
-            <Section title="16. Your Rights">
+            <Section title="21. Your Rights">
               <p>You may request deletion of your data at any time by contacting the Developer. Account deletion will permanently remove all your gym and member data from our systems.</p>
             </Section>
 

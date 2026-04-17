@@ -129,70 +129,116 @@ export default function MemberDashboard() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '40px' }}>
           
-          {/* Digital Membership Card */}
+          {/* Digital Membership Card (Identity Style) */}
           <div style={{ 
             ...cardStyle, 
             padding: 0,
-            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
             position: 'relative',
             overflow: 'hidden',
-            aspectRatio: '1.586 / 1', // Standard Credit Card ratio
+            aspectRatio: '1.586 / 1',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-            border: '1px solid rgba(255,255,255,0.1)'
+            boxShadow: '0 0 30px rgba(0, 212, 255, 0.15), 0 20px 50px rgba(0,0,0,0.6)',
+            border: '1px solid rgba(0, 212, 255, 0.3)',
+            animation: 'cardPulse 4s infinite ease-in-out'
           }}>
-            {/* Glossy Sheen Overlay */}
+            {/* Holographic Reflection Layer */}
             <div style={{
-              position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
-              background: 'linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.03) 50%, transparent 55%)',
-              pointerEvents: 'none', transform: 'rotate(25deg)'
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 55%, transparent 60%)',
+              backgroundSize: '200% 200%',
+              animation: 'holographicShine 6s infinite linear',
+              pointerEvents: 'none', zIndex: 2
+            }} />
+
+            {/* Mesh Background Pattern */}
+            <div style={{
+              position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none',
+              backgroundImage: 'radial-gradient(#00d4ff 0.5px, transparent 0.5px)',
+              backgroundSize: '10px 10px'
             }} />
 
             {/* Card Header */}
-            <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 1 }}>
+            <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 3 }}>
               <div>
-                <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, letterSpacing: '0.2em', color: '#00d4ff', textShadow: '0 0 10px rgba(0,212,255,0.5)' }}>NEXORA SYSTEM</p>
-                <div style={{ width: '40px', height: '1px', background: 'rgba(0,212,255,0.3)', marginTop: '4px' }} />
+                <p style={{ margin: 0, fontSize: '9px', fontWeight: 900, letterSpacing: '0.3em', color: '#00d4ff', textShadow: '0 0 8px rgba(0,212,255,0.8)' }}>IDENTITY CORE</p>
+                <h1 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 900, color: '#fff', letterSpacing: '0.05em', fontFamily: 'Syne, sans-serif' }}>
+                  {gymInfo.name || 'NEXORA'}
+                </h1>
               </div>
-              <CreditCard size={32} color="rgba(255,255,255,0.2)" />
+              <div style={{ 
+                width: '45px', height: '32px', borderRadius: '6px', 
+                background: 'linear-gradient(135deg, #94a3b8 0%, #475569 100%)', 
+                border: '1px solid rgba(255,255,255,0.2)',
+                display: 'flex', flexWrap: 'wrap', gap: '2px', padding: '4px',
+                boxShadow: 'inset 0 0 5px rgba(0,0,0,0.5)'
+              }}>
+                <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                <div style={{ width: '40%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '1px' }} />
+                <div style={{ width: '40%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '1px' }} />
+              </div>
             </div>
 
-            {/* Card Body */}
-            <div style={{ padding: '0 24px', zIndex: 1 }}>
-              <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 900, color: '#f1f5f9', letterSpacing: '0.05em' }}>
-                {gymInfo.name?.toUpperCase() || 'NEXORA GYM'}
-              </h2>
-              <div style={{ marginBottom: '16px', opacity: 0.8 }}>
-                <p style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#f1f5f9' }}>{profile.name}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }}>{profile.phone}</p>
+            {/* Card Main Info */}
+            <div style={{ padding: '0 24px', display: 'flex', gap: '20px', alignItems: 'center', zIndex: 3 }}>
+              {/* Photo Placeholder */}
+              <div style={{ 
+                width: '70px', height: '70px', borderRadius: '12px', 
+                background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
+              }}>
+                <User size={40} color="rgba(0,212,255,0.3)" />
+              </div>
+              
+              <div>
+                <p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#f1f5f9', letterSpacing: '0.02em' }}>{profile.name}</p>
+                <p style={{ margin: 0, fontSize: '13px', color: '#00d4ff', fontFamily: 'monospace', fontWeight: 600 }}>{profile.phone}</p>
+                <div style={{ 
+                  marginTop: '8px', display: 'inline-flex', padding: '2px 8px', borderRadius: '4px',
+                  background: 'rgba(255,255,255,0.1)', fontSize: '9px', fontWeight: 800, color: '#94a3b8'
+                }}>
+                  MEM ID: {profile.id?.slice(0,8).toUpperCase()}
+                </div>
               </div>
             </div>
 
             {/* Card Footer */}
             <div style={{ 
-              padding: '24px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.05)',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1
+              padding: '20px 24px', background: 'rgba(0,212,255,0.03)', borderTop: '1px solid rgba(0,212,255,0.1)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 3
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '8px', color: '#64748b', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Membership Status</p>
                 <div style={{ 
-                  padding: '4px 10px', borderRadius: '6px', fontSize: '9px', fontWeight: 900,
-                  background: profile.status === 'Active' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                  display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px',
                   color: profile.status === 'Active' ? '#34d399' : '#f87171',
-                  border: `1px solid ${profile.status === 'Active' ? 'rgba(52, 211, 153, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                  textTransform: 'uppercase', letterSpacing: '0.1em'
+                  fontSize: '11px', fontWeight: 900
                 }}>
-                  STATUS: {profile.status}
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 10px currentColor' }} />
+                  {profile.status.toUpperCase()}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ margin: 0, fontSize: '9px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Expiry</p>
-                <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#f1f5f9' }}>
-                  {profile.subscriptionEndDate ? new Date(profile.subscriptionEndDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'N/A'}
+                <p style={{ margin: 0, fontSize: '8px', color: '#64748b', fontWeight: 900, textTransform: 'uppercase' }}>Valid Until</p>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 900, color: '#f1f5f9' }}>
+                  {profile.subscriptionEndDate ? new Date(profile.subscriptionEndDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase() : 'N/A'}
                 </p>
               </div>
             </div>
+
+            <style>{`
+              @keyframes holographicShine {
+                0% { background-position: -200% -200%; }
+                100% { background-position: 200% 200%; }
+              }
+              @keyframes cardPulse {
+                0%, 100% { border-color: rgba(0, 212, 255, 0.3); box-shadow: 0 0 30px rgba(0, 212, 255, 0.1); }
+                50% { border-color: rgba(0, 212, 255, 0.6); box-shadow: 0 0 40px rgba(0, 212, 255, 0.2); }
+              }
+            `}</style>
           </div>
 
           {/* Package Card */}

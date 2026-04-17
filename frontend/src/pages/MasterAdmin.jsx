@@ -313,7 +313,6 @@ export default function MasterAdmin() {
                       onChange={(e) => setNewPackage(e.target.value)}
                     >
                       <option value="starter">Starter Plan</option>
-                      <option value="growth">Growth Plan</option>
                       <option value="pro">Pro Plan</option>
                       <option value="pro_plus">Pro Plus Plan</option>
                     </select>
@@ -478,7 +477,7 @@ export default function MasterAdmin() {
                         </td>
                         <td className="py-5 px-4">
                           <div className="flex gap-1.5 justify-center">
-                            {['starter', 'growth', 'pro', 'pro_plus'].map(p => (
+                            {['starter', 'pro', 'pro_plus'].map(p => (
                               <button
                                 key={p}
                                 onClick={() => handleSetPackage(g.gymKey, p)}

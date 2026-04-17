@@ -28,61 +28,52 @@ const PackagesModal = ({ isOpen, onClose }) => {
       name: 'Starter',
       price: '3,999',
       original: '5,399',
-      badge: 'Save 25%',
+      badge: 'Basic',
       color: '#94a3b8',
+      description: 'Target: Small local gyms.',
       features: [
         { text: 'Basic Member Management', included: true },
-        { text: 'Manual Payment Entry', included: true },
+        { text: 'Manual Payments', included: true },
         { text: 'Basic WhatsApp Reminders', included: true },
         { text: 'Payment Verification', included: false },
-        { text: 'Revenue Leak Guard', included: false },
+        { text: 'Advanced Analytics', included: false },
       ],
       cta: 'Register Now'
     },
     {
-      name: 'Growth',
-      price: '7,999',
-      original: '10,699',
-      badge: 'Best Value',
+      name: 'Pro',
+      price: '8,999',
+      original: '11,999',
+      badge: 'Most Popular',
       color: '#00d4ff',
+      isPopular: true,
+      description: 'Target: Growing gyms (50-150 members).',
       features: [
         { text: 'Everything in Starter', included: true },
-        { text: 'Payment Verification', included: true },
-        { text: 'Auto WhatsApp Reminders', included: true },
-        { text: 'Payment Collection Suite', included: true },
-        { text: 'CSV Exports', included: false },
+        { text: 'Payment Verification Flow', included: true },
+        { text: 'Automated Reminders', included: true },
+        { text: 'Daily Cash Closing', included: true },
+        { text: 'Package Builder (3 Slots)', included: true },
+        { text: 'CSV Exports & Templates', included: true },
+        { text: '2 Device Login Limit', included: true },
       ],
-      cta: 'Choose Growth'
-    },
-    {
-      name: 'Pro',
-      price: '11,999',
-      original: '15,999',
-      badge: 'Most Popular',
-      color: '#8b5cf6',
-      isPopular: true,
-      features: [
-        { text: 'Everything in Growth', included: true },
-        { text: 'Full CSV Exports', included: true },
-        { text: 'Confirmation Messages', included: true },
-        { text: 'Custom Message Templates', included: true },
-        { text: 'Revenue Leak Guard', included: false },
-      ],
-      cta: 'Go Pro'
+      cta: 'Choose Pro'
     },
     {
       name: 'Pro Plus',
-      price: '15,999',
-      original: '21,399',
+      price: '14,999',
+      original: '19,999',
       badge: 'Ultimate',
       color: '#f59e0b',
       limited: true,
+      description: 'Target: Premium gyms, franchise owners.',
       features: [
         { text: 'Everything in Pro', included: true },
-        { text: 'Full Revenue Leak Guard', included: true },
-        { text: 'Priority VIP Support', included: true },
-        { text: 'Multi-Device (5+)', included: true },
-        { text: 'Custom AI Insights', included: true },
+        { text: 'Revenue Leak Guard', included: true },
+        { text: 'Advanced Analytics', included: true },
+        { text: 'Package Builder (7 Slots)', included: true },
+        { text: 'Multi-Device Access (5 Units)', included: true },
+        { text: 'Priority Performance VIP', included: true },
       ],
       cta: 'Scale Now'
     }
@@ -161,7 +152,7 @@ const PackagesModal = ({ isOpen, onClose }) => {
               padding: '12px 24px', borderRadius: '16px', color: '#94a3b8', fontSize: '13px'
             }}>
               <ShieldCheck size={16} color="#00d4ff" />
-              <span>One-time <strong style={{ color: '#00d4ff' }}>PKR 5,000</strong> activation fee covers full profile setup, one <strong>30-minute training session</strong>, WhatsApp integration, and desktop optimization.</span>
+              <span>One-time <strong style={{ color: '#00d4ff' }}>PKR 8,999</strong> activation fee covers full profile setup, one <strong>30-minute training session</strong>, WhatsApp integration, and desktop optimization.</span>
             </div>
           </div>
 
@@ -202,7 +193,8 @@ const PackagesModal = ({ isOpen, onClose }) => {
                 )}
 
                 <div style={{ marginBottom: '32px' }}>
-                  <h3 style={{ fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 12px 0' }}>{pkg.name}</h3>
+                  <h3 style={{ fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px 0' }}>{pkg.name}</h3>
+                  <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: '#475569', fontWeight: 600 }}>{pkg.description}</p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                     <span style={{ fontSize: '32px', fontWeight: 800, color: '#fff' }}>PKR {pkg.price}</span>
                     <span style={{ fontSize: '14px', color: '#475569', textDecoration: 'line-through' }}>PKR {pkg.original}</span>
