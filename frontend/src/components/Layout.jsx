@@ -382,8 +382,8 @@ export default function Layout() {
             gap: '12px'
           }}>
             <div style={{ display: 'flex', gap: '24px' }}>
-              <Link to="/legal" style={{ color: '#475569', fontSize: '12px', textDecoration: 'none', transition: 'color 0.2s' }}>Terms of Use</Link>
-              <Link to="/legal" style={{ color: '#475569', fontSize: '12px', textDecoration: 'none', transition: 'color 0.2s' }}>Privacy Policy</Link>
+              <Link to="/terms?view=true" style={{ color: '#475569', fontSize: '12px', textDecoration: 'none', transition: 'color 0.2s' }}>Terms of Use</Link>
+              <Link to="/privacy?view=true" style={{ color: '#475569', fontSize: '12px', textDecoration: 'none', transition: 'color 0.2s' }}>Privacy Policy</Link>
             </div>
             <p style={{ margin: 0, fontSize: '11px', color: '#1a2540', fontWeight: 700, letterSpacing: '0.05em' }}>
               NEXORA OPERATING SYSTEM © 2026 — ALL RIGHTS RESERVED

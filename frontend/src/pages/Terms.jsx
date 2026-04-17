@@ -1,11 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { ShieldCheck, ScrollText, CheckCircle } from 'lucide-react';
+import { ShieldCheck, ScrollText, CheckCircle, ArrowLeft } from 'lucide-react';
 
 export default function Terms() {
   const { gymKey, acceptTerms } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isViewOnly = new URLSearchParams(location.search).get('view') === 'true';
   const [scrolled, setScrolled] = useState(false);
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,6 +59,19 @@ export default function Terms() {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          {isViewOnly && (
+            <button 
+              onClick={() => navigate(-1)}
+              style={{
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                color: '#64748b', padding: '8px 16px', borderRadius: '10px',
+                marginBottom: '20px', cursor: 'pointer', fontSize: '12px',
+                display: 'flex', alignItems: 'center', gap: '6px', margin: '0 auto 20px'
+              }}
+            >
+              <ArrowLeft size={14} /> Back to Dashboard
+            </button>
+          )}
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: '64px', height: '64px', borderRadius: '18px', marginBottom: '16px',
@@ -70,7 +87,7 @@ export default function Terms() {
             Terms of Service & Privacy Policy
           </h1>
           <p style={{ color: '#475569', marginTop: '8px', fontSize: '14px' }}>
-            Please read and accept before using Nexora
+            {isViewOnly ? 'Review our latest legal policies' : 'Please read and accept before using Nexora'}
           </p>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -92,7 +109,7 @@ export default function Terms() {
           <div
             ref={scrollRef}
             style={{
-              height: '480px', overflowY: 'auto', padding: '32px',
+              height: isViewOnly ? '600px' : '480px', overflowY: 'auto', padding: '32px',
               fontSize: '13px', lineHeight: '1.8', color: '#94a3b8'
             }}
           >
@@ -237,46 +254,58 @@ export default function Terms() {
           )}
 
           {/* Accept section */}
-          <div style={{ padding: '24px 32px', borderTop: '1px solid #1a2540', background: '#080d14' }}>
-            <label style={{
-              display: 'flex', alignItems: 'flex-start', gap: '14px',
-              cursor: scrolled ? 'pointer' : 'not-allowed', opacity: scrolled ? 1 : 0.4,
-              marginBottom: '20px'
-            }}>
-              <div
-                onClick={() => scrolled && setChecked(!checked)}
-                style={{
-                  width: '22px', height: '22px', borderRadius: '6px', flexShrink: 0,
-                  border: checked ? '2px solid #00d4ff' : '2px solid #1a2540',
-                  background: checked ? 'rgba(0,212,255,0.15)' : '#080d14',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s ease', marginTop: '2px'
-                }}
+          {!isViewOnly ? (
+            <div style={{ padding: '24px 32px', borderTop: '1px solid #1a2540', background: '#080d14' }}>
+              <label style={{
+                display: 'flex', alignItems: 'flex-start', gap: '14px',
+                cursor: scrolled ? 'pointer' : 'not-allowed', opacity: scrolled ? 1 : 0.4,
+                marginBottom: '20px'
+              }}>
+                <div
+                  onClick={() => scrolled && setChecked(!checked)}
+                  style={{
+                    width: '22px', height: '22px', borderRadius: '6px', flexShrink: 0,
+                    border: checked ? '2px solid #00d4ff' : '2px solid #1a2540',
+                    background: checked ? 'rgba(0,212,255,0.15)' : '#080d14',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s ease', marginTop: '2px'
+                  }}
+                >
+                  {checked && <CheckCircle size={14} color="#00d4ff" />}
+                </div>
+                <span style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
+                  I, the authorized representative of this gym, confirm that I have fully read and understood the Terms of Service and Privacy Policy. I accept all terms including the WhatsApp disclaimer and force majeure clause, and agree to use Nexora entirely at my own risk.
+                  <strong style={{ color: '#e2e8f0' }}> Gym Key: {gymKey}</strong>
+                </span>
+              </label>
+
+              <button
+                onClick={handleAccept}
+                disabled={!checked || !scrolled || loading}
+                className="btn-primary"
+                style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '15px' }}
               >
-                {checked && <CheckCircle size={14} color="#00d4ff" />}
-              </div>
-              <span style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                I, the authorized representative of this gym, confirm that I have fully read and understood the Terms of Service and Privacy Policy. I accept all terms including the WhatsApp disclaimer and force majeure clause, and agree to use Nexora entirely at my own risk.
-                <strong style={{ color: '#e2e8f0' }}> Gym Key: {gymKey}</strong>
-              </span>
-            </label>
+                <ShieldCheck size={20} />
+                {loading ? 'Saving acceptance...' : 'I Accept — Activate Nexora'}
+              </button>
 
-            <button
-              onClick={handleAccept}
-              disabled={!checked || !scrolled || loading}
-              className="btn-primary"
-              style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '15px' }}
-            >
-              <ShieldCheck size={20} />
-              {loading ? 'Saving acceptance...' : 'I Accept — Activate Nexora'}
-            </button>
-
-            {!scrolled && (
-              <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: '#334155' }}>
-                You must scroll through and read all terms before accepting.
-              </p>
-            )}
-          </div>
+              {!scrolled && (
+                <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: '#334155' }}>
+                  You must scroll through and read all terms before accepting.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div style={{ padding: '24px 32px', borderTop: '1px solid #1a2540', background: '#080d14', textAlign: 'center' }}>
+               <button 
+                 onClick={() => navigate(-1)}
+                 className="btn-primary"
+                 style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '15px', background: '#1e293b' }}
+               >
+                 Close Reference
+               </button>
+            </div>
+          )}
         </div>
 
         <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '11px', color: '#1e293b' }}>

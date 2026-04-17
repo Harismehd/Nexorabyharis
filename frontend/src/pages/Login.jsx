@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import api from '../api';
 import toast from 'react-hot-toast';
 import { Dumbbell, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
@@ -104,20 +105,22 @@ export default function Login() {
       {/* Right Pane: Login & Roast */}
       <div style={{
         width: '500px', background: '#080d14', borderLeft: '1px solid #1e293b',
-        display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px', position: 'relative'
-      }}>
-        <div style={{ position: 'absolute', top: '40px', right: '40px' }}>
+        display: 'flex', flexDirection: 'column', padding: '60px 40px', 
+        position: 'relative', overflowY: 'auto'
+      }} className="custom-scrollbar">
+        <div style={{ position: 'sticky', top: '0', right: '0', alignSelf: 'flex-end', marginBottom: '-32px', zIndex: 10 }}>
            <Dumbbell size={32} color="#1e293b" />
         </div>
 
-        <div style={{ marginBottom: '40px' }}>
-          <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '28px', color: '#f1f5f9', margin: 0 }}>
-            Authorize Access
-          </h1>
-          <p style={{ color: '#475569', marginTop: '6px', fontSize: '14px' }}>
-            Welcome back to the future of fitness management.
-          </p>
-        </div>
+        <div style={{ margin: 'auto 0' }}>
+          <div style={{ marginBottom: '40px' }}>
+            <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '28px', color: '#f1f5f9', margin: 0 }}>
+              Authorize Access
+            </h1>
+            <p style={{ color: '#475569', marginTop: '6px', fontSize: '14px' }}>
+              Welcome back to the future of fitness management.
+            </p>
+          </div>
 
         {/* Card */}
         <div style={{
@@ -286,11 +289,25 @@ export default function Login() {
               </div>
            </div>
         </div>
-
-        <p style={{ position: 'absolute', bottom: '40px', left: '60px', fontSize: '11px', color: '#1e293b', fontWeight: 700 }}>
-          NEXORA OPERATING SYSTEM © 2026 — POWERED BY HARIS MEHMOOD
-        </p>
-      </div>
+ 
+         <footer style={{ 
+           marginTop: '40px', 
+           paddingBottom: '20px', 
+           borderTop: '1px solid #1e293b',
+           display: 'flex',
+           justifyContent: 'center',
+           gap: '24px',
+           paddingTop: '20px'
+         }}>
+           <Link to="/terms?view=true" style={{ color: '#475569', fontSize: '11px', textDecoration: 'none' }}>Terms of Use</Link>
+           <Link to="/privacy?view=true" style={{ color: '#475569', fontSize: '11px', textDecoration: 'none' }}>Privacy Policy</Link>
+         </footer>
+ 
+         <p style={{ marginTop: '40px', fontSize: '11px', color: '#1e293b', fontWeight: 700, textAlign: 'center' }}>
+           NEXORA OPERATING SYSTEM © 2026 — POWERED BY HARIS MEHMOOD
+         </p>
+       </div>
+</div>
 
       <PackagesModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 

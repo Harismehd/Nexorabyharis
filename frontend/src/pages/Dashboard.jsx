@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import api from '../api';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -266,411 +267,425 @@ export default function Dashboard() {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '40px' }}>
+    <div style={{ height: 'calc(100vh - 180px)', overflowY: 'auto', paddingRight: '12px', paddingBottom: '40px' }} className="custom-scrollbar">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-      {/* Header */}
-      <div className="flex justify-between items-end mb-4">
-        <div>
-          <h1 className="text-premium" style={{ fontWeight: 800, fontSize: '32px', color: '#f1f5f9', margin: 0, letterSpacing: '-0.02em' }}>
-            Nexora Hub
-          </h1>
-          <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px', opacity: 0.8 }}>Next-Level Gym Intelligence • Fee Automation by Haris</p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {canCloseCash && (
-            <button 
-              onClick={() => setShowClosingModal(true)}
-              className="glass-pane hover:bg-white/10 transition-all" 
-              style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.2)' }}
-            >
-              <BadgeDollarSign size={14} />
-              Daily Closing
-            </button>
-          )}
-          <div className="glass-pane" style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, color: '#00d4ff' }}>
-            <Activity size={14} />
-            Live System
+        {/* Header */}
+        <div className="flex justify-between items-end mb-4">
+          <div>
+            <h1 className="text-premium" style={{ fontWeight: 800, fontSize: '32px', color: '#f1f5f9', margin: 0, letterSpacing: '-0.02em' }}>
+              Nexora Hub
+            </h1>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px', opacity: 0.8 }}>Next-Level Gym Intelligence • Fee Automation by Haris</p>
           </div>
-        </div>
-      </div>
-
-      <DailyClosingModal 
-        show={showClosingModal} 
-        onClose={() => setShowClosingModal(false)} 
-        payments={payments} 
-        members={members} 
-      />
-
-
-      {/* Broadcast System Alerts */}
-      {broadcasts.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '10px' }}>
-          {broadcasts.map(b => {
-             const isAlert = b.type === 'alert';
-             const isWarning = b.type === 'warning';
-             const colors = isAlert 
-              ? { bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.2)', text: '#fca5a5', icon: <AlertOctagon size={18} /> }
-              : isWarning
-              ? { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.2)', text: '#fcd34d', icon: <AlertTriangle size={18} /> }
-              : { bg: 'rgba(0, 212, 255, 0.06)', border: 'rgba(0, 212, 255, 0.15)', text: '#00d4ff', icon: <Info size={18} /> };
-
-             return (
-               <div key={b.id} className="animate-in fade-in slide-in-from-top-2 duration-500" style={{
-                 padding: '16px 20px', borderRadius: '16px', background: colors.bg,
-                 border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: '14px',
-                 boxShadow: isAlert ? '0 0 20px rgba(239, 68, 68, 0.1)' : 'none'
-               }}>
-                 <div style={{ color: colors.text }}>{colors.icon}</div>
-                 <div style={{ flex: 1 }}>
-                   <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#f1f5f9', letterSpacing: '0.01em' }}>{b.message}</p>
-                   <p style={{ margin: '2px 0 0 0', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: colors.text, opacity: 0.7 }}>
-                     System Announcement • {new Date(b.created_at).toLocaleDateString()}
-                   </p>
-                 </div>
-               </div>
-             );
-          })}
-        </div>
-      )}
-
-      {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
-        {cardItems.map((card, i) => (
-          <div key={i} className="tile-3d" style={{
-            background: card.gradient, borderRadius: '24px', padding: '24px',
-            position: 'relative', overflow: 'hidden',
-            border: '1px solid rgba(255,255,255,0.15)',
-            boxShadow: `0 20px 40px -10px ${card.glow}`,
-            cursor: 'default'
-          }}>
-            {/* Gloss shine */}
-            <div style={{
-              position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
-              background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-              pointerEvents: 'none'
-            }} />
-            
-            <div className="text-premium" style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: card.labelColor, marginBottom: '12px', opacity: 0.9 }}>
-              {card.label}
-            </div>
-            <div className="text-premium" style={{ fontSize: '30px', fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: '8px' }}>
-              {card.value}
-            </div>
-            <div className="text-premium" style={{ fontSize: '12px', color: card.labelColor, opacity: 0.8 }}>{card.sub}</div>
-            
-            {card.showProgress && (
-              <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '99px', marginTop: '16px' }}>
-                <div style={{ height: '100%', width: `${progress}%`, borderRadius: '99px', background: '#fff', boxShadow: '0 0 10px #fff', transition: 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
-              </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {canCloseCash && (
+              <button 
+                onClick={() => setShowClosingModal(true)}
+                className="glass-pane hover:bg-white/10 transition-all" 
+                style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.2)' }}
+              >
+                <BadgeDollarSign size={14} />
+                Daily Closing
+              </button>
             )}
-            
-            <div style={{
-              position: 'absolute', right: '20px', bottom: '20px',
-              width: '56px', height: '56px', borderRadius: '16px',
-              background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
-              boxShadow: 'inset 0 0 10px rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.1)'
-            }}>
-              {card.icon}
+            <div className="glass-pane" style={{ padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600, color: '#00d4ff' }}>
+              <Activity size={14} />
+              Live System
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Main Charts Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '20px' }}>
-
-        {/* Revenue Trend */}
-        <div style={cardStyle}>
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-premium" style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
-              Monthly Revenue Trend
-            </h3>
-            <div className="flex gap-2">
-              <span style={{ fontSize: '10px', color: '#00d4ff', background: 'rgba(0,212,255,0.1)', padding: '2px 8px', borderRadius: '4px' }}>+12.5%</span>
-            </div>
-          </div>
-          {revenueTrend.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={revenueTrend}>
-                <defs>
-                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#00d4ff" stopOpacity={0} />
-                  </linearGradient>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 11 }} tickLine={false} axisLine={false} dy={10} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={v => `Rs.${v}`} dx={-10} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(0,212,255,0.2)', strokeWidth: 2 }} />
-                <Area 
-                  type="monotone" 
-                  dataKey="Revenue" 
-                  stroke="#00d4ff" 
-                  strokeWidth={4} 
-                  fill="url(#revGrad)" 
-                  dot={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 2, r: 5 }} 
-                  activeDot={{ r: 8, fill: '#fff', stroke: '#00d4ff', strokeWidth: 3 }} 
-                  filter="url(#glow)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div style={{ height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '14px' }}>No data yet</div>
-          )}
         </div>
 
-        {/* Member Distribution */}
-        <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for advanced distribution metrics">
-          <div style={{ ...cardStyle, height: '100%' }}>
-            <h3 className="text-premium" style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 24px' }}>
-              Member Distribution
-            </h3>
-            <div style={{ position: 'relative' }}>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie 
-                    data={pieData} 
-                    cx="50%" 
-                    cy="50%" 
-                    innerRadius={70} 
-                    outerRadius={95} 
-                    paddingAngle={8} 
-                    dataKey="value"
-                    animationBegin={0}
-                    animationDuration={1500}
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell 
-                        key={i} 
-                        fill={PIE_COLORS[i % PIE_COLORS.length]} 
-                        stroke="rgba(255,255,255,0.1)" 
-                        strokeWidth={1}
-                        style={{ filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div style={{ 
-                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                textAlign: 'center'
+        <DailyClosingModal 
+          show={showClosingModal} 
+          onClose={() => setShowClosingModal(false)} 
+          payments={payments} 
+          members={members} 
+        />
+
+
+        {/* Broadcast System Alerts */}
+        {broadcasts.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '10px' }}>
+            {broadcasts.map(b => {
+               const isAlert = b.type === 'alert';
+               const isWarning = b.type === 'warning';
+               const colors = isAlert 
+                ? { bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.2)', text: '#fca5a5', icon: <AlertOctagon size={18} /> }
+                : isWarning
+                ? { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.2)', text: '#fcd34d', icon: <AlertTriangle size={18} /> }
+                : { bg: 'rgba(0, 212, 255, 0.06)', border: 'rgba(0, 212, 255, 0.15)', text: '#00d4ff', icon: <Info size={18} /> };
+
+               return (
+                 <div key={b.id} className="animate-in fade-in slide-in-from-top-2 duration-500" style={{
+                   padding: '16px 20px', borderRadius: '16px', background: colors.bg,
+                   border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: '14px',
+                   boxShadow: isAlert ? '0 0 20px rgba(239, 68, 68, 0.1)' : 'none'
+                 }}>
+                   <div style={{ color: colors.text }}>{colors.icon}</div>
+                   <div style={{ flex: 1 }}>
+                     <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#f1f5f9', letterSpacing: '0.01em' }}>{b.message}</p>
+                     <p style={{ margin: '2px 0 0 0', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: colors.text, opacity: 0.7 }}>
+                       System Announcement • {new Date(b.created_at).toLocaleDateString()}
+                     </p>
+                   </div>
+                 </div>
+               );
+            })}
+          </div>
+        )}
+
+        {/* Stat Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+          {cardItems.map((card, i) => (
+            <div key={i} className="tile-3d" style={{
+              background: card.gradient, borderRadius: '24px', padding: '24px',
+              position: 'relative', overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.15)',
+              boxShadow: `0 20px 40px -10px ${card.glow}`,
+              cursor: 'default'
+            }}>
+              {/* Gloss shine */}
+              <div style={{
+                position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
+                background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+                pointerEvents: 'none'
+              }} />
+              
+              <div className="text-premium" style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: card.labelColor, marginBottom: '12px', opacity: 0.9 }}>
+                {card.label}
+              </div>
+              <div className="text-premium" style={{ fontSize: '30px', fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: '8px' }}>
+                {card.value}
+              </div>
+              <div className="text-premium" style={{ fontSize: '12px', color: card.labelColor, opacity: 0.8 }}>{card.sub}</div>
+              
+              {card.showProgress && (
+                <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '99px', marginTop: '16px' }}>
+                  <div style={{ height: '100%', width: `${progress}%`, borderRadius: '99px', background: '#fff', boxShadow: '0 0 10px #fff', transition: 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+                </div>
+              )}
+              
+              <div style={{
+                position: 'absolute', right: '20px', bottom: '20px',
+                width: '56px', height: '56px', borderRadius: '16px',
+                background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                boxShadow: 'inset 0 0 10px rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.1)'
               }}>
-                <div style={{ fontSize: '28px', fontWeight: 800, color: '#fff' }}>{members.length}</div>
-                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total</div>
+                {card.icon}
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '24px' }}>
-              {pieData.map((d, i) => (
-                <div key={i} className="glass-pane" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: PIE_COLORS[i], boxShadow: `0 0 10px ${PIE_COLORS[i]}40` }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>{d.name}</div>
-                    <div style={{ fontSize: '14px', color: '#fff', fontWeight: 700 }}>{d.value}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </LockedOverlay>
-      </div>
+          ))}
+        </div>
 
-      {/* Bottom 3 widgets Wrapped in LockedOverlay */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        {/* Main Charts Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '20px' }}>
 
-        {/* Membership Growth */}
-        <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for growth insights">
+          {/* Revenue Trend */}
           <div style={cardStyle}>
-            <div className="flex items-center gap-2 mb-4">
-              <Users size={18} color="#a855f7" />
-              <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-                Membership Growth
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-premium" style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                Monthly Revenue Trend
               </h3>
+              <div className="flex gap-2">
+                <span style={{ fontSize: '10px', color: '#00d4ff', background: 'rgba(0,212,255,0.1)', padding: '2px 8px', borderRadius: '4px' }}>+12.5%</span>
+              </div>
             </div>
-            {growthData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={growthData}>
+            {revenueTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={revenueTrend}>
+                  <defs>
+                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#00d4ff" stopOpacity={0} />
+                    </linearGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="3" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Line type="monotone" dataKey="Members" stroke="#a855f7" strokeWidth={3} dot={{ fill: '#a855f7', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
-                </LineChart>
+                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 11 }} tickLine={false} axisLine={false} dy={10} />
+                  <YAxis tick={{ fill: '#64748b', fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={v => `Rs.${v}`} dx={-10} />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(0,212,255,0.2)', strokeWidth: 2 }} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="Revenue" 
+                    stroke="#00d4ff" 
+                    strokeWidth={4} 
+                    fill="url(#revGrad)" 
+                    dot={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 2, r: 5 }} 
+                    activeDot={{ r: 8, fill: '#fff', stroke: '#00d4ff', strokeWidth: 3 }} 
+                    filter="url(#glow)"
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>No data yet</div>
+              <div style={{ height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '14px' }}>No data yet</div>
             )}
           </div>
-        </LockedOverlay>
 
-        {/* Class Popularity */}
-        <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for popularity tracking">
-          <div style={cardStyle}>
-            <div className="flex items-center gap-2 mb-4">
-              <BarChart3 size={18} color="#3b82f6" />
-              <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-                Class Popularity
+          {/* Member Distribution */}
+          <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for advanced distribution metrics">
+            <div style={{ ...cardStyle, height: '100%' }}>
+              <h3 className="text-premium" style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 24px' }}>
+                Member Distribution
               </h3>
-            </div>
-            <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={[
-                { name: 'CrossFit', val: 85 },
-                { name: 'Yoga', val: 65 },
-                { name: 'Spin', val: 45 },
-                { name: 'HIIT', val: 95 },
-                { name: 'Boxing', val: 75 }
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                <Bar dataKey="val" radius={[6, 6, 0, 0]}>
-                  {[0, 1, 2, 3, 4].map((_, i) => (
-                    <Cell key={i} fill={`url(#barGrad${i})`} />
-                  ))}
-                </Bar>
-                <defs>
-                  {[0, 1, 2, 3, 4].map((_, i) => (
-                    <linearGradient key={i} id={`barGrad${i}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" />
-                      <stop offset="100%" stopColor="#1e3a8a" />
-                    </linearGradient>
-                  ))}
-                </defs>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </LockedOverlay>
-
-        {/* Attendance Heatmap */}
-        <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for intensity maps">
-          <div style={cardStyle}>
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar size={18} color="#00d4ff" />
-              <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-                Attendance Heatmap
-              </h3>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px', marginBottom: '8px' }}>
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                <div key={i} style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', fontWeight: 700 }}>{d}</div>
-              ))}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px' }}>
-              {heatmapCells.map((cell, i) => (
-                <div key={i} style={{
-                  height: '18px', borderRadius: '4px',
-                  background: cell.value > 0.7 ? '#00d4ff' : cell.value > 0.4 ? 'rgba(0,212,255,0.4)' : 'rgba(255,255,255,0.05)',
-                  boxShadow: cell.value > 0.7 ? '0 0 10px rgba(0,212,255,0.3)' : 'none',
-                  transition: 'all 0.3s ease'
-                }} 
-                title={`Activity: ${Math.round(cell.value * 100)}%`}
-                />
-              ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '10px', color: '#64748b', fontWeight: 500 }}>
-              <span>Less Active</span><span>Peak Hours</span>
-            </div>
-          </div>
-        </LockedOverlay>
-      </div>
-
-      {/* Referral Intelligence (Pro/Pro Plus Only) */}
-      {(packageTier === 'pro' || packageTier === 'pro_plus') && (
-        <div style={{ ...cardStyle }}>
-          <div className="flex items-center gap-3 mb-8 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
-            <div style={{ background: 'rgba(52,211,153,0.15)', padding: '10px', borderRadius: '12px' }}>
-              <Zap size={24} color="#34d399" />
-            </div>
-            <div>
-              <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#fff', margin: 0 }}>Referral Intelligence</h2>
-              <p style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>Program Performance & Leaderboard</p>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-            {[
-              { label: 'Total Referrals', value: referralStats.totalReferrals, icon: <Users size={18} />, color: '#00d4ff' },
-              { label: 'Active Referrers', value: referralStats.activeReferrers, icon: <Activity size={18} />, color: '#34d399' },
-              { label: 'Total Discount Given', value: `Rs. ${referralStats.totalDiscountGiven.toLocaleString()}`, icon: <Banknote size={18} />, color: '#fbbf24' },
-              { label: 'Referral Share', value: `${referralStats.referralPercentage}%`, icon: <TrendingUp size={18} />, color: '#a855f7' },
-            ].map((stat, i) => (
-              <div key={i} style={{ padding: '20px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: stat.color, marginBottom: '12px' }}>
-                  {stat.icon}
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</span>
+              <div style={{ position: 'relative' }}>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie 
+                      data={pieData} 
+                      cx="50%" 
+                      cy="50%" 
+                      innerRadius={70} 
+                      outerRadius={95} 
+                      paddingAngle={8} 
+                      dataKey="value"
+                      animationBegin={0}
+                      animationDuration={1500}
+                    >
+                      {pieData.map((_, i) => (
+                        <Cell 
+                          key={i} 
+                          fill={PIE_COLORS[i % PIE_COLORS.length]} 
+                          stroke="rgba(255,255,255,0.1)" 
+                          strokeWidth={1}
+                          style={{ filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ 
+                  position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#fff' }}>{members.length}</div>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total</div>
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: 900, color: '#fff' }}>{stat.value}</div>
               </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px' }}>
-            {/* Leaderboard */}
-            <div>
-              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Crown size={16} color="#fbbf24" /> Referral Leaderboard
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {referralStats.leaderboard.length > 0 ? referralStats.leaderboard.map((m, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 20px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: i === 0 ? '#fbbf24' : '#1a2540', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: i === 0 ? '#000' : '#94a3b8', fontSize: '14px' }}>
-                      {i + 1}
-                    </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '24px' }}>
+                {pieData.map((d, i) => (
+                  <div key={i} className="glass-pane" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
+                    <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: PIE_COLORS[i], boxShadow: `0 0 10px ${PIE_COLORS[i]}40` }} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9' }}>{m.name}</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>{m.count} successful referrals</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#34d399' }}>Rs. {m.discount.toLocaleString()}</div>
-                      <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Earned</div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>{d.name}</div>
+                      <div style={{ fontSize: '14px', color: '#fff', fontWeight: 700 }}>{d.value}</div>
                     </div>
                   </div>
-                )) : (
-                  <p style={{ fontSize: '13px', color: '#475569', textAlign: 'center', padding: '40px' }}>No referrals yet. Start your program to see data here!</p>
-                )}
+                ))}
+              </div>
+            </div>
+          </LockedOverlay>
+        </div>
+
+        {/* Bottom 3 widgets Wrapped in LockedOverlay */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+
+          {/* Membership Growth */}
+          <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for growth insights">
+            <div style={cardStyle}>
+              <div className="flex items-center gap-2 mb-4">
+                <Users size={18} color="#a855f7" />
+                <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                  Membership Growth
+                </h3>
+              </div>
+              {growthData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={growthData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Line type="monotone" dataKey="Members" stroke="#a855f7" strokeWidth={3} dot={{ fill: '#a855f7', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>No data yet</div>
+              )}
+            </div>
+          </LockedOverlay>
+
+          {/* Class Popularity */}
+          <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for popularity tracking">
+            <div style={cardStyle}>
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 size={18} color="#3b82f6" />
+                <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                  Class Popularity
+                </h3>
+              </div>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={[
+                  { name: 'CrossFit', val: 85 },
+                  { name: 'Yoga', val: 65 },
+                  { name: 'Spin', val: 45 },
+                  { name: 'HIIT', val: 95 },
+                  { name: 'Boxing', val: 75 }
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                  <Bar dataKey="val" radius={[6, 6, 0, 0]}>
+                    {[0, 1, 2, 3, 4].map((_, i) => (
+                      <Cell key={i} fill={`url(#barGrad${i})`} />
+                    ))}
+                  </Bar>
+                  <defs>
+                    {[0, 1, 2, 3, 4].map((_, i) => (
+                      <linearGradient key={i} id={`barGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" />
+                        <stop offset="100%" stopColor="#1e3a8a" />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </LockedOverlay>
+
+          {/* Attendance Heatmap */}
+          <LockedOverlay isLocked={isAdvancedLocked} message="Upgrade to Pro for intensity maps">
+            <div style={cardStyle}>
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar size={18} color="#00d4ff" />
+                <h3 className="text-premium" style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                  Attendance Heatmap
+                </h3>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px', marginBottom: '8px' }}>
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                  <div key={i} style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', fontWeight: 700 }}>{d}</div>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px' }}>
+                {heatmapCells.map((cell, i) => (
+                  <div key={i} style={{
+                    height: '18px', borderRadius: '4px',
+                    background: cell.value > 0.7 ? '#00d4ff' : cell.value > 0.4 ? 'rgba(0,212,255,0.4)' : 'rgba(255,255,255,0.05)',
+                    boxShadow: cell.value > 0.7 ? '0 0 10px rgba(0,212,255,0.3)' : 'none',
+                    transition: 'all 0.3s ease'
+                  }} 
+                  title={`Activity: ${Math.round(cell.value * 100)}%`}
+                  />
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '10px', color: '#64748b', fontWeight: 500 }}>
+                <span>Less Active</span><span>Peak Hours</span>
+              </div>
+            </div>
+          </LockedOverlay>
+        </div>
+
+        {/* Referral Intelligence (Pro/Pro Plus Only) */}
+        {(packageTier === 'pro' || packageTier === 'pro_plus') && (
+          <div style={{ ...cardStyle }}>
+            <div className="flex items-center gap-3 mb-8 pb-4" style={{ borderBottom: '1px solid #1a2540' }}>
+              <div style={{ background: 'rgba(52,211,153,0.15)', padding: '10px', borderRadius: '12px' }}>
+                <Zap size={24} color="#34d399" />
+              </div>
+              <div>
+                <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '20px', color: '#fff', margin: 0 }}>Referral Intelligence</h2>
+                <p style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>Program Performance & Leaderboard</p>
               </div>
             </div>
 
-            {/* Quick Insights */}
-            <div className="glass-pane" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(0, 212, 255, 0.1)', background: 'rgba(0, 212, 255, 0.02)' }}>
-               <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#00d4ff', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px' }}>Program Insights</h4>
-               <div className="space-y-6">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                       <span style={{ fontSize: '12px', color: '#94a3b8' }}>Referral Conversion</span>
-                       <span style={{ fontSize: '12px', color: '#fff', fontWeight: 700 }}>{referralStats.referralPercentage}%</span>
-                    </div>
-                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                       <div style={{ height: '100%', width: `${referralStats.referralPercentage}%`, background: '#00d4ff' }} />
-                    </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+              {[
+                { label: 'Total Referrals', value: referralStats.totalReferrals, icon: <Users size={18} />, color: '#00d4ff' },
+                { label: 'Active Referrers', value: referralStats.activeReferrers, icon: <Activity size={18} />, color: '#34d399' },
+                { label: 'Total Discount Given', value: `Rs. ${referralStats.totalDiscountGiven.toLocaleString()}`, icon: <Banknote size={18} />, color: '#fbbf24' },
+                { label: 'Referral Share', value: `${referralStats.referralPercentage}%`, icon: <TrendingUp size={18} />, color: '#a855f7' },
+              ].map((stat, i) => (
+                <div key={i} style={{ padding: '20px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: stat.color, marginBottom: '12px' }}>
+                    {stat.icon}
+                    <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</span>
                   </div>
-                  <div style={{ padding: '16px', borderRadius: '16px', background: 'rgba(0,0,0,0.2)' }}>
-                     <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '8px' }}>Top Referrer of all time:</p>
-                     {referralStats.topReferrer ? (
-                       <div className="flex items-center gap-3">
-                         <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24' }}><Crown size={20} /></div>
-                         <div>
-                            <p style={{ fontSize: '15px', fontWeight: 800, color: '#fff', margin: 0 }}>{referralStats.topReferrer.name}</p>
-                            <p style={{ fontSize: '11px', color: '#fbbf24', margin: 0 }}>{referralStats.topReferrer.totalReferrals} referrals made</p>
+                  <div style={{ fontSize: '24px', fontWeight: 900, color: '#fff' }}>{stat.value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px' }}>
+              {/* Leaderboard */}
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Crown size={16} color="#fbbf24" /> Referral Leaderboard
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {referralStats.leaderboard.length > 0 ? referralStats.leaderboard.map((m, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 20px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: i === 0 ? '#fbbf24' : '#1a2540', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: i === 0 ? '#000' : '#94a3b8', fontSize: '14px' }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9' }}>{m.name}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>{m.count} successful referrals</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#34d399' }}>Rs. {m.discount.toLocaleString()}</div>
+                        <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Earned</div>
+                      </div>
+                    </div>
+                  )) : (
+                    <p style={{ fontSize: '13px', color: '#475569', textAlign: 'center', padding: '40px' }}>No referrals yet. Start your program to see data here!</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Insights */}
+              <div className="glass-pane" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(0, 212, 255, 0.1)', background: 'rgba(0, 212, 255, 0.02)' }}>
+                 <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#00d4ff', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px' }}>Program Insights</h4>
+                 <div className="space-y-6">
+                    <div>
+                      <div className="flex justify-between mb-2">
+                         <span style={{ fontSize: '12px', color: '#94a3b8' }}>Referral Conversion</span>
+                         <span style={{ fontSize: '12px', color: '#fff', fontWeight: 700 }}>{referralStats.referralPercentage}%</span>
+                      </div>
+                      <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                         <div style={{ height: '100%', width: `${referralStats.referralPercentage}%`, background: '#00d4ff' }} />
+                      </div>
+                    </div>
+                    <div style={{ padding: '16px', borderRadius: '16px', background: 'rgba(0,0,0,0.2)' }}>
+                       <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '8px' }}>Top Referrer of all time:</p>
+                       {referralStats.topReferrer ? (
+                         <div className="flex items-center gap-3">
+                           <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24' }}><Crown size={20} /></div>
+                           <div>
+                              <p style={{ fontSize: '15px', fontWeight: 800, color: '#fff', margin: 0 }}>{referralStats.topReferrer.name}</p>
+                              <p style={{ fontSize: '11px', color: '#fbbf24', margin: 0 }}>{referralStats.topReferrer.totalReferrals} referrals made</p>
+                           </div>
                          </div>
-                       </div>
-                     ) : <p style={{ fontSize: '12px', color: '#475569' }}>—</p>}
-                  </div>
-                  <div className="flex items-center gap-3 p-4 border border-dashed border-blue-500/20 rounded-xl">
-                      <Zap size={18} className="text-blue-400" />
-                      <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>Higher rewards usually result in 30% more referrals. Adjust settings in "Referral Settings".</p>
-                  </div>
-               </div>
+                       ) : <p style={{ fontSize: '12px', color: '#475569' }}>—</p>}
+                    </div>
+                    <div className="flex items-center gap-3 p-4 border border-dashed border-blue-500/20 rounded-xl">
+                        <Zap size={18} className="text-blue-400" />
+                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>Higher rewards usually result in 30% more referrals. Adjust settings in "Referral Settings".</p>
+                    </div>
+                 </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        <footer style={{ 
+          marginTop: '40px', 
+          paddingBottom: '24px', 
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '24px'
+        }}>
+          <Link to="/terms?view=true" style={{ color: '#475569', fontSize: '11px', textDecoration: 'none' }}>Terms of Use</Link>
+          <Link to="/privacy?view=true" style={{ color: '#475569', fontSize: '11px', textDecoration: 'none' }}>Privacy Policy</Link>
+        </footer>
+      </div>
     </div>
   );
 }
