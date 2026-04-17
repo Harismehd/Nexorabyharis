@@ -46,23 +46,6 @@ function formatLastVisit(dateStr) {
 
 function triggerReferralReward(db, gymKey, refereeId) {
   const referee = db.members.find(m => m.id === refereeId && m.gymKey === gymKey);
-  if (!referee || !referee.referredBy || referee.referralDiscountApplied) return;
-
-  const referrer = db.members.find(m => m.id === referee.referredBy && m.gymKey === gymKey);
-  const gym = db.gyms.find(g => g.gymKey === gymKey);
-  
-  if (referrer && gym) {
-    const rewardAmount = gym.referralSettings?.referrerDiscount || 500;
-    referrer.discountBalance = (Number(referrer.discountBalance) || 0) + Number(rewardAmount);
-    referrer.totalReferrals = (Number(referrer.totalReferrals) || 0) + 1;
-    
-    referee.referralDiscountApplied = true;
-    referee.referralStatus = 'VERIFIED';
-  }
-}
-
-function triggerReferralReward(db, gymKey, refereeId) {
-  const referee = db.members.find(m => m.id === refereeId && m.gymKey === gymKey);
   if (!referee || !referee.referredBy || referee.referralDiscountApplied) return false;
 
   const referrer = db.members.find(m => m.id === referee.referredBy && m.gymKey === gymKey);
@@ -105,11 +88,11 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const { gymKey, action, memberId, phone } = req.query;
 
-    const dbChanged = syncReferralRewards(db, gymKey);
-    if (dbChanged) await writeDB(db);
+    let dbChanged = syncReferralRewards(db, gymKey);
 
     // --- MEMBER PORTAL ACTIONS ---
     if (action === 'me') {
+      if (dbChanged) await writeDB(db);
       const member = db.members.find(m => m.gymKey === gymKey && String(m.phone).trim() === String(phone).trim());
       if (!member) return res.status(404).json({ error: 'Profile not found' });
       const gym = db.gyms.find(g => g.gymKey === gymKey);
