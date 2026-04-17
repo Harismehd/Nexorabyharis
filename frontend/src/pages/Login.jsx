@@ -57,7 +57,7 @@ export default function Login() {
     if (!normalizedGymKey || !phone) return toast.error('Please fill both fields');
     setLoading(true);
     try {
-      const res = await api.post('/auth/member-login', { gymKey: normalizedGymKey, phone });
+      const res = await api.post('/auth', { gymKey: normalizedGymKey, phone });
       toast.success(res.data.message);
       login(res.data.gymKey, 'member', { 
         memberId: res.data.memberId, 

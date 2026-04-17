@@ -39,7 +39,24 @@ function ensureGymDefaults(gym) {
   if (!gym.paymentSettings) gym.paymentSettings = { methods: ['easypaisa'], easypaisaNumberEncrypted: '', jazzcashNumberEncrypted: '', bankTitle: '', bankIbanEncrypted: '' };
 }
 
-function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCovered }) {
+function triggerReferralReward(db, gymKey, refereeId) {
+  const referee = db.members.find(m => m.id === refereeId && m.gymKey === gymKey);
+  if (!referee || !referee.referredBy || referee.referralDiscountApplied) return;
+
+  const referrer = db.members.find(m => m.id === referee.referredBy && m.gymKey === gymKey);
+  const gym = db.gyms.find(g => g.gymKey === gymKey);
+  
+  if (referrer && gym) {
+    const rewardAmount = gym.referralSettings?.referrerDiscount || 500;
+    referrer.discountBalance = (Number(referrer.discountBalance) || 0) + Number(rewardAmount);
+    referrer.totalReferrals = (Number(referrer.totalReferrals) || 0) + 1;
+    
+    referee.referralDiscountApplied = true;
+    referee.referralStatus = 'VERIFIED';
+  }
+}
+
+function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCovered, appliedDiscount }) {
   const memberIndex = db.members.findIndex(m => m.id === memberId && m.gymKey === gymKey);
   if (memberIndex === -1) return { error: 'Member not found' };
   const member = db.members[memberIndex];
@@ -49,12 +66,16 @@ function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCover
   let appliedDiscount = 0;
   let finalAmount = parseFloat(amount || 0);
 
-  // Apply Referral Discount if Pro and Balance exists
-  if (isPro && member.discountBalance > 0) {
+  // Deduct applied discount if provided by frontend
+  if (appliedDiscount && Number(appliedDiscount) > 0) {
+    member.discountBalance = Math.max(0, (Number(member.discountBalance) || 0) - Number(appliedDiscount));
+  } else if (isPro && member.discountBalance > 0) {
+    // Auto-consume for manual records if not specified
     const maxDiscount = gym.referralSettings?.maxMonthlyDiscount || 1000;
-    appliedDiscount = Math.min(member.discountBalance, maxDiscount, finalAmount);
-    finalAmount -= appliedDiscount;
-    member.discountBalance -= appliedDiscount;
+    const autoDisc = Math.min(member.discountBalance, maxDiscount, finalAmount);
+    finalAmount -= autoDisc;
+    member.discountBalance -= autoDisc;
+    appliedDiscount = autoDisc;
   }
 
   let currentEnd = member.subscriptionEndDate ? parseISO(member.subscriptionEndDate) : new Date();
@@ -83,6 +104,10 @@ function createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCover
     isAdvance: parseInt(monthsCovered, 10) > 1 
   };
   db.payments.push(payment);
+
+  // Trigger Referral Reward when a payment is recorded
+  triggerReferralReward(db, gymKey, memberId);
+
   return { payment, newEndDate };
 }
 
@@ -109,8 +134,8 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST' && !url.includes('proof') && !url.includes('verify')) {
-    const { gymKey, memberId, amount, method, monthsCovered } = req.body;
-    const result = createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCovered });
+    const { gymKey, memberId, amount, method, monthsCovered, appliedDiscount } = req.body;
+    const result = createPaymentRecord(db, { gymKey, memberId, amount, method, monthsCovered, appliedDiscount });
     if (result.error) return res.status(404).json({ error: result.error });
     await writeDB(db);
     return res.json({ message: 'Payment recorded', payment: result.payment, newEndDate: result.newEndDate });
@@ -178,25 +203,7 @@ export default async function handler(req, res) {
     db.pendingPayments[pendingIndex] = pending;
     await writeDB(db);
 
-    // Handle Referral Reward Logic (Pro/Pro Plus only)
-    if (isPro) {
-      const member = db.members.find(m => m.id === pending.memberId);
-      if (member && member.referredBy && !member.referralDiscountApplied) {
-        const referrerIndex = db.members.findIndex(m => m.id === member.referredBy && m.gymKey === gymKey);
-        if (referrerIndex !== -1) {
-          const referrerReward = gym.referralSettings?.referrerDiscount || 500;
-          db.members[referrerIndex].totalReferrals = (db.members[referrerIndex].totalReferrals || 0) + 1;
-          db.members[referrerIndex].discountBalance = (db.members[referrerIndex].discountBalance || 0) + referrerReward;
-          
-          // Mark referral as rewarded so it doesn't double count if they pay again later
-          member.referralDiscountApplied = true;
-          const memberIndex = db.members.findIndex(m => m.id === member.id);
-          db.members[memberIndex] = member;
-
-          // Note: WhatsApp messages removed as per user request
-        }
-      }
-    }
+    triggerReferralReward(db, gymKey, pending.memberId);
 
     return res.json({
       message: 'Payment verified successfully',
@@ -236,6 +243,7 @@ export default async function handler(req, res) {
         pending.verificationCode = verificationCode;
         pending.receiptNumber = result.payment.receiptNumber;
         verifiedCount++;
+        triggerReferralReward(db, gymKey, pending.memberId);
 
         const member = db.members.find(m => m.id === pending.memberId);
         if (member && gym.whatsappStatus === 'connected') {

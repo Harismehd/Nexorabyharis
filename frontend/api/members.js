@@ -65,7 +65,7 @@ export default async function handler(req, res) {
         .map(m => ({ 
           name: m.name, 
           joiningDate: m.joiningDate, 
-          rewardStatus: m.referralDiscountApplied ? 'Rewarded' : 'Pending Verification' 
+          rewardStatus: m.referralStatus || 'PENDING' 
         }));
 
       return res.json({
@@ -139,6 +139,7 @@ export default async function handler(req, res) {
 
     let referredBy = null;
     let initialDiscount = 0;
+    let referredByName = '';
 
     // 2. Validate referral code if provided and Pro/Pro Plus
     if (referredByCode && isPro) {
@@ -146,6 +147,7 @@ export default async function handler(req, res) {
       if (referrer) {
         if (referrer.phone !== phone) { // Avoid self-referral
           referredBy = referrer.id;
+          referredByName = referrer.name;
           initialDiscount = gym.referralSettings?.newMemberReward || 250; 
         }
       }
@@ -164,6 +166,8 @@ export default async function handler(req, res) {
       // Referral System Fields
       referralCode,
       referredBy,
+      referredByName,
+      referralStatus: referredBy ? 'PENDING' : '',
       referralDiscountApplied: false,
       totalReferrals: 0,
       discountBalance: initialDiscount
