@@ -25,6 +25,7 @@ const Register = () => {
   const SETUP_FEE = 8999;
   const pricingMap = {
     'Starter': 3999,
+    'Growth': 7999,
     'Pro': 8999,
     'Pro Plus': 14999
   };

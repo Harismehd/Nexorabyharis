@@ -41,6 +41,22 @@ const PackagesModal = ({ isOpen, onClose }) => {
       cta: 'Register Now'
     },
     {
+      name: 'Growth',
+      price: '7,999',
+      original: '10,699',
+      badge: 'Best Value',
+      color: '#00d4ff',
+      description: 'Target: Standard gyms (up to 50 members).',
+      features: [
+        { text: 'Everything in Starter', included: true },
+        { text: 'Payment Verification', included: true },
+        { text: 'Auto WhatsApp Reminders', included: true },
+        { text: 'Daily Cash Closing', included: true },
+        { text: '2 Package Slots', included: true },
+      ],
+      cta: 'Choose Growth'
+    },
+    {
       name: 'Pro',
       price: '8,999',
       original: '11,999',

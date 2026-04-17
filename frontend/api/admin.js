@@ -16,10 +16,9 @@ async function writeDB(payload) {
   if (error) throw error;
 }
 
-function ensureGymDefaults(gym) {
-  if (typeof gym.isActive !== 'boolean') gym.isActive = true;
-  if (!gym.package) gym.package = 'starter';
-  if (!gym.paymentSettings) gym.paymentSettings = { methods: ['easypaisa'], easypaisaNumberEncrypted: '', jazzcashNumberEncrypted: '', bankTitle: '', bankIbanEncrypted: '' };
+function ensureSystem(db) {
+  if (!db.system) db.system = { globalShutdown: false, masterPassword: 'SAdmin#2026!Nexora' };
+  if (!db.system.masterPassword) db.system.masterPassword = 'SAdmin#2026!Nexora';
 }
 
 export default async function handler(req, res) {
@@ -29,6 +28,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const db = await readDB();
+  ensureSystem(db);
   const adminKey = req.headers['x-admin-key'];
   if (!adminKey || adminKey !== db.system.masterPassword) return res.status(403).json({ error: 'Forbidden: Admin access required' });
 

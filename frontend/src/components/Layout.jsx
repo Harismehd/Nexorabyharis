@@ -321,20 +321,7 @@ export default function Layout() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Status indicator */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '6px 14px', borderRadius: '99px',
-              background: 'rgba(0,212,255,0.06)',
-              border: '1px solid rgba(0,212,255,0.12)'
-            }}>
-              <div style={{
-                width: '7px', height: '7px', borderRadius: '50%',
-                background: '#00d4ff',
-                boxShadow: '0 0 8px #00d4ff',
-                animation: 'pulse 2s infinite'
-              }} />
-              <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
   {/* Package badge */}
   {role !== 'admin' && (() => {
     const badges = {
@@ -373,7 +360,6 @@ export default function Layout() {
     </span>
   </div>
 </div>
-            </div>
           </div>
         </header>
 
@@ -385,6 +371,24 @@ export default function Layout() {
           >
             <Outlet />
           </div>
+
+          <footer style={{ 
+            marginTop: '32px', 
+            padding: '24px 0', 
+            borderTop: '1px solid rgba(255,255,255,0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <div style={{ display: 'flex', gap: '24px' }}>
+              <Link to="/legal" style={{ color: '#475569', fontSize: '12px', textDecoration: 'none', transition: 'color 0.2s' }}>Terms of Use</Link>
+              <Link to="/legal" style={{ color: '#475569', fontSize: '12px', textDecoration: 'none', transition: 'color 0.2s' }}>Privacy Policy</Link>
+            </div>
+            <p style={{ margin: 0, fontSize: '11px', color: '#1a2540', fontWeight: 700, letterSpacing: '0.05em' }}>
+              NEXORA OPERATING SYSTEM © 2026 — ALL RIGHTS RESERVED
+            </p>
+          </footer>
         </div>
       </main>
 

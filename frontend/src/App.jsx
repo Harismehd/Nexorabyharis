@@ -20,6 +20,7 @@ import Terms from './pages/Terms';
 import Register from './pages/Register';
 import Support from './pages/Support';
 import MemberDashboard from './pages/MemberDashboard';
+import Legal from './pages/Legal';
 import api from './api';
 
 const ProtectedRoute = ({ children }) => {
@@ -99,6 +100,7 @@ function AppRoutes() {
         <Route path="logs" element={<Logs />} />
         <Route path="about" element={<About />} />
         <Route path="support" element={<Support />} />
+        <Route path="legal" element={<Legal />} />
       </Route>
       <Route path="/admin" element={<AdminRoute><MasterAdmin /></AdminRoute>} />
       <Route path="/member-dashboard" element={<MemberRoute><MemberDashboard /></MemberRoute>} />
