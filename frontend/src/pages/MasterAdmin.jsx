@@ -45,6 +45,7 @@ export default function MasterAdmin() {
     }
   };
 
+  const fetchApplications = async () => {
     try {
       const res = await api.get('/admin?action=applications', getAdminHeaders());
       setApplications(res.data || []);
