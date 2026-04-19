@@ -45,9 +45,8 @@ export default function MasterAdmin() {
     }
   };
 
-  const fetchApplications = async () => {
     try {
-      const res = await api.get('/registrations', getAdminHeaders());
+      const res = await api.get('/admin?action=applications', getAdminHeaders());
       setApplications(res.data || []);
     } catch (err) {
       console.error('Failed to fetch applications:', err);
@@ -143,7 +142,7 @@ export default function MasterAdmin() {
     toast.success('Fields pre-filled. Press Mint to complete.');
 
     // Update status in Backend
-    api.put('/registrations', { id: app.id, status: 'approved' }, getAdminHeaders()).then(() => {
+    api.put('/admin?action=approve', { id: app.id, status: 'approved' }, getAdminHeaders()).then(() => {
       fetchApplications();
     });
   };
@@ -151,7 +150,7 @@ export default function MasterAdmin() {
   const handleReject = async (id) => {
     if (!window.confirm('Reject this application?')) return;
     try {
-      await api.put('/registrations', { id, status: 'rejected' }, getAdminHeaders());
+      await api.put('/admin?action=approve', { id, status: 'rejected' }, getAdminHeaders());
       toast.success('Application rejected');
       fetchApplications();
     } catch {

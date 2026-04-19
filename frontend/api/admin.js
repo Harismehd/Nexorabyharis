@@ -21,131 +21,163 @@ function ensureSystem(db) {
   if (!db.system.masterPassword) db.system.masterPassword = 'SAdmin#2026!Nexora';
 }
 
+export const config = { api: { bodyParser: false } };
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const db = await readDB();
-  ensureSystem(db);
-  const adminKey = req.headers['x-admin-key'];
-  if (!adminKey || adminKey !== db.system.masterPassword) return res.status(403).json({ error: 'Forbidden: Admin access required' });
-
   const url = req.url || '';
-
-  if (req.method === 'GET' && url.includes('dashboard')) {
-    return res.json({ 
-      system: db.system || { globalShutdown: false }, 
-      gyms: db.gyms.map(g => ({ 
-        gymKey: g.gymKey, 
-        name: g.name || 'Unnamed Gym', 
-        isActive: g.isActive !== false, 
-        package: g.package || 'starter', 
-        deviceLimit: g.deviceLimit || 5, // Expose for UI
-        whatsappStatus: g.whatsappStatus, 
-        memberCount: db.members.filter(m => m.gymKey === g.gymKey).length 
-      })) 
-    });
-  }
-
-  if (req.method === 'GET' && url.includes('gyms')) {
-    return res.json({ 
-      gyms: db.gyms.map(g => ({ 
-        gymKey: g.gymKey, 
-        name: g.name || 'Unnamed Gym', 
-        isActive: g.isActive !== false, 
-        package: g.package || 'starter', 
-        deviceLimit: g.deviceLimit || 5, // Expose for UI
-        whatsappStatus: g.whatsappStatus, 
-        memberCount: db.members.filter(m => m.gymKey === g.gymKey).length 
-      })) 
-    });
-  }
-
   const action = req.query.action || (url.includes('?') ? new URL(url, 'http://localhost').searchParams.get('action') : '');
 
-  if (req.method === 'POST' && (action === 'create' || url.includes('create'))) {
-    const { gymKey, password, package: pkg, deviceLimit } = req.body;
-    if (db.gyms.find(g => g.gymKey === gymKey)) return res.status(400).json({ error: 'Gym Key already exists' });
-    const allowedPackages = ['starter', 'growth', 'pro', 'pro_plus'];
-    const newGym = { 
-      gymKey, password, isActive: true, 
-      package: allowedPackages.includes(pkg) ? pkg : 'starter', 
-      deviceLimit: deviceLimit || 5,
-      autoMessagingEnabled: false, 
-      template: 'Hi {name}, your gym fee Rs {amount} is due on {date}. Please pay on time.', 
-      whatsappStatus: 'disconnected', 
-      paymentSettings: { methods: ['easypaisa'], easypaisaNumberEncrypted: '', jazzcashNumberEncrypted: '', bankTitle: '', bankIbanEncrypted: '' } 
-    };
-    db.gyms.push(newGym);
-    await writeDB(db);
-    return res.json({ message: 'Gym Key created successfully', gym: newGym });
-  }
+  try {
+    // PUBLIC ACTION: SIGNUP
+    if (req.method === 'POST' && action === 'signup') {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const buffer = Buffer.concat(chunks);
+      const contentType = req.headers['content-type'] || '';
+      const boundary = contentType.split('boundary=')[1];
+      if (!boundary) return res.status(400).json({ error: 'Invalid request' });
 
-  if (req.method === 'POST' && (action === 'update' || url.includes('update'))) {
-    const { gymKey, field, value } = req.body;
-    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-    
-    if (field === 'deviceLimit') {
-      db.gyms[gymIndex].deviceLimit = parseInt(value, 10) || 5;
-    } else {
-      db.gyms[gymIndex][field] = value;
+      const parts = buffer.toString('binary').split(`--${boundary}`);
+      const formData = {};
+      let fileBuffer = null;
+      let fileType = 'image/png';
+      let fileName = 'proof.png';
+
+      for (const part of parts) {
+        if (part.includes('name="')) {
+          const nameMatch = part.match(/name="([^"]+)"/);
+          const name = nameMatch ? nameMatch[1] : null;
+          if (part.includes('filename="')) {
+            const filenameMatch = part.match(/filename="([^"]+)"/);
+            fileName = filenameMatch ? filenameMatch[1] : fileName;
+            const typeMatch = part.match(/Content-Type: ([^\r\n]+)/);
+            fileType = typeMatch ? typeMatch[1] : fileType;
+            const dataStart = part.indexOf('\r\n\r\n') + 4;
+            const dataEnd = part.lastIndexOf('\r\n');
+            fileBuffer = Buffer.from(part.slice(dataStart, dataEnd), 'binary');
+          } else if (name) {
+            formData[name] = part.split('\r\n\r\n')[1]?.replace(/\r\n$/, '').trim();
+          }
+        }
+      }
+
+      if (!fileBuffer) return res.status(400).json({ error: 'Payment proof is required' });
+
+      const fileExt = fileName.split('.').pop() || 'png';
+      const storagePath = `proofs/${uuidv4()}-${Date.now()}.${fileExt}`;
+      await supabase.storage.from('registration-proofs').upload(storagePath, fileBuffer, { contentType: fileType });
+      const { data: { publicUrl } } = supabase.storage.from('registration-proofs').getPublicUrl(storagePath);
+
+      await supabase.from('registrations').insert([{
+        gym_name: formData.gymName,
+        owner_name: formData.ownerName,
+        phone: formData.businessPhone,
+        email: formData.emailAddress,
+        package_name: formData.packageName,
+        gym_key_choice: formData.gymKeyChoice,
+        payment_proof_url: publicUrl,
+        status: 'pending'
+      }]);
+
+      return res.status(200).json({ message: 'Registration submitted' });
     }
-    
-    await writeDB(db);
-    return res.json({ message: `Updated ${field} successfully` });
+
+    // PROTECTED ACTIONS (Requires admin key)
+    const db = await readDB();
+    ensureSystem(db);
+    const adminKey = req.headers['x-admin-key'];
+    if (!adminKey || adminKey !== db.system.masterPassword) return res.status(403).json({ error: 'Forbidden' });
+
+    if (req.method === 'GET') {
+      if (action === 'dashboard' || url.includes('dashboard')) {
+        return res.json({ system: db.system, gyms: db.gyms.map(g => ({ ...g, memberCount: db.members.filter(m => m.gymKey === g.gymKey).length })) });
+      }
+      if (action === 'gyms' || url.includes('gyms')) {
+        return res.json({ gyms: db.gyms.map(g => ({ ...g, memberCount: db.members.filter(m => m.gymKey === g.gymKey).length })) });
+      }
+      if (action === 'applications') {
+        const { data, error } = await supabase.from('registrations').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+        if (error) throw error;
+        return res.json(data || []);
+      }
+      if (action === 'stats') {
+        const { data, error } = await supabase.from('message_jobs').select('gym_key, created_at').gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+        if (error) throw error;
+        const statsMap = {};
+        (data || []).forEach(job => {
+          const date = job.created_at?.slice(0, 10);
+          const key = `${job.gym_key}__${date}`;
+          statsMap[key] = (statsMap[key] || 0) + 1;
+        });
+        const result = Object.entries(statsMap).map(([k, count]) => {
+          const [gymKey, date] = k.split('__');
+          return { gymKey, date, count };
+        }).sort((a, b) => b.date.localeCompare(a.date));
+        return res.json(result);
+      }
+    }
+
+    if (req.method === 'POST') {
+      if (action === 'create') {
+        const { gymKey, password, package: pkg, deviceLimit } = req.body;
+        if (db.gyms.find(g => g.gymKey === gymKey)) return res.status(400).json({ error: 'Gym Key exists' });
+        const newGym = { gymKey, password, isActive: true, package: pkg || 'starter', deviceLimit: deviceLimit || 5, autoMessagingEnabled: false, template: 'Hi {name}, fee Rs {amount} due {date}.', whatsappStatus: 'disconnected', paymentSettings: { methods: ['easypaisa'], easypaisaNumberEncrypted: '', jazzcashNumberEncrypted: '', bankTitle: '', bankIbanEncrypted: '' } };
+        db.gyms.push(newGym);
+        await writeDB(db);
+        return res.json({ message: 'Gym created', gym: newGym });
+      }
+      if (action === 'update') {
+        const { gymKey, field, value } = req.body;
+        const idx = db.gyms.findIndex(g => g.gymKey === gymKey);
+        if (idx !== -1) {
+          db.gyms[idx][field] = field === 'deviceLimit' ? parseInt(value, 10) : value;
+          await writeDB(db);
+          return res.json({ message: 'Updated' });
+        }
+        return res.status(404).json({ error: 'Gym not found' });
+      }
+      if (action === 'toggle') {
+        const { gymKey } = req.body;
+        const idx = db.gyms.findIndex(g => g.gymKey === gymKey);
+        if (idx !== -1) {
+          db.gyms[idx].isActive = !db.gyms[idx].isActive;
+          await writeDB(db);
+          return res.json({ message: 'Toggled' });
+        }
+        return res.status(404).json({ error: 'Gym not found' });
+      }
+      if (action === 'package') {
+        const { gymKey, package: pkg } = req.body;
+        const idx = db.gyms.findIndex(g => g.gymKey === gymKey);
+        if (idx !== -1) {
+          db.gyms[idx].package = pkg;
+          await writeDB(db);
+          return res.json({ message: 'Package updated' });
+        }
+        return res.status(404).json({ error: 'Gym not found' });
+      }
+      if (action === 'shutdown') {
+        db.system.globalShutdown = !db.system.globalShutdown;
+        await writeDB(db);
+        return res.json({ message: 'Shutdown toggled' });
+      }
+    }
+
+    if (req.method === 'PUT' && action === 'approve') {
+      const { id, status } = req.body;
+      const { error } = await supabase.from('registrations').update({ status }).eq('id', id);
+      if (error) throw error;
+      return res.json({ message: 'Status updated' });
+    }
+
+    res.status(404).json({ error: 'Not found' });
+  } catch (err) {
+    console.error('Admin API error:', err);
+    res.status(500).json({ error: err.message });
   }
-
-  if (req.method === 'POST' && (action === 'toggle' || url.includes('toggle'))) {
-    const { gymKey } = req.body;
-    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-    db.gyms[gymIndex].isActive = !(db.gyms[gymIndex].isActive !== false);
-    await writeDB(db);
-    return res.json({ message: `Gym ${db.gyms[gymIndex].isActive ? 'Activated' : 'Suspended'}` });
-  }
-
-  if (req.method === 'POST' && (action === 'package' || url.includes('package'))) {
-    const { gymKey, package: pkg } = req.body;
-    const gymIndex = db.gyms.findIndex(g => g.gymKey === gymKey);
-    if (gymIndex === -1) return res.status(404).json({ error: 'Gym not found' });
-    const allowedPackages = ['starter', 'growth', 'pro', 'pro_plus'];
-    db.gyms[gymIndex].package = allowedPackages.includes(pkg) ? pkg : 'starter';
-    await writeDB(db);
-    return res.json({ message: `Package updated to ${db.gyms[gymIndex].package.toUpperCase()}` });
-  }
-
-  if (req.method === 'POST' && (action === 'shutdown' || url.includes('shutdown'))) {
-    if (!db.system) db.system = { globalShutdown: false };
-    db.system.globalShutdown = !db.system.globalShutdown;
-    await writeDB(db);
-    return res.json({ message: `Global platform is now ${db.system.globalShutdown ? 'OFFLINE' : 'ONLINE'}` });
-  }
-
-  if (req.method === 'GET' && url.includes('stats')) {
-    const { data, error } = await supabase
-      .from('message_jobs')
-      .select('gym_key, created_at')
-      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-    
-    if (error) return res.status(500).json({ error: error.message });
-
-    const statsMap = {};
-    (data || []).forEach(job => {
-      const date = job.created_at?.slice(0, 10);
-      const key = `${job.gym_key}__${date}`;
-      statsMap[key] = (statsMap[key] || 0) + 1;
-    });
-
-    const result = Object.entries(statsMap).map(([key, count]) => {
-      const [gymKey, date] = key.split('__');
-      return { gymKey, date, count };
-    }).sort((a, b) => b.date.localeCompare(a.date));
-
-    return res.json(result);
-  }
-
-  res.status(404).json({ error: 'Not found' });
 }

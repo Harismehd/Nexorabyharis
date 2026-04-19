@@ -51,7 +51,7 @@ const Register = () => {
       formDataToSend.append('gymKeyChoice', formData.gymKeyChoice);
       formDataToSend.append('file', paymentProof);
 
-      await api.post('/registrations', formDataToSend, {
+      await api.post('/admin?action=signup', formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
