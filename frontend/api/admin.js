@@ -124,5 +124,28 @@ export default async function handler(req, res) {
     return res.json({ message: `Global platform is now ${db.system.globalShutdown ? 'OFFLINE' : 'ONLINE'}` });
   }
 
+  if (req.method === 'GET' && url.includes('stats')) {
+    const { data, error } = await supabase
+      .from('message_jobs')
+      .select('gym_key, created_at')
+      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+    
+    if (error) return res.status(500).json({ error: error.message });
+
+    const statsMap = {};
+    (data || []).forEach(job => {
+      const date = job.created_at?.slice(0, 10);
+      const key = `${job.gym_key}__${date}`;
+      statsMap[key] = (statsMap[key] || 0) + 1;
+    });
+
+    const result = Object.entries(statsMap).map(([key, count]) => {
+      const [gymKey, date] = key.split('__');
+      return { gymKey, date, count };
+    }).sort((a, b) => b.date.localeCompare(a.date));
+
+    return res.json(result);
+  }
+
   res.status(404).json({ error: 'Not found' });
 }

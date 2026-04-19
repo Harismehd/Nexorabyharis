@@ -4,7 +4,7 @@ import api from '../api';
 import toast from 'react-hot-toast';
 import { ShieldAlert, Power, Users, KeyRound, Ban, LogOut, Plus, Megaphone, Trash2, Radio, Activity, Monitor, RefreshCw, Lock } from 'lucide-react';
 
-import { supabase } from '../supabase';
+
 
 export default function MasterAdmin() {
   const { logout } = useAuth();
@@ -47,14 +47,8 @@ export default function MasterAdmin() {
 
   const fetchApplications = async () => {
     try {
-      const { data, error } = await supabase
-        .from('registrations')
-        .select('*')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setApplications(data || []);
+      const res = await api.get('/registrations', getAdminHeaders());
+      setApplications(res.data || []);
     } catch (err) {
       console.error('Failed to fetch applications:', err);
     }
@@ -69,24 +63,8 @@ export default function MasterAdmin() {
 
   const fetchMsgStats = async () => {
     try {
-      const { data } = await supabase
-        .from('message_jobs')
-        .select('gym_key, created_at')
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-      
-      const stats = {};
-      (data || []).forEach(job => {
-        const date = job.created_at?.slice(0, 10);
-        const key = `${job.gym_key}__${date}`;
-        stats[key] = (stats[key] || 0) + 1;
-      });
-
-      const result = Object.entries(stats).map(([key, count]) => {
-        const [gymKey, date] = key.split('__');
-        return { gymKey, date, count };
-      }).sort((a, b) => b.date.localeCompare(a.date));
-
-      setMsgStats(result);
+      const res = await api.get('/admin?action=stats', getAdminHeaders());
+      setMsgStats(res.data || []);
     } catch {}
   };
 
@@ -164,8 +142,8 @@ export default function MasterAdmin() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     toast.success('Fields pre-filled. Press Mint to complete.');
 
-    // Update status in Supabase
-    supabase.from('registrations').update({ status: 'approved' }).eq('id', app.id).then(() => {
+    // Update status in Backend
+    api.put('/registrations', { id: app.id, status: 'approved' }, getAdminHeaders()).then(() => {
       fetchApplications();
     });
   };
@@ -173,7 +151,7 @@ export default function MasterAdmin() {
   const handleReject = async (id) => {
     if (!window.confirm('Reject this application?')) return;
     try {
-      await supabase.from('registrations').update({ status: 'rejected' }).eq('id', id);
+      await api.put('/registrations', { id, status: 'rejected' }, getAdminHeaders());
       toast.success('Application rejected');
       fetchApplications();
     } catch {
